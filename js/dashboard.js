@@ -210,13 +210,11 @@ jQuery(document).ready(function($) {
             const $mainContent = $('#main-content');
             const $toggleText = $('.drawer-toggle-text');
             const $toggleIcon = $('#drawer-toggle svg');
-            const $footerInfo = $('.drawer-footer-info');
             
             $drawer.addClass('drawer-collapsed');
             $mainContent.removeClass('ml-64').addClass('ml-16');
-            $toggleText.text('Expand Menu');
+            $toggleText.text('Expand');
             $toggleIcon.addClass('rotate-180');
-            $footerInfo.addClass('hidden');
             
             // Hide text elements in navigation
             $drawer.find('h3, .site-title, .employee-name, .employee-email, .employee-role').addClass('drawer-text-hidden');
@@ -229,13 +227,11 @@ jQuery(document).ready(function($) {
             const $mainContent = $('#main-content');
             const $toggleText = $('.drawer-toggle-text');
             const $toggleIcon = $('#drawer-toggle svg');
-            const $footerInfo = $('.drawer-footer-info');
             
             $drawer.removeClass('drawer-collapsed');
             $mainContent.removeClass('ml-16').addClass('ml-64');
-            $toggleText.text('Collapse Menu');
+            $toggleText.text('Collapse');
             $toggleIcon.removeClass('rotate-180');
-            $footerInfo.removeClass('hidden');
             
             // Show text elements in navigation
             $drawer.find('h3, .site-title, .employee-name, .employee-email, .employee-role').removeClass('drawer-text-hidden');
