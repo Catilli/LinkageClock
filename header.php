@@ -12,7 +12,26 @@
 <?php wp_body_open(); ?>
 
 <div id="page" class="site">
-    <header id="masthead" class="site-header bg-white shadow-sm">
+
+    <header id="masthead" class="site-header drawer bg-white shadow-sm">
+        <div class="drawer__content">
+            <div class="drawer__header">
+                <h1 class="drawer__title">
+                </h1>
+            </div>
+            <div class="drawer__body">
+                <nav id="site-navigation" class="main-navigation">
+                    <?php
+                    wp_nav_menu(array(
+                        'theme_location' => 'primary',
+                        'menu_id'        => 'primary-menu',
+                        'menu_class'     => 'flex space-x-4',
+                    ));
+                    ?>
+                </nav>
+            </div>
+            <div class="drawer__footer"></div>
+        </div>
     </header>
 
     <div id="content" class="site-content">
