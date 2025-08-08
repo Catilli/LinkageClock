@@ -8,6 +8,7 @@ jQuery(document).ready(function($) {
             this.initSearch();
             this.initFilters();
             this.startAutoRefresh();
+            this.initDrawerToggle();
         },
         
         bindEvents: function() {
@@ -176,13 +177,77 @@ jQuery(document).ready(function($) {
                 const days = Math.floor(diff / 86400000);
                 return `${days} day${days > 1 ? 's' : ''} ago`;
             }
+        },
+        
+        initDrawerToggle: function() {
+            const $drawer = $('#masthead');
+            const $mainContent = $('#main-content');
+            const $toggleButton = $('#drawer-toggle');
+            const $toggleText = $('.drawer-toggle-text');
+            const $toggleIcon = $toggleButton.find('svg');
+            const $footerInfo = $('.drawer-footer-info');
+            let isCollapsed = false;
+            
+            // Check for saved state
+            if (localStorage.getItem('drawerCollapsed') === 'true') {
+                this.collapseDrawer();
+                isCollapsed = true;
+            }
+            
+            $toggleButton.on('click', function() {
+                if (isCollapsed) {
+                    dashboard.expandDrawer();
+                    isCollapsed = false;
+                } else {
+                    dashboard.collapseDrawer();
+                    isCollapsed = true;
+                }
+            });
+        },
+        
+        collapseDrawer: function() {
+            const $drawer = $('#masthead');
+            const $mainContent = $('#main-content');
+            const $toggleText = $('.drawer-toggle-text');
+            const $toggleIcon = $('#drawer-toggle svg');
+            const $footerInfo = $('.drawer-footer-info');
+            
+            $drawer.addClass('drawer-collapsed');
+            $mainContent.removeClass('ml-64').addClass('ml-16');
+            $toggleText.text('Expand Menu');
+            $toggleIcon.addClass('rotate-180');
+            $footerInfo.addClass('hidden');
+            
+            // Hide text elements in navigation
+            $drawer.find('h3, .site-title, .employee-name, .employee-email, .employee-role').addClass('drawer-text-hidden');
+            
+            localStorage.setItem('drawerCollapsed', 'true');
+        },
+        
+        expandDrawer: function() {
+            const $drawer = $('#masthead');
+            const $mainContent = $('#main-content');
+            const $toggleText = $('.drawer-toggle-text');
+            const $toggleIcon = $('#drawer-toggle svg');
+            const $footerInfo = $('.drawer-footer-info');
+            
+            $drawer.removeClass('drawer-collapsed');
+            $mainContent.removeClass('ml-16').addClass('ml-64');
+            $toggleText.text('Collapse Menu');
+            $toggleIcon.removeClass('rotate-180');
+            $footerInfo.removeClass('hidden');
+            
+            // Show text elements in navigation
+            $drawer.find('h3, .site-title, .employee-name, .employee-email, .employee-role').removeClass('drawer-text-hidden');
+            
+            localStorage.setItem('drawerCollapsed', 'false');
         }
     };
     
     // Initialize dashboard
     dashboard.init();
     
-    // Add CSS for notifications
+    // Add CSS for notifications and drawer functionality
     const notificationCSS = `
         <style>
             .notification {
@@ -215,6 +280,45 @@ jQuery(document).ready(function($) {
             .status-badge.clocked-out {
                 background-color: #f8d7da;
                 color: #721c24;
+            }
+            
+            /* Drawer collapse styles */
+            #masthead {
+                transition: width 0.3s ease-in-out;
+                overflow: hidden;
+            }
+            #masthead.drawer-collapsed {
+                width: 4rem !important;
+            }
+            #masthead.drawer-collapsed .drawer-text-hidden {
+                opacity: 0;
+                visibility: hidden;
+                transition: opacity 0.2s ease, visibility 0.2s ease;
+            }
+            #masthead.drawer-collapsed .p-6 {
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            #masthead.drawer-collapsed .site-logo,
+            #masthead.drawer-collapsed .site-branding {
+                display: none;
+            }
+            #masthead.drawer-collapsed nav a {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            #masthead.drawer-collapsed .drawer-toggle-text {
+                display: none;
+            }
+            #masthead.drawer-collapsed #drawer-toggle {
+                justify-content: center;
+            }
+            .rotate-180 {
+                transform: rotate(180deg);
+            }
+            #main-content {
+                transition: margin-left 0.3s ease-in-out;
             }
         </style>
     `;
