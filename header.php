@@ -39,7 +39,7 @@
         </div>
 
         <!-- Drawer Body -->
-        <div class="flex-1 overflow-y-auto">
+        <div class="flex-1 overflow-y-auto flex flex-col">
             <!-- Navigation -->
             <nav id="site-navigation" class="main-navigation p-6">
                 <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Navigation</h3>
@@ -52,6 +52,9 @@
                 ));
                 ?>
             </nav>
+
+            <!-- Spacer to push user section to bottom -->
+            <div class="flex-1"></div>
 
             <!-- User Section -->
             <?php if (is_user_logged_in()): ?>
