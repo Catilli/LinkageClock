@@ -13,15 +13,6 @@
 
 <div id="page" class="site">
 
-    <!-- Mobile Menu Toggle Button -->
-    <div class="fixed top-4 left-4 z-50 md:hidden">
-        <button id="mobile-menu-toggle" class="bg-white p-2 rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition duration-200">
-            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-            </svg>
-        </button>
-    </div>
-
     <!-- Left Side Drawer -->
     <header id="masthead" class="site-header fixed left-0 top-0 h-full w-64 bg-white shadow-lg border-r border-gray-200 z-40">
         
@@ -45,11 +36,9 @@
                     <?php endif; ?>
                 </div>
                 
-                <!-- Close Button -->
-                <button id="drawer-close" class="text-gray-500 hover:text-gray-700 transition duration-200">
-                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                    </svg>
+                <!-- Collapse Button -->
+                <button id="drawer-close" class="text-gray-500 hover:text-gray-700 transition duration-200 text-sm font-medium">
+                    Collapse
                 </button>
             </div>
         </div>
@@ -65,7 +54,6 @@
                     'menu_id'        => 'primary-menu',
                     'menu_class'     => 'space-y-2',
                     'container'      => false,
-                    'fallback_cb'    => 'linkage_fallback_menu',
                 ));
                 ?>
             </nav>
@@ -98,24 +86,7 @@
                 </div>
             <?php endif; ?>
 
-            <!-- Quick Actions -->
-            <?php if (is_user_logged_in()): ?>
-                <div class="p-6 border-t border-gray-200">
-                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Quick Actions</h3>
-                    <div class="space-y-2">
-                        <a href="<?php echo esc_url(home_url('/time-tracking')); ?>" 
-                           class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">
-                            ⏰ Time Tracking
-                        </a>
-                        <?php if (current_user_can('linkage_approve_timesheets')): ?>
-                            <a href="<?php echo esc_url(home_url('/approve-timesheets')); ?>" 
-                               class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">
-                                ✅ Approve Timesheets
-                            </a>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            <?php endif; ?>
+
         </div>
 
         <!-- Drawer Footer -->
