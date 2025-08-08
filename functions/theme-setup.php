@@ -53,6 +53,9 @@ add_action('after_setup_theme', 'linkage_content_width');
  * Enqueue scripts and styles.
  */
 function linkage_scripts() {
+    // Enqueue jQuery (WordPress built-in)
+    wp_enqueue_script('jquery');
+    
     // Enqueue Tailwind CSS CDN
     wp_enqueue_script(
         'tailwind-css',
@@ -83,41 +86,6 @@ function linkage_scripts() {
     if (is_singular() && comments_open() && get_option('thread_comments')) {
         wp_enqueue_script('comment-reply');
     }
-
-    // Add drawer functionality script
-    wp_add_inline_script('jquery', '
-        jQuery(document).ready(function($) {
-            const drawer = $("#masthead");
-            const closeBtn = $("#drawer-close");
-            
-            // Close drawer
-            function closeDrawer() {
-                drawer.addClass("-translate-x-full");
-            }
-            
-            // Open drawer
-            function openDrawer() {
-                drawer.removeClass("-translate-x-full");
-            }
-            
-            // Close drawer with Collapse button
-            closeBtn.on("click", closeDrawer);
-            
-            // Close on escape key
-            $(document).on("keydown", function(e) {
-                if (e.key === "Escape") {
-                    closeDrawer();
-                }
-            });
-            
-            // Handle window resize - always show on desktop
-            $(window).on("resize", function() {
-                if ($(window).width() >= 768) {
-                    openDrawer();
-                }
-            });
-        });
-    ');
 }
 add_action('wp_enqueue_scripts', 'linkage_scripts');
 
