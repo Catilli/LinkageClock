@@ -17,7 +17,6 @@ function linkage_create_timesheet_table() {
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
 }
-register_activation_hook(__FILE__, 'linkage_create_timesheet_table');
 
 function linkage_create_employee_status_table() {
     global $wpdb;
@@ -40,4 +39,31 @@ function linkage_create_employee_status_table() {
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
 }
+
+// Create tables when theme is activated
+register_activation_hook(__FILE__, 'linkage_create_timesheet_table');
 register_activation_hook(__FILE__, 'linkage_create_employee_status_table');
+
+// Also create tables on theme load to ensure they exist
+function linkage_ensure_tables_exist() {
+    global $wpdb;
+    
+    // Check if employee status table exists
+    $status_table = $wpdb->prefix . 'linkage_employee_status';
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$status_table'") == $status_table;
+    
+    if (!$table_exists) {
+        linkage_create_employee_status_table();
+    }
+    
+    // Check if timesheet table exists
+    $timesheet_table = $wpdb->prefix . 'linkage_timesheets';
+    $timesheet_exists = $wpdb->get_var("SHOW TABLES LIKE '$timesheet_table'") == $timesheet_table;
+    
+    if (!$timesheet_exists) {
+        linkage_create_timesheet_table();
+    }
+}
+
+// Run table check on theme load
+add_action('after_setup_theme', 'linkage_ensure_tables_exist');
