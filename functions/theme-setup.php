@@ -92,3 +92,58 @@ function linkage_pingback_header() {
     }
 }
 add_action('wp_head', 'linkage_pingback_header');
+
+/**
+ * Disable Gutenberg editor for specific page templates
+ */
+function linkage_disable_gutenberg_for_templates($use_block_editor, $post) {
+    // Get the page template
+    $page_template = get_page_template_slug($post->ID);
+    
+    // Disable Gutenberg for specific templates
+    $templates_to_disable = array(
+        'page-time-tracking.php',
+        'page-approve-timesheets.php'
+    );
+    
+    if (in_array($page_template, $templates_to_disable)) {
+        return false;
+    }
+    
+    return $use_block_editor;
+}
+add_filter('use_block_editor_for_post', 'linkage_disable_gutenberg_for_templates', 10, 2);
+
+/**
+ * Add custom meta box for page templates that don't use Gutenberg
+ */
+function linkage_add_template_meta_box() {
+    add_meta_box(
+        'linkage_template_info',
+        'Template Information',
+        'linkage_template_info_callback',
+        'page',
+        'side',
+        'high'
+    );
+}
+add_action('add_meta_boxes', 'linkage_add_template_meta_box');
+
+/**
+ * Meta box callback function
+ */
+function linkage_template_info_callback($post) {
+    $page_template = get_page_template_slug($post->ID);
+    
+    if ($page_template === 'page-time-tracking.php') {
+        echo '<div class="notice notice-info">';
+        echo '<p><strong>Time Tracking Template</strong></p>';
+        echo '<p>This page uses a custom time tracking form. The content editor is disabled for this template.</p>';
+        echo '</div>';
+    } elseif ($page_template === 'page-approve-timesheets.php') {
+        echo '<div class="notice notice-info">';
+        echo '<p><strong>Approve Timesheets Template</strong></p>';
+        echo '<p>This page uses a custom timesheet approval interface. The content editor is disabled for this template.</p>';
+        echo '</div>';
+    }
+}
