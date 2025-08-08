@@ -37,13 +37,7 @@ function linkage_theme_setup() {
     add_editor_style('style.css');
 
     // Add custom logo support
-    add_theme_support('custom-logo', array(
-        'height'      => 0, // Auto height
-        'width'       => 240,
-        'flex-height' => true,
-        'flex-width'  => true,
-        'header-text' => array('site-title', 'site-description'),
-    ));
+    add_theme_support( 'custom-logo' );
 }
 add_action('after_setup_theme', 'linkage_theme_setup');
 
@@ -101,33 +95,3 @@ function linkage_pingback_header() {
     }
 }
 add_action('wp_head', 'linkage_pingback_header');
-
-/**
- * Fallback menu function
- */
-function linkage_fallback_menu() {
-    echo '<ul class="flex space-x-6 text-gray-700">';
-    echo '<li><a href="' . esc_url(home_url('/')) . '" class="hover:text-blue-600 transition duration-200">Home</a></li>';
-    if (is_user_logged_in()) {
-        echo '<li><a href="' . esc_url(home_url('/time-tracking')) . '" class="hover:text-blue-600 transition duration-200">Time Tracking</a></li>';
-        if (current_user_can('linkage_approve_timesheets')) {
-            echo '<li><a href="' . esc_url(home_url('/approve-timesheets')) . '" class="hover:text-blue-600 transition duration-200">Approve Timesheets</a></li>';
-        }
-    }
-    echo '</ul>';
-}
-
-/**
- * Custom logo styling
- */
-function linkage_custom_logo_setup() {
-    $defaults = array(
-        'height'      => 60,
-        'width'       => 200,
-        'flex-height' => true,
-        'flex-width'  => true,
-        'header-text' => array('site-title', 'site-description'),
-    );
-    add_theme_support('custom-logo', $defaults);
-}
-add_action('after_setup_theme', 'linkage_custom_logo_setup');
