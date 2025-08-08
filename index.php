@@ -1,157 +1,277 @@
 <?php
 /**
- * The main template file
+ * The main template file - Employee Dashboard
  */
 
 get_header(); ?>
 
 <div class="container mx-auto px-4 py-8">
-    <div class="max-w-6xl mx-auto">
+    <div class="max-w-7xl mx-auto">
         
-        <!-- Hero Section -->
-        <div class="text-center mb-12">
+        <!-- Dashboard Header -->
+        <div class="text-center mb-8">
             <h1 class="text-4xl font-bold text-gray-900 mb-4">
-                Welcome to LinkageClock
+                Employee Dashboard
             </h1>
-            <p class="text-xl text-gray-600 mb-8">
-                Efficient payroll time tracking solution for modern businesses
+            <p class="text-xl text-gray-600 mb-6">
+                Live employee status tracking and management
             </p>
             
             <?php if (is_user_logged_in()): ?>
-                <div class="flex justify-center space-x-4">
+                <div class="flex justify-center space-x-4 mb-6">
                     <a href="<?php echo esc_url(home_url('/time-tracking')); ?>" 
-                       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-200">
                         Log Time
                     </a>
                     <?php if (current_user_can('linkage_approve_timesheets')): ?>
                         <a href="<?php echo esc_url(home_url('/approve-timesheets')); ?>" 
-                           class="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg">
+                           class="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-200">
                             Approve Timesheets
                         </a>
                     <?php endif; ?>
                 </div>
             <?php else: ?>
-                <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded">
-                    Please <a href="<?php echo esc_url(wp_login_url()); ?>" class="underline">log in</a> to access time tracking features.
+                <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
+                    Please <a href="<?php echo esc_url(wp_login_url()); ?>" class="underline">log in</a> to access the dashboard.
                 </div>
             <?php endif; ?>
         </div>
 
-        <!-- Features Section -->
-        <div class="grid md:grid-cols-3 gap-8 mb-12">
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="text-blue-500 text-3xl mb-4">⏰</div>
-                <h3 class="text-xl font-semibold mb-2">Time Tracking</h3>
-                <p class="text-gray-600">Easily log your work hours with our intuitive time tracking system.</p>
-            </div>
-            
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="text-green-500 text-3xl mb-4">📊</div>
-                <h3 class="text-xl font-semibold mb-2">Payroll Integration</h3>
-                <p class="text-gray-600">Seamless integration with payroll systems for accurate processing.</p>
-            </div>
-            
-            <div class="bg-white p-6 rounded-lg shadow-md">
-                <div class="text-purple-500 text-3xl mb-4">👥</div>
-                <h3 class="text-xl font-semibold mb-2">Employee Management</h3>
-                <p class="text-gray-600">Manage employee accounts and permissions efficiently.</p>
-            </div>
-        </div>
-
-        <!-- Quick Stats (if user is logged in) -->
         <?php if (is_user_logged_in()): ?>
-            <div class="bg-gray-50 p-6 rounded-lg mb-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">Your Quick Stats</h2>
-                <div class="grid md:grid-cols-3 gap-6">
-                    <?php
-                    global $wpdb;
-                    $user_id = get_current_user_id();
-                    $table = $wpdb->prefix . 'linkage_timesheets';
-                    
-                    // Total hours this month
-                    $current_month = date('Y-m');
-                    $monthly_hours = $wpdb->get_var($wpdb->prepare(
-                        "SELECT SUM(hours_worked) FROM $table WHERE user_id = %d AND DATE_FORMAT(work_date, '%%Y-%%m') = %s",
-                        $user_id, $current_month
-                    ));
-                    
-                    // Pending timesheets
-                    $pending_count = $wpdb->get_var($wpdb->prepare(
-                        "SELECT COUNT(*) FROM $table WHERE user_id = %d AND status = 'pending'",
-                        $user_id
-                    ));
-                    
-                    // Approved timesheets
-                    $approved_count = $wpdb->get_var($wpdb->prepare(
-                        "SELECT COUNT(*) FROM $table WHERE user_id = %d AND status = 'approved'",
-                        $user_id
-                    ));
-                    ?>
-                    
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-blue-600"><?php echo $monthly_hours ? number_format($monthly_hours, 1) : '0'; ?></div>
-                        <div class="text-gray-600">Hours This Month</div>
+            <!-- Search and Filter Controls -->
+            <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+                <div class="grid md:grid-cols-4 gap-4">
+                    <!-- Search -->
+                    <div class="md:col-span-2">
+                        <label for="employee-search" class="block text-sm font-medium text-gray-700 mb-2">Search Employees</label>
+                        <input type="text" id="employee-search" placeholder="Search by name or email..." 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                     </div>
                     
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-yellow-600"><?php echo $pending_count ?: '0'; ?></div>
-                        <div class="text-gray-600">Pending Timesheets</div>
+                    <!-- Status Filter -->
+                    <div>
+                        <label for="status-filter" class="block text-sm font-medium text-gray-700 mb-2">Status</label>
+                        <select id="status-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="all">All Status</option>
+                            <option value="clocked_in">Clocked In</option>
+                            <option value="clocked_out">Clocked Out</option>
+                        </select>
                     </div>
                     
-                    <div class="text-center">
-                        <div class="text-3xl font-bold text-green-600"><?php echo $approved_count ?: '0'; ?></div>
-                        <div class="text-gray-600">Approved Timesheets</div>
+                    <!-- Role Filter -->
+                    <div>
+                        <label for="role-filter" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
+                        <select id="role-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
+                            <option value="all">All Roles</option>
+                            <option value="employee">Employee</option>
+                            <option value="hr manager">HR Manager</option>
+                            <option value="administrator">Administrator</option>
+                        </select>
                     </div>
-                </div>
-            </div>
-        <?php endif; ?>
-
-        <!-- Recent Posts Section -->
-        <?php if (have_posts()): ?>
-            <div class="mb-8">
-                <h2 class="text-2xl font-bold text-gray-900 mb-6">Latest Updates</h2>
-                <div class="grid md:grid-cols-2 gap-6">
-                    <?php while (have_posts()): the_post(); ?>
-                        <article class="bg-white p-6 rounded-lg shadow-md">
-                            <h3 class="text-xl font-semibold mb-2">
-                                <a href="<?php the_permalink(); ?>" class="text-blue-600 hover:text-blue-800">
-                                    <?php the_title(); ?>
-                                </a>
-                            </h3>
-                            <div class="text-gray-600 mb-3">
-                                <?php echo wp_trim_words(get_the_excerpt(), 20); ?>
-                            </div>
-                            <div class="text-sm text-gray-500">
-                                <?php echo get_the_date(); ?>
-                            </div>
-                        </article>
-                    <?php endwhile; ?>
                 </div>
                 
-                <?php if (get_next_posts_link() || get_previous_posts_link()): ?>
-                    <div class="flex justify-between mt-8">
-                        <?php if (get_previous_posts_link()): ?>
-                            <div class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                <?php previous_posts_link('← Previous'); ?>
-                            </div>
-                        <?php endif; ?>
-                        
-                        <?php if (get_next_posts_link()): ?>
-                            <div class="bg-gray-500 hover:bg-gray-700 text-white font-bold py-2 px-4 rounded">
-                                <?php next_posts_link('Next →'); ?>
-                            </div>
-                        <?php endif; ?>
-                    </div>
-                <?php endif; ?>
+                <!-- Employee Count -->
+                <div class="mt-4 text-sm text-gray-600">
+                    <span id="employee-count">Loading...</span>
+                </div>
             </div>
+
+            <!-- Employee Status Table -->
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="px-6 py-4 border-b border-gray-200">
+                    <h2 class="text-xl font-semibold text-gray-900">Employee Status</h2>
+                </div>
+                
+                <div class="overflow-x-auto">
+                    <table class="min-w-full divide-y divide-gray-200">
+                        <thead class="bg-gray-50">
+                            <tr>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Employee
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Role
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Status
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Last Action
+                                </th>
+                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                    Actions
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="bg-white divide-y divide-gray-200">
+                            <?php
+                            // Initialize employee status for users who don't have status records
+                            linkage_initialize_employee_status();
+                            
+                            // Get all employees with their status
+                            $employees = linkage_get_all_employees_status();
+                            
+                            if (!empty($employees)):
+                                foreach ($employees as $employee):
+                                    $status_class = $employee->current_status === 'clocked_in' ? 'clocked-in' : 'clocked-out';
+                                    $status_text = $employee->current_status === 'clocked_in' ? 'Clocked In' : 'Clocked Out';
+                                    $role_display = linkage_get_user_role_display($employee->ID);
+                                    $time_ago = linkage_format_time_ago($employee->last_action_time);
+                            ?>
+                                <tr class="employee-row hover:bg-gray-50">
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="flex items-center">
+                                            <div class="flex-shrink-0 h-10 w-10">
+                                                <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
+                                                    <span class="text-sm font-medium text-gray-700">
+                                                        <?php echo strtoupper(substr($employee->display_name, 0, 1)); ?>
+                                                    </span>
+                                                </div>
+                                            </div>
+                                            <div class="ml-4">
+                                                <div class="text-sm font-medium text-gray-900 employee-name">
+                                                    <?php echo esc_html($employee->display_name); ?>
+                                                </div>
+                                                <div class="text-sm text-gray-500 employee-email">
+                                                    <?php echo esc_html($employee->user_email); ?>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <div class="text-sm text-gray-900 employee-role">
+                                            <?php echo esc_html($role_display); ?>
+                                        </div>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap">
+                                        <span class="status-badge <?php echo $status_class; ?> px-2 inline-flex text-xs leading-5 font-semibold rounded-full employee-status" 
+                                              data-status="<?php echo esc_attr($employee->current_status); ?>">
+                                            <?php echo esc_html($status_text); ?>
+                                        </span>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                                        <?php echo esc_html($time_ago); ?>
+                                    </td>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                                        <?php if (current_user_can('linkage_manage_employees')): ?>
+                                            <?php if ($employee->current_status === 'clocked_out'): ?>
+                                                <button class="status-update-btn bg-green-500 hover:bg-green-700 text-white text-xs px-3 py-1 rounded transition duration-200"
+                                                        data-user-id="<?php echo esc_attr($employee->ID); ?>"
+                                                        data-status="clocked_in"
+                                                        data-action-type="clock_in">
+                                                    Clock In
+                                                </button>
+                                            <?php else: ?>
+                                                <button class="status-update-btn bg-red-500 hover:bg-red-700 text-white text-xs px-3 py-1 rounded transition duration-200"
+                                                        data-user-id="<?php echo esc_attr($employee->ID); ?>"
+                                                        data-status="clocked_out"
+                                                        data-action-type="clock_out">
+                                                    Clock Out
+                                                </button>
+                                            <?php endif; ?>
+                                        <?php else: ?>
+                                            <span class="text-gray-400">No permissions</span>
+                                        <?php endif; ?>
+                                    </td>
+                                </tr>
+                            <?php 
+                                endforeach;
+                            else:
+                            ?>
+                                <tr>
+                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                        No employees found. Please add employees to see their status.
+                                    </td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Quick Stats -->
+            <div class="grid md:grid-cols-3 gap-6 mt-8">
+                <?php
+                $total_employees = count($employees);
+                $clocked_in_count = 0;
+                $clocked_out_count = 0;
+                
+                foreach ($employees as $employee) {
+                    if ($employee->current_status === 'clocked_in') {
+                        $clocked_in_count++;
+                    } else {
+                        $clocked_out_count++;
+                    }
+                }
+                ?>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-bold"><?php echo $total_employees; ?></span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-500">Total Employees</div>
+                            <div class="text-lg font-semibold text-gray-900"><?php echo $total_employees; ?></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-bold"><?php echo $clocked_in_count; ?></span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-500">Currently Working</div>
+                            <div class="text-lg font-semibold text-gray-900"><?php echo $clocked_in_count; ?></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-red-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-bold"><?php echo $clocked_out_count; ?></span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-500">Off Duty</div>
+                            <div class="text-lg font-semibold text-gray-900"><?php echo $clocked_out_count; ?></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         <?php else: ?>
+            <!-- Not Logged In Message -->
             <div class="text-center py-12">
-                <h2 class="text-2xl font-bold text-gray-900 mb-4">No Posts Found</h2>
-                <p class="text-gray-600">Check back later for updates and announcements.</p>
+                <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
+                    <p class="text-lg">Please log in to view the employee dashboard.</p>
+                    <a href="<?php echo esc_url(wp_login_url()); ?>" class="inline-block mt-2 bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
+                        Log In
+                    </a>
+                </div>
             </div>
         <?php endif; ?>
         
     </div>
 </div>
+
+<script>
+// Initialize employee count on page load
+jQuery(document).ready(function($) {
+    setTimeout(function() {
+        const visibleCount = $('.employee-row:visible').length;
+        const totalCount = $('.employee-row').length;
+        $('#employee-count').text(`${visibleCount} of ${totalCount} employees`);
+    }, 100);
+});
+</script>
 
 <?php get_footer(); ?>
