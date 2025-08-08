@@ -126,3 +126,43 @@ function linkage_add_template_notice() {
     }
 }
 add_action('edit_form_after_title', 'linkage_add_template_notice');
+
+/**
+ * Add notice using admin_notices hook for better Gutenberg compatibility
+ */
+function linkage_admin_template_notice() {
+    global $post, $pagenow;
+    
+    // Only show on post.php or post-new.php pages
+    if (!in_array($pagenow, array('post.php', 'post-new.php'))) {
+        return;
+    }
+    
+    // Only for pages
+    if (!$post || $post->post_type !== 'page') {
+        return;
+    }
+    
+    $page_template = get_page_template_slug($post->ID);
+    
+    if ($page_template === 'page-time-tracking.php') {
+        ?>
+        <div class="notice notice-warning is-dismissible">
+            <p>
+                <strong>Time Tracking Template</strong><br>
+                This page uses a custom time tracking form. The content below will be replaced by the time tracking interface when viewed on the frontend.
+            </p>
+        </div>
+        <?php
+    } elseif ($page_template === 'page-approve-timesheets.php') {
+        ?>
+        <div class="notice notice-warning is-dismissible">
+            <p>
+                <strong>Approve Timesheets Template</strong><br>
+                This page uses a custom timesheet approval interface. The content below will be replaced by the approval system when viewed on the frontend.
+            </p>
+        </div>
+        <?php
+    }
+}
+add_action('admin_notices', 'linkage_admin_template_notice');
