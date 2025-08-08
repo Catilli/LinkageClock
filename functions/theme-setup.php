@@ -128,79 +128,7 @@ function linkage_add_template_notice() {
 add_action('edit_form_after_title', 'linkage_add_template_notice');
 
 /**
- * Add notice using admin_notices hook for better Gutenberg compatibility
- */
-function linkage_admin_template_notice() {
-    global $post, $pagenow;
-    
-    // Only show on post.php or post-new.php pages
-    if (!in_array($pagenow, array('post.php', 'post-new.php'))) {
-        return;
-    }
-    
-    // Only for pages
-    if (!$post || $post->post_type !== 'page') {
-        return;
-    }
-    
-    $page_template = get_page_template_slug($post->ID);
-    
-    if ($page_template === 'page-time-tracking.php') {
-        ?>
-        <div class="notice notice-warning is-dismissible">
-            <p>
-                <strong>Time Tracking Template</strong><br>
-                This page uses a custom time tracking form. The content below will be replaced by the time tracking interface when viewed on the frontend.
-            </p>
-        </div>
-        <?php
-    } elseif ($page_template === 'page-approve-timesheets.php') {
-        ?>
-        <div class="notice notice-warning is-dismissible">
-            <p>
-                <strong>Approve Timesheets Template</strong><br>
-                This page uses a custom timesheet approval interface. The content below will be replaced by the approval system when viewed on the frontend.
-            </p>
-        </div>
-        <?php
-    }
-}
-add_action('admin_notices', 'linkage_admin_template_notice');
-
-/**
- * Debug function to check what's happening
- */
-function linkage_debug_notice() {
-    global $post, $pagenow;
-    
-    // Only show on post.php or post-new.php pages
-    if (!in_array($pagenow, array('post.php', 'post-new.php'))) {
-        return;
-    }
-    
-    // Only for pages
-    if (!$post || $post->post_type !== 'page') {
-        return;
-    }
-    
-    $page_template = get_page_template_slug($post->ID);
-    
-    ?>
-    <div class="notice notice-info is-dismissible">
-        <p>
-            <strong>Debug Information:</strong><br>
-            Page: <?php echo $pagenow; ?><br>
-            Post Type: <?php echo $post ? $post->post_type : 'no post'; ?><br>
-            Template: <?php echo $page_template ? $page_template : 'default'; ?><br>
-            Post ID: <?php echo $post ? $post->ID : 'no ID'; ?>
-        </p>
-    </div>
-    <?php
-}
-add_action('admin_notices', 'linkage_debug_notice');
-
-/**
- * Alternative approach using enqueue_block_editor_assets
+ * Add notice using Gutenberg-compatible approach
  */
 function linkage_block_editor_notice() {
     global $post;
@@ -214,27 +142,51 @@ function linkage_block_editor_notice() {
     if ($page_template === 'page-time-tracking.php' || $page_template === 'page-approve-timesheets.php') {
         ?>
         <script>
-        document.addEventListener('DOMContentLoaded', function() {
-            var notice = document.createElement('div');
-            notice.className = 'notice notice-warning';
-            notice.style.margin = '20px 0';
-            notice.style.borderLeftColor = '#ffb900';
+        (function() {
+            function addNotice() {
+                // Wait for Gutenberg to be fully loaded
+                if (typeof wp !== 'undefined' && wp.data && wp.data.subscribe) {
+                    wp.data.subscribe(function() {
+                        var editor = wp.data.select('core/editor');
+                        if (editor && editor.getCurrentPostType() === 'page') {
+                            var message = '';
+                            if ('<?php echo $page_template; ?>' === 'page-time-tracking.php') {
+                                message = '<strong>Time Tracking Template</strong><br>This page uses a custom time tracking form. The content below will be replaced by the time tracking interface when viewed on the frontend.';
+                            } else {
+                                message = '<strong>Approve Timesheets Template</strong><br>This page uses a custom timesheet approval interface. The content below will be replaced by the approval system when viewed on the frontend.';
+                            }
+                            
+                            // Create notice element
+                            var notice = document.createElement('div');
+                            notice.className = 'notice notice-warning is-dismissible';
+                            notice.style.margin = '20px 0';
+                            notice.style.borderLeftColor = '#ffb900';
+                            notice.innerHTML = '<p style="margin: 0; padding: 12px 0;">' + message + '</p>';
+                            
+                            // Find the editor area and insert notice
+                            var editorArea = document.querySelector('.editor-styles-wrapper') || document.querySelector('.block-editor-writing-flow');
+                            if (editorArea) {
+                                var existingNotice = editorArea.querySelector('.linkage-template-notice');
+                                if (!existingNotice) {
+                                    notice.className += ' linkage-template-notice';
+                                    editorArea.insertBefore(notice, editorArea.firstChild);
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    // Fallback for when Gutenberg data is not available
+                    setTimeout(addNotice, 100);
+                }
+            }
             
-            var message = '';
-            if ('<?php echo $page_template; ?>' === 'page-time-tracking.php') {
-                message = '<strong>Time Tracking Template</strong><br>This page uses a custom time tracking form. The content below will be replaced by the time tracking interface when viewed on the frontend.';
+            // Start the process
+            if (document.readyState === 'loading') {
+                document.addEventListener('DOMContentLoaded', addNotice);
             } else {
-                message = '<strong>Approve Timesheets Template</strong><br>This page uses a custom timesheet approval interface. The content below will be replaced by the approval system when viewed on the frontend.';
+                addNotice();
             }
-            
-            notice.innerHTML = '<p style="margin: 0; padding: 12px 0;">' + message + '</p>';
-            
-            // Insert after the title
-            var title = document.querySelector('.editor-post-title');
-            if (title && title.parentNode) {
-                title.parentNode.insertBefore(notice, title.nextSibling);
-            }
-        });
+        })();
         </script>
         <?php
     }
