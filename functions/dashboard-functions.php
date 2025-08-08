@@ -11,7 +11,7 @@ function linkage_get_all_employees_status() {
     $status_table = $wpdb->prefix . 'linkage_employee_status';
     $users_table = $wpdb->users;
     
-    // Get all users who have any of our custom capabilities
+    // First, try to get users with our custom capabilities
     $query = "
         SELECT 
             u.ID,
@@ -34,7 +34,28 @@ function linkage_get_all_employees_status() {
         ORDER BY u.display_name ASC
     ";
     
-    return $wpdb->get_results($query);
+    $results = $wpdb->get_results($query);
+    
+    // If no results, try to get all users (fallback)
+    if (empty($results)) {
+        $fallback_query = "
+            SELECT 
+                u.ID,
+                u.display_name,
+                u.user_email,
+                COALESCE(es.status, 'clocked_out') as current_status,
+                COALESCE(es.last_action_time, 'Never') as last_action_time,
+                COALESCE(es.last_action_type, 'None') as last_action_type
+            FROM $users_table u
+            LEFT JOIN $status_table es ON u.ID = es.user_id
+            WHERE u.ID > 1
+            ORDER BY u.display_name ASC
+        ";
+        
+        $results = $wpdb->get_results($fallback_query);
+    }
+    
+    return $results;
 }
 
 /**
@@ -198,3 +219,106 @@ function linkage_enqueue_dashboard_scripts() {
     }
 }
 add_action('wp_enqueue_scripts', 'linkage_enqueue_dashboard_scripts');
+
+/**
+ * Debug function to check user roles and capabilities
+ */
+function linkage_debug_user_roles() {
+    global $wpdb;
+    
+    echo "<h3>Debug: User Roles and Capabilities</h3>";
+    
+    // Get all users
+    $users = get_users();
+    
+    foreach ($users as $user) {
+        echo "<p><strong>User:</strong> " . $user->display_name . " (ID: " . $user->ID . ")</p>";
+        echo "<p><strong>Roles:</strong> " . implode(', ', $user->roles) . "</p>";
+        
+        // Check capabilities
+        $capabilities = get_user_meta($user->ID, $wpdb->prefix . 'capabilities', true);
+        echo "<p><strong>Capabilities:</strong> " . print_r($capabilities, true) . "</p>";
+        
+        // Check if user has any of our custom capabilities
+        $has_custom_cap = false;
+        if (is_array($capabilities)) {
+            foreach ($capabilities as $cap => $has) {
+                if (strpos($cap, 'linkage_') === 0 && $has) {
+                    $has_custom_cap = true;
+                    break;
+                }
+            }
+        }
+        echo "<p><strong>Has Custom Capabilities:</strong> " . ($has_custom_cap ? 'Yes' : 'No') . "</p>";
+        echo "<hr>";
+    }
+}
+
+/**
+ * Debug function to check database tables
+ */
+function linkage_debug_database_tables() {
+    global $wpdb;
+    
+    echo "<h3>Debug: Database Tables</h3>";
+    
+    // Check if employee status table exists
+    $table_name = $wpdb->prefix . 'linkage_employee_status';
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table_name'") == $table_name;
+    echo "<p><strong>Employee Status Table Exists:</strong> " . ($table_exists ? 'Yes' : 'No') . "</p>";
+    
+    if ($table_exists) {
+        $count = $wpdb->get_var("SELECT COUNT(*) FROM $table_name");
+        echo "<p><strong>Records in Employee Status Table:</strong> $count</p>";
+        
+        $records = $wpdb->get_results("SELECT * FROM $table_name LIMIT 5");
+        echo "<p><strong>Sample Records:</strong></p>";
+        echo "<pre>" . print_r($records, true) . "</pre>";
+    }
+    
+    // Check if timesheet table exists
+    $timesheet_table = $wpdb->prefix . 'linkage_timesheets';
+    $timesheet_exists = $wpdb->get_var("SHOW TABLES LIKE '$timesheet_table'") == $timesheet_table;
+    echo "<p><strong>Timesheet Table Exists:</strong> " . ($timesheet_exists ? 'Yes' : 'No') . "</p>";
+}
+
+/**
+ * Force create database tables
+ */
+function linkage_force_create_tables() {
+    // Include the create-table.php file to ensure tables are created
+    require_once get_template_directory() . '/functions/create-table.php';
+    
+    // Call the table creation functions
+    linkage_create_timesheet_table();
+    linkage_create_employee_status_table();
+    
+    echo "<p><strong>Tables created/updated successfully!</strong></p>";
+}
+
+/**
+ * Force initialize all users as employees
+ */
+function linkage_force_initialize_all_users() {
+    global $wpdb;
+    
+    // Get all users
+    $users = get_users();
+    $initialized_count = 0;
+    
+    foreach ($users as $user) {
+        // Add employee role if user doesn't have it
+        if (!in_array('employee', $user->roles)) {
+            $user->add_role('employee');
+        }
+        
+        // Initialize status record
+        $result = linkage_update_employee_status($user->ID, 'clocked_out', 'force_initial', 'Force initialized');
+        if ($result !== false) {
+            $initialized_count++;
+        }
+    }
+    
+    echo "<p><strong>Initialized $initialized_count users as employees!</strong></p>";
+    return $initialized_count;
+}
