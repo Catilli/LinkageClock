@@ -83,6 +83,51 @@ function linkage_scripts() {
     if (is_singular() && comments_open() && get_option('thread_comments')) {
         wp_enqueue_script('comment-reply');
     }
+
+    // Add drawer functionality script
+    wp_add_inline_script('jquery', '
+        jQuery(document).ready(function($) {
+            const drawer = $("#masthead");
+            const toggleBtn = $("#mobile-menu-toggle");
+            const closeBtn = $("#drawer-close");
+            
+            // Close drawer
+            function closeDrawer() {
+                drawer.addClass("-translate-x-full");
+            }
+            
+            // Open drawer
+            function openDrawer() {
+                drawer.removeClass("-translate-x-full");
+            }
+            
+            // Toggle drawer (mobile menu button)
+            toggleBtn.on("click", function() {
+                if (drawer.hasClass("-translate-x-full")) {
+                    openDrawer();
+                } else {
+                    closeDrawer();
+                }
+            });
+            
+            // Close drawer with X button
+            closeBtn.on("click", closeDrawer);
+            
+            // Close on escape key
+            $(document).on("keydown", function(e) {
+                if (e.key === "Escape") {
+                    closeDrawer();
+                }
+            });
+            
+            // Handle window resize - always show on desktop
+            $(window).on("resize", function() {
+                if ($(window).width() >= 768) {
+                    openDrawer();
+                }
+            });
+        });
+    ');
 }
 add_action('wp_enqueue_scripts', 'linkage_scripts');
 
@@ -95,3 +140,18 @@ function linkage_pingback_header() {
     }
 }
 add_action('wp_head', 'linkage_pingback_header');
+
+/**
+ * Fallback menu function for drawer navigation
+ */
+function linkage_fallback_menu() {
+    echo '<ul class="space-y-2">';
+    echo '<li><a href="' . esc_url(home_url('/')) . '" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">🏠 Home</a></li>';
+    if (is_user_logged_in()) {
+        echo '<li><a href="' . esc_url(home_url('/time-tracking')) . '" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">⏰ Time Tracking</a></li>';
+        if (current_user_can('linkage_approve_timesheets')) {
+            echo '<li><a href="' . esc_url(home_url('/approve-timesheets')) . '" class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">✅ Approve Timesheets</a></li>';
+        }
+    }
+    echo '</ul>';
+}
