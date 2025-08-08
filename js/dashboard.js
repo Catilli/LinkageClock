@@ -184,7 +184,7 @@ jQuery(document).ready(function($) {
             const $mainContent = $('#main-content');
             const $toggleButton = $('#drawer-toggle');
             const $toggleText = $('.drawer-toggle-text');
-            const $hamburgerIcon = $('.hamburger-icon');
+            const $arrowIcon = $('.arrow-icon');
             let isCollapsed = false;
             
             // Check for saved state
@@ -208,12 +208,12 @@ jQuery(document).ready(function($) {
             const $drawer = $('#masthead');
             const $mainContent = $('#main-content');
             const $toggleText = $('.drawer-toggle-text');
-            const $hamburgerIcon = $('.hamburger-icon');
+            const $arrowIcon = $('.arrow-icon');
             
             $drawer.addClass('drawer-collapsed');
             $mainContent.removeClass('ml-64').addClass('ml-16');
             $toggleText.text('EXPAND');
-            $hamburgerIcon.addClass('hamburger-active');
+            $arrowIcon.addClass('arrow-rotated');
             
             // Hide text elements in navigation
             $drawer.find('h3, .site-title, .employee-name, .employee-email, .employee-role').addClass('drawer-text-hidden');
@@ -225,12 +225,12 @@ jQuery(document).ready(function($) {
             const $drawer = $('#masthead');
             const $mainContent = $('#main-content');
             const $toggleText = $('.drawer-toggle-text');
-            const $hamburgerIcon = $('.hamburger-icon');
+            const $arrowIcon = $('.arrow-icon');
             
             $drawer.removeClass('drawer-collapsed');
             $mainContent.removeClass('ml-16').addClass('ml-64');
             $toggleText.text('COLLAPSE');
-            $hamburgerIcon.removeClass('hamburger-active');
+            $arrowIcon.removeClass('arrow-rotated');
             
             // Show text elements in navigation
             $drawer.find('h3, .site-title, .employee-name, .employee-email, .employee-role').removeClass('drawer-text-hidden');
@@ -313,24 +313,12 @@ jQuery(document).ready(function($) {
                 transition: margin-left 0.3s ease-in-out;
             }
             
-            /* Hamburger menu animation */
-            .hamburger-icon {
-                position: relative;
-                cursor: pointer;
+            /* Arrow rotation animation */
+            .arrow-icon {
+                transition: transform 0.3s ease-in-out;
             }
-            .hamburger-line {
-                transform-origin: center;
-                transition: all 0.3s ease-in-out;
-            }
-            .hamburger-icon.hamburger-active .hamburger-line:nth-child(1) {
-                transform: rotate(45deg) translate(0.125rem, 0.125rem);
-            }
-            .hamburger-icon.hamburger-active .hamburger-line:nth-child(2) {
-                opacity: 0;
-                transform: scale(0);
-            }
-            .hamburger-icon.hamburger-active .hamburger-line:nth-child(3) {
-                transform: rotate(-45deg) translate(0.125rem, -0.125rem);
+            .arrow-icon.arrow-rotated {
+                transform: rotate(180deg);
             }
         </style>
     `;
