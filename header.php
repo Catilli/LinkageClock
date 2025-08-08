@@ -13,19 +13,30 @@
 
 <div id="page" class="site">
 
-    <header id="masthead" class="site-header drawer bg-white shadow-sm border-b border-gray-200">
-        <div class="drawer__content container mx-auto px-4">
-            <div class="flex items-center justify-between py-4">
-                
+    <!-- Mobile Menu Toggle Button -->
+    <div class="fixed top-4 left-4 z-50 md:hidden">
+        <button id="mobile-menu-toggle" class="bg-white p-2 rounded-lg shadow-lg border border-gray-200 hover:bg-gray-50 transition duration-200">
+            <svg class="w-6 h-6 text-gray-700" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+            </svg>
+        </button>
+    </div>
+
+    <!-- Left Side Drawer -->
+    <header id="masthead" class="site-header fixed left-0 top-0 h-full w-64 bg-white shadow-lg border-r border-gray-200 z-40">
+        
+        <!-- Drawer Header -->
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
                 <!-- Logo and Site Title -->
-                <div class="flex drawer__header items-center">
+                <div class="flex items-center">
                     <?php if (has_custom_logo()): ?>
-                        <div class="site-logo mr-4">
+                        <div class="site-logo mr-3">
                             <?php the_custom_logo(); ?>
                         </div>
                     <?php else: ?>
                         <div class="site-branding">
-                            <h1 class="site-title text-2xl font-bold text-gray-900">
+                            <h1 class="site-title text-xl font-bold text-gray-900">
                                 <a href="<?php echo esc_url(home_url('/')); ?>" rel="home" class="hover:text-blue-600 transition duration-200">
                                     <?php bloginfo('name'); ?>
                                 </a>
@@ -33,36 +44,90 @@
                         </div>
                     <?php endif; ?>
                 </div>
+                
+                <!-- Close Button -->
+                <button id="drawer-close" class="text-gray-500 hover:text-gray-700 transition duration-200">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                    </svg>
+                </button>
+            </div>
+        </div>
 
-                <!-- Navigation -->
-                <nav id="site-navigation" class="drawer__body main-navigation">
-                    <?php
-                    wp_nav_menu(array(
-                        'theme_location' => 'primary',
-                        'menu_id'        => 'primary-menu',
-                        'menu_class'     => 'flex space-x-6 text-gray-700',
-                        'container'      => false,
-                        'fallback_cb'    => 'linkage_fallback_menu',
-                    ));
-                    ?>
-                </nav>
+        <!-- Drawer Body -->
+        <div class="flex-1 overflow-y-auto">
+            <!-- Navigation -->
+            <nav id="site-navigation" class="main-navigation p-6">
+                <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Navigation</h3>
+                <?php
+                wp_nav_menu(array(
+                    'theme_location' => 'primary',
+                    'menu_id'        => 'primary-menu',
+                    'menu_class'     => 'space-y-2',
+                    'container'      => false,
+                    'fallback_cb'    => 'linkage_fallback_menu',
+                ));
+                ?>
+            </nav>
 
-                <!-- User Menu (if logged in) -->
-                <?php if (is_user_logged_in()): ?>
-                    <div class="drawer__footer flex items-center space-x-4">
-                        <span class="text-sm text-gray-600">
-                            Welcome, <?php echo esc_html(wp_get_current_user()->display_name); ?>
-                        </span>
+            <!-- User Section -->
+            <?php if (is_user_logged_in()): ?>
+                <div class="p-6 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">User</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-medium">
+                                    <?php echo strtoupper(substr(wp_get_current_user()->display_name, 0, 1)); ?>
+                                </span>
+                            </div>
+                            <div>
+                                <p class="text-sm font-medium text-gray-900">
+                                    <?php echo esc_html(wp_get_current_user()->display_name); ?>
+                                </p>
+                                <p class="text-xs text-gray-500">
+                                    <?php echo esc_html(wp_get_current_user()->user_email); ?>
+                                </p>
+                            </div>
+                        </div>
                         <a href="<?php echo esc_url(wp_logout_url(home_url())); ?>" 
-                           class="text-sm text-red-600 hover:text-red-800 transition duration-200">
+                           class="block text-sm text-red-600 hover:text-red-800 transition duration-200">
                             Logout
                         </a>
                     </div>
-                <?php endif; ?>
+                </div>
+            <?php endif; ?>
 
+            <!-- Quick Actions -->
+            <?php if (is_user_logged_in()): ?>
+                <div class="p-6 border-t border-gray-200">
+                    <h3 class="text-sm font-semibold text-gray-500 uppercase tracking-wider mb-4">Quick Actions</h3>
+                    <div class="space-y-2">
+                        <a href="<?php echo esc_url(home_url('/time-tracking')); ?>" 
+                           class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">
+                            ⏰ Time Tracking
+                        </a>
+                        <?php if (current_user_can('linkage_approve_timesheets')): ?>
+                            <a href="<?php echo esc_url(home_url('/approve-timesheets')); ?>" 
+                               class="block px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-md transition duration-200">
+                                ✅ Approve Timesheets
+                            </a>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php endif; ?>
+        </div>
+
+        <!-- Drawer Footer -->
+        <div class="p-6 border-t border-gray-200">
+            <div class="text-xs text-gray-500">
+                <p>&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?></p>
+                <p class="mt-1">Powered by LinkageClock</p>
             </div>
         </div>
     </header>
 
-    <div id="content" class="site-content">
-        <main id="main" class="site-main">
+    <!-- Main Content Area -->
+    <div class="ml-64">
+        <div id="content" class="site-content">
+            <main id="main" class="site-main">
