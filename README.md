@@ -6,7 +6,7 @@ LinkageClock is a payroll time tracking theme designed for efficient employee ti
 
 ## Project Objective
 
-Develop a WordPress plugin for desktop-only employee time tracking, including Time In, Time Out, Lunch Start, Lunch End, individual employee profiles, and payroll-ready reporting with export capability. The system must feature a main dashboard displaying real-time clock-in and clock-out status of all employees.
+Develop a WordPress site for desktop-only employee time tracking, including Time In, Time Out, Lunch Start, Lunch End, individual employee profiles, and payroll-ready reporting with export capability. The system must feature a main dashboard displaying real-time clock-in and clock-out status of all employees.
 
 ## Deliverables
 
