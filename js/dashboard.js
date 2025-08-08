@@ -9,6 +9,7 @@ jQuery(document).ready(function($) {
             this.initFilters();
             this.startAutoRefresh();
             this.initDrawerToggle();
+            this.initUserDropdown();
         },
         
         bindEvents: function() {
@@ -236,6 +237,58 @@ jQuery(document).ready(function($) {
             $drawer.find('h3, .site-title, .employee-name, .employee-email, .employee-role').removeClass('drawer-text-hidden');
             
             localStorage.setItem('drawerCollapsed', 'false');
+        },
+        
+        initUserDropdown: function() {
+            const $userToggle = $('#user-menu-toggle');
+            const $userDropdown = $('#user-dropdown-menu');
+            const $userArrow = $('.user-menu-arrow');
+            
+            // Toggle dropdown on user button click
+            $userToggle.on('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                
+                const isOpen = $userDropdown.hasClass('opacity-100');
+                
+                if (isOpen) {
+                    dashboard.closeUserDropdown();
+                } else {
+                    dashboard.openUserDropdown();
+                }
+            });
+            
+            // Close dropdown when clicking outside
+            $(document).on('click', function(e) {
+                const isOpen = $userDropdown.hasClass('opacity-100');
+                if (isOpen && !$(e.target).closest('#user-menu-toggle, #user-dropdown-menu').length) {
+                    dashboard.closeUserDropdown();
+                }
+            });
+            
+            // Close dropdown on escape key
+            $(document).on('keydown', function(e) {
+                const isOpen = $userDropdown.hasClass('opacity-100');
+                if (e.key === 'Escape' && isOpen) {
+                    dashboard.closeUserDropdown();
+                }
+            });
+        },
+        
+        openUserDropdown: function() {
+            const $userDropdown = $('#user-dropdown-menu');
+            const $userArrow = $('.user-menu-arrow');
+            
+            $userDropdown.removeClass('opacity-0 invisible translate-y-2').addClass('opacity-100 visible translate-y-0');
+            $userArrow.addClass('rotate-180');
+        },
+        
+        closeUserDropdown: function() {
+            const $userDropdown = $('#user-dropdown-menu');
+            const $userArrow = $('.user-menu-arrow');
+            
+            $userDropdown.removeClass('opacity-100 visible translate-y-0').addClass('opacity-0 invisible translate-y-2');
+            $userArrow.removeClass('rotate-180');
         }
     };
     
@@ -318,6 +371,14 @@ jQuery(document).ready(function($) {
                 transition: transform 0.3s ease-in-out;
             }
             .arrow-icon.arrow-rotated {
+                transform: rotate(180deg);
+            }
+            
+            /* User dropdown animation */
+            .user-menu-arrow {
+                transition: transform 0.2s ease-in-out;
+            }
+            .rotate-180 {
                 transform: rotate(180deg);
             }
         </style>
