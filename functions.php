@@ -7,3 +7,6 @@ require_once get_template_directory() . '/functions/custom-roles.php';
 
 // Include theme-setup.php for theme support and setup
 require_once get_template_directory() . '/functions/theme-setup.php';
+
+// Include dashboard-functions.php for dashboard functionality
+require_once get_template_directory() . '/functions/dashboard-functions.php';
