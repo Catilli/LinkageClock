@@ -30,14 +30,6 @@
                                     <?php bloginfo('name'); ?>
                                 </a>
                             </h1>
-                            <?php
-                            $linkage_description = get_bloginfo('description', 'display');
-                            if ($linkage_description || is_customize_preview()):
-                            ?>
-                                <p class="site-description text-gray-600 text-sm mt-1">
-                                    <?php echo $linkage_description; ?>
-                                </p>
-                            <?php endif; ?>
                         </div>
                     <?php endif; ?>
                 </div>
