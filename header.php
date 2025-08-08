@@ -86,10 +86,12 @@
         <!-- Collapse Toggle -->
         <div class="p-4 border-t border-gray-200">
             <button id="drawer-toggle" class="w-full flex items-center justify-center p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 group">
-                <svg class="w-5 h-5 transform transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
-                </svg>
-                <span class="ml-2 text-sm font-medium drawer-toggle-text">Collapse</span>
+                <div class="hamburger-icon w-6 h-6 flex flex-col justify-center items-center space-y-1">
+                    <span class="hamburger-line block w-5 h-0.5 bg-current transition-all duration-300 ease-in-out"></span>
+                    <span class="hamburger-line block w-5 h-0.5 bg-current transition-all duration-300 ease-in-out"></span>
+                    <span class="hamburger-line block w-5 h-0.5 bg-current transition-all duration-300 ease-in-out"></span>
+                </div>
+                <span class="ml-2 text-sm font-medium drawer-toggle-text">COLLAPSE</span>
             </button>
         </div>
     </header>
