@@ -35,11 +35,6 @@
                         </div>
                     <?php endif; ?>
                 </div>
-                
-                <!-- Collapse Button -->
-                <button id="drawer-close" class="text-gray-500 hover:text-gray-700 transition duration-200 text-sm font-medium">
-                    Collapse
-                </button>
             </div>
         </div>
 
@@ -86,12 +81,17 @@
                 </div>
             <?php endif; ?>
 
-
         </div>
 
-        <!-- Drawer Footer -->
-        <div class="p-6 border-t border-gray-200">
-            <div class="text-xs text-gray-500">
+        <!-- Drawer Footer / Collapse Toggle -->
+        <div class="p-4 border-t border-gray-200">
+            <button id="drawer-toggle" class="w-full flex items-center justify-center p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 group">
+                <svg class="w-5 h-5 transform transition-transform duration-200 group-hover:scale-110" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 19l-7-7 7-7m8 14l-7-7 7-7"></path>
+                </svg>
+                <span class="ml-2 text-sm font-medium drawer-toggle-text">Collapse Menu</span>
+            </button>
+            <div class="text-xs text-gray-500 mt-3 text-center drawer-footer-info">
                 <p>&copy; <?php echo date('Y'); ?> <?php bloginfo('name'); ?></p>
                 <p class="mt-1">Powered by LinkageClock</p>
             </div>
@@ -99,6 +99,6 @@
     </header>
 
     <!-- Main Content Area -->
-    <div class="ml-64">
+    <div id="main-content" class="ml-64 transition-all duration-300">
         <div id="content" class="site-content">
             <main id="main" class="site-main">
