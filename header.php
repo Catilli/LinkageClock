@@ -69,7 +69,7 @@
                                     <?php echo esc_html(wp_get_current_user()->display_name); ?>
                                 </p>
                                 <p class="text-xs text-gray-500">
-                                    <?php echo esc_html(wp_get_current_user()->user_email); ?>
+                                    <?php echo esc_html(linkage_get_user_role_display(wp_get_current_user()->ID)); ?>
                                 </p>
                             </div>
                         </div>
@@ -84,7 +84,7 @@
         </div>
 
         <!-- Collapse Toggle -->
-        <div class="p-4 border-t border-gray-200">
+        <div class="border-t border-gray-200">
             <button id="drawer-toggle" class="w-full flex items-center justify-center p-3 text-gray-600 hover:text-gray-900 hover:bg-gray-100 rounded-lg transition-all duration-200 group">
                 <svg class="arrow-icon w-5 h-5 transform transition-transform duration-300 ease-in-out" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7"></path>
