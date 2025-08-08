@@ -4,3 +4,137 @@
  * Version: 1.1
  * Text Domain: linkageclock
 **/
+
+/* Custom Logo Styling */
+.site-logo {
+    display: flex;
+    align-items: center;
+}
+
+.site-logo img {
+    max-height: none; /* Remove max-height constraint */
+    width: auto;
+    height: auto;
+    max-width: 240px; /* Set max-width instead */
+}
+
+.site-logo a {
+    display: flex;
+    align-items: center;
+    text-decoration: none;
+}
+
+/* Header Styling */
+.site-header {
+    position: relative;
+    z-index: 100;
+}
+
+.site-branding {
+    display: flex;
+    flex-direction: column;
+}
+
+.site-title a {
+    text-decoration: none;
+    color: inherit;
+}
+
+.site-description {
+    margin: 0;
+    line-height: 1.4;
+}
+
+/* Navigation Styling */
+.main-navigation ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.main-navigation li {
+    display: block;
+}
+
+.main-navigation a {
+    text-decoration: none;
+    padding: 0.5rem 0;
+    display: block;
+    position: relative;
+}
+
+.main-navigation a:hover {
+    text-decoration: none;
+}
+
+/* Drawer Specific Styles */
+.site-header {
+    display: flex;
+    flex-direction: column;
+}
+
+.site-header .flex-1 {
+    flex: 1;
+}
+
+.site-header .overflow-y-auto {
+    overflow-y: auto;
+}
+
+/* Custom Logo in Customizer */
+.custom-logo-link {
+    display: inline-block;
+}
+
+.custom-logo-link img {
+    max-width: 100%;
+    height: auto;
+}
+
+/* Mobile Menu Toggle */
+#mobile-menu-toggle {
+    transition: all 0.2s ease;
+}
+
+#mobile-menu-toggle:hover {
+    transform: scale(1.05);
+}
+
+/* Drawer Animation */
+.site-header {
+    transition: transform 0.3s ease-in-out;
+}
+
+/* Overlay */
+#drawer-overlay {
+    transition: opacity 0.3s ease-in-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    .site-logo img {
+        max-width: 200px; /* Smaller max-width on mobile */
+        height: auto;
+    }
+    
+    /* Drawer is visible by default on mobile */
+    .site-header {
+        transform: translateX(0);
+    }
+    
+    /* Hide drawer when closed */
+    .site-header.drawer-closed {
+        transform: translateX(-100%);
+    }
+}
+
+/* Desktop: Always show drawer */
+@media (min-width: 768px) {
+    .site-header {
+        transform: translateX(0) !important;
+    }
+    
+    #mobile-menu-toggle {
+        display: none;
+    }
+}
