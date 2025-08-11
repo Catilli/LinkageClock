@@ -87,6 +87,47 @@ if ( isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'],
                                    value="<?php echo esc_attr($current_user->user_email); ?>"
                                    required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            
+                            <?php 
+                            // Check if current email has Gravatar
+                            $current_gravatar_url = get_avatar_url($current_user->user_email, array('size' => 80, 'default' => '404'));
+                            $current_has_gravatar = false;
+                            if (function_exists('wp_remote_get')) {
+                                $response = wp_remote_get($current_gravatar_url);
+                                if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) == 200) {
+                                    $current_has_gravatar = true;
+                                }
+                            }
+                            ?>
+                            
+                            <div class="mt-2 p-3 <?php echo $current_has_gravatar ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'; ?> border rounded-md">
+                                <div class="flex items-start">
+                                    <div class="flex-shrink-0">
+                                        <?php if ($current_has_gravatar): ?>
+                                            <svg class="w-5 h-5 text-green-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        <?php else: ?>
+                                            <svg class="w-5 h-5 text-blue-500 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                            </svg>
+                                        <?php endif; ?>
+                                    </div>
+                                    <div class="ml-3">
+                                        <?php if ($current_has_gravatar): ?>
+                                            <p class="text-sm text-green-700">
+                                                <strong>Great!</strong> Your email has a Gravatar profile picture.
+                                            </p>
+                                        <?php else: ?>
+                                            <p class="text-sm text-blue-700">
+                                                <strong>Profile Picture:</strong> To add a profile picture, create a free account at 
+                                                <a href="https://gravatar.com" target="_blank" class="font-medium underline hover:no-underline">Gravatar.com</a> 
+                                                using this email address.
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
 
                         <!-- Password Section -->
@@ -138,10 +179,42 @@ if ( isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'],
                 <!-- User Avatar & Info -->
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <div class="text-center">
-                        <div class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center mx-auto mb-4">
-                            <span class="text-white text-2xl font-bold">
-                                <?php echo strtoupper(substr($current_user->display_name, 0, 1)); ?>
-                            </span>
+                        <?php 
+                        // Check if user has a Gravatar
+                        $user_email = $current_user->user_email;
+                        $gravatar_url = get_avatar_url($user_email, array('size' => 80, 'default' => '404'));
+                        
+                        // Check if Gravatar exists by trying to get a response
+                        $gravatar_exists = false;
+                        if (function_exists('wp_remote_get')) {
+                            $response = wp_remote_get($gravatar_url);
+                            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) == 200) {
+                                $gravatar_exists = true;
+                            }
+                        }
+                        ?>
+                        
+                        <div class="relative w-20 h-20 mx-auto mb-4">
+                            <?php if ($gravatar_exists): ?>
+                                <img src="<?php echo esc_url($gravatar_url); ?>" 
+                                     alt="<?php echo esc_attr($current_user->display_name); ?>'s Avatar"
+                                     class="w-20 h-20 rounded-full object-cover border-2 border-gray-200">
+                            <?php else: ?>
+                                <div class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <span class="text-white text-2xl font-bold">
+                                        <?php echo strtoupper(substr($current_user->display_name, 0, 1)); ?>
+                                    </span>
+                                </div>
+                            <?php endif; ?>
+                            
+                            <!-- Gravatar indicator -->
+                            <?php if ($gravatar_exists): ?>
+                                <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
+                                    <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
+                                    </svg>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         <h3 class="text-lg font-semibold text-gray-900">
                             <?php echo esc_html($current_user->display_name); ?>
