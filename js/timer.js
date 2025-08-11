@@ -46,24 +46,24 @@ jQuery(document).ready(function($) {
                 const breakStart = new Date(breakStartTime);
                 const elapsedSeconds = Math.floor((now - breakStart) / 1000);
                 Timer.breakSeconds = Math.max(0, elapsedSeconds);
-                Timer.updateBreakDisplay();
+                Timer.updateLunchDisplay();
             }
         },
         
         bindEvents: function() {
-            // Clock In/Out button
-            $('#clock-toggle-btn').on('click', function(e) {
-                e.preventDefault();
-                const action = $(this).data('action');
-                Timer.handleClockAction(action);
-            });
-            
-            // Break button
-            $('#break-toggle-btn').on('click', function(e) {
-                e.preventDefault();
-                const action = $(this).data('action');
-                Timer.handleBreakAction(action);
-            });
+                    // Time In/Out button
+        $('#clock-toggle-btn').on('click', function(e) {
+            e.preventDefault();
+            const action = $(this).data('action');
+            Timer.handleClockAction(action);
+        });
+        
+        // Lunch button
+        $('#break-toggle-btn').on('click', function(e) {
+            e.preventDefault();
+            const action = $(this).data('action');
+            Timer.handleBreakAction(action);
+        });
         },
         
         loadInitialState: function() {
@@ -74,7 +74,7 @@ jQuery(document).ready(function($) {
             // Check if user is on break first - if so, only start break timer
             if (breakStartTime) {
                 Timer.isOnBreak = true;
-                Timer.calculateAndStartBreakTimer(breakStartTime);
+                Timer.calculateAndStartLunchTimer(breakStartTime);
                 // Hide work timer when on break and don't start work timer
                 Timer.hideWorkTimer();
                 Timer.isWorking = false; // Ensure work state is false
@@ -156,8 +156,8 @@ jQuery(document).ready(function($) {
             switch (action) {
                 case 'clock_in':
                     Timer.showWorkTimer();
-                    Timer.showBreakButton();
-                    Timer.updateClockButton('clock_out', 'Clock Out', 'red');
+                    Timer.showLunchButton();
+                    Timer.updateClockButton('clock_out', 'Time Out', 'red');
                     // Use the actual clock in time from the response
                     if (data.clock_in_time) {
                         Timer.calculateAndStartWorkTimer(data.clock_in_time);
@@ -170,9 +170,9 @@ jQuery(document).ready(function($) {
                     
                 case 'clock_out':
                     Timer.hideWorkTimer();
-                    Timer.hideBreakTimer();
-                    Timer.hideBreakButton();
-                    Timer.updateClockButton('clock_in', 'Clock In', 'green');
+                    Timer.hideLunchTimer();
+                    Timer.hideLunchButton();
+                    Timer.updateClockButton('clock_in', 'Time In', 'green');
                     Timer.stopWorkTimer();
                     Timer.stopBreakTimer();
                     Timer.isWorking = false;
@@ -180,39 +180,39 @@ jQuery(document).ready(function($) {
                     break;
                     
                 case 'break_start':
-                    Timer.showBreakTimer();
-                    Timer.updateBreakButton('break_end', 'End Break');
+                    Timer.showLunchTimer();
+                    Timer.updateLunchButton('break_end', 'Lunch End');
                     Timer.stopWorkTimer();
                     Timer.isWorking = false; // Ensure work state is false when on break
                     
                     // Preserve the current work time - don't reset it
                     // Timer.workSeconds will keep the accumulated work time
                     
-                    // Hide the clock out button while on break
+                    // Hide the time out button while on lunch
                     Timer.hideClockButton();
                     
                     // Use the actual break start time from the response
                     if (data.break_start_time) {
-                        Timer.calculateAndStartBreakTimer(data.break_start_time);
+                        Timer.calculateAndStartLunchTimer(data.break_start_time);
                     } else {
                         Timer.breakSeconds = 0;
-                        Timer.startBreakTimer();
+                        Timer.startLunchTimer();
                     }
                     Timer.isOnBreak = true;
                     break;
                     
                 case 'break_end':
-                    Timer.hideBreakTimer();
-                    Timer.updateBreakButton('break_start', 'Start Break');
-                    Timer.stopBreakTimer();
+                    Timer.hideLunchTimer();
+                    Timer.updateLunchButton('break_start', 'Lunch Start');
+                    Timer.stopLunchTimer();
                     Timer.isOnBreak = false;
                     Timer.isWorking = true; // Set working state back to true
                     
-                    // Show the clock button again when break ends
+                    // Show the time button again when lunch ends
                     Timer.showClockButton();
                     
-                    // Resume work timer from where it was paused (don't recalculate from clock-in time)
-                    // The workSeconds should already contain the accumulated time before the break
+                    // Resume work timer from where it was paused (don't recalculate from time-in time)
+                    // The workSeconds should already contain the accumulated time before the lunch
                     Timer.startWorkTimer();
                     Timer.showWorkTimer(); // Show the work timer again
                     break;
@@ -247,7 +247,7 @@ jQuery(document).ready(function($) {
             }
         },
         
-        calculateAndStartBreakTimer: function(breakStartTime) {
+        calculateAndStartLunchTimer: function(breakStartTime) {
             // Calculate elapsed time since break start
             const now = new Date();
             const breakStart = new Date(breakStartTime);
@@ -257,18 +257,18 @@ jQuery(document).ready(function($) {
             Timer.breakSeconds = Math.max(0, elapsedSeconds);
             
             // Start the timer from the calculated elapsed time
-            Timer.startBreakTimer();
+            Timer.startLunchTimer();
         },
         
-        startBreakTimer: function() {
-            Timer.stopBreakTimer(); // Clear any existing timer
+        startLunchTimer: function() {
+            Timer.stopLunchTimer(); // Clear any existing timer
             Timer.breakTimer = setInterval(function() {
                 Timer.breakSeconds++;
-                Timer.updateBreakDisplay();
+                Timer.updateLunchDisplay();
             }, 1000);
         },
         
-        stopBreakTimer: function() {
+        stopLunchTimer: function() {
             if (Timer.breakTimer) {
                 clearInterval(Timer.breakTimer);
                 Timer.breakTimer = null;
@@ -287,7 +287,7 @@ jQuery(document).ready(function($) {
             }
         },
         
-        updateBreakDisplay: function() {
+        updateLunchDisplay: function() {
             const formatted = Timer.formatTime(Timer.breakSeconds);
             $('#break-time').text(formatted);
             
@@ -321,21 +321,21 @@ jQuery(document).ready(function($) {
             // Timer.workSeconds will be preserved
         },
         
-        showBreakTimer: function() {
+        showLunchTimer: function() {
             $('#break-timer').fadeIn(300);
         },
         
-        hideBreakTimer: function() {
+        hideLunchTimer: function() {
             $('#break-timer').fadeOut(300);
             $('#break-time').text('00:00:00');
             Timer.breakSeconds = 0;
         },
         
-        showBreakButton: function() {
+        showLunchButton: function() {
             $('#break-toggle-btn').fadeIn(300);
         },
         
-        hideBreakButton: function() {
+        hideLunchButton: function() {
             $('#break-toggle-btn').fadeOut(300);
         },
         
@@ -372,7 +372,7 @@ jQuery(document).ready(function($) {
             }
         },
         
-        updateBreakButton: function(action, text) {
+        updateLunchButton: function(action, text) {
             const btn = $('#break-toggle-btn');
             
             // Update button data and text
