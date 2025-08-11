@@ -139,11 +139,6 @@ get_header(); ?>
                                                   data-status="<?php echo esc_attr($employee->current_status); ?>">
                                                 <?php echo esc_html($status_text); ?>
                                             </span>
-                                            <?php if ($employee->current_status === 'on_break'): ?>
-                                                <span class="status-badge break-status px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 border border-orange-200">
-                                                    IN break
-                                                </span>
-                                            <?php endif; ?>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
@@ -166,20 +161,17 @@ get_header(); ?>
             </div>
 
             <!-- Quick Stats -->
-            <div class="grid md:grid-cols-4 gap-6 mt-8">
+            <div class="grid md:grid-cols-3 gap-6 mt-8">
                 <?php
                 $total_employees = count($employees);
                 $clocked_in_count = 0;
-                $on_break_count = 0;
                 $clocked_out_count = 0;
                 
                 foreach ($employees as $employee) {
                     switch ($employee->current_status) {
                         case 'clocked_in':
-                            $clocked_in_count++;
-                            break;
                         case 'on_break':
-                            $on_break_count++;
+                            $clocked_in_count++;
                             break;
                         case 'clocked_out':
                         default:
@@ -213,20 +205,6 @@ get_header(); ?>
                         <div class="ml-4">
                             <div class="text-sm font-medium text-gray-500">Clocked In</div>
                             <div class="text-lg font-semibold text-gray-900"><?php echo $clocked_in_count; ?></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-lg shadow-md">
-                    <div class="flex items-center">
-                        <div class="flex-shrink-0">
-                            <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
-                                <span class="text-white text-sm font-bold"><?php echo $on_break_count; ?></span>
-                            </div>
-                        </div>
-                        <div class="ml-4">
-                            <div class="text-sm font-medium text-gray-500">On Break</div>
-                            <div class="text-lg font-semibold text-gray-900"><?php echo $on_break_count; ?></div>
                         </div>
                     </div>
                 </div>
