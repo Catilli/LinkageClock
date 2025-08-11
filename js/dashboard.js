@@ -116,7 +116,8 @@ jQuery(document).ready(function($) {
                 success: function(response) {
                     if (response.success) {
                         dashboard.showNotification('Status updated successfully', 'success');
-                        dashboard.refreshEmployeeList();
+                        // Update specific row instead of refreshing entire list
+                        dashboard.updateEmployeeRowStatus(userId, status);
                     } else {
                         dashboard.showNotification('Failed to update status', 'error');
                     }
@@ -128,20 +129,24 @@ jQuery(document).ready(function($) {
         },
         
         refreshEmployeeList: function() {
-            // Reload the page to get updated data
-            location.reload();
+            // Use AJAX to refresh employee data instead of page reload
+            this.refreshEmployeeData();
         },
         
         updateTimeDisplays: function() {
-            // This function can be used to update time displays without full refresh
-            // For now, we'll use full page reload for simplicity
-            this.refreshEmployeeList();
+            // Update time displays without page reload
+            $('.time-ago').each(function() {
+                const datetime = $(this).data('datetime');
+                if (datetime) {
+                    $(this).text(dashboard.formatTimeAgo(datetime));
+                }
+            });
         },
         
         startAutoRefresh: function() {
-            // Auto-refresh every 30 seconds
+            // Auto-refresh with AJAX every 30 seconds
             setInterval(function() {
-                dashboard.refreshEmployeeList();
+                dashboard.refreshEmployeeData();
             }, 30000);
         },
         
@@ -318,6 +323,94 @@ jQuery(document).ready(function($) {
             // Fallback: if no exact match and we're on home page, highlight dashboard
             if (!$('.menu-item a.active').length && (currentPath === '/' || currentPath === '')) {
                 $('.menu-item-dashboard a').addClass('active');
+            }
+        },
+
+        // AJAX-based data refresh functions
+        refreshEmployeeData: function() {
+            $.ajax({
+                url: linkage_ajax.ajax_url,
+                type: 'POST',
+                data: {
+                    action: 'linkage_get_employee_updates',
+                    nonce: linkage_ajax.nonce
+                },
+                success: function(response) {
+                    if (response.success) {
+                        dashboard.updateEmployeeStatuses(response.data.statuses);
+                        dashboard.updateTimeDisplays();
+                        dashboard.updateEmployeeCount();
+                        dashboard.updateEmployeePositions(response.data.positions);
+                        dashboard.updateEmployeeHireDates(response.data.hire_dates);
+                    }
+                },
+                error: function() {
+                    console.log('Failed to refresh employee data');
+                }
+            });
+        },
+
+        updateEmployeeStatuses: function(statuses) {
+            if (!statuses) return;
+            
+            Object.keys(statuses).forEach(function(userId) {
+                const status = statuses[userId];
+                const $statusElement = $(`.employee-status[data-user-id="${userId}"]`);
+                
+                if ($statusElement.length) {
+                    // Update status badge
+                    $statusElement.attr('data-status', status.status);
+                    $statusElement.find('.status-badge').removeClass().addClass(`status-badge ${status.status === 'clocked_in' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`);
+                    $statusElement.find('.status-badge').text(status.status === 'clocked_in' ? 'Clocked In' : 'Clocked Out');
+                    
+                    // Update last action time
+                    if (status.last_action_time) {
+                        $statusElement.find('.last-action-time').text(dashboard.formatTimeAgo(status.last_action_time));
+                    }
+                }
+            });
+        },
+
+        updateEmployeePositions: function(positions) {
+            if (!positions) return;
+            
+            Object.keys(positions).forEach(function(userId) {
+                const position = positions[userId];
+                const $positionElement = $(`.employee-position[data-user-id="${userId}"]`);
+                
+                if ($positionElement.length) {
+                    $positionElement.text(position);
+                }
+            });
+        },
+
+        updateEmployeeHireDates: function(hireDates) {
+            if (!hireDates) return;
+            
+            Object.keys(hireDates).forEach(function(userId) {
+                const hireDate = hireDates[userId];
+                const $hireDateElement = $(`.employee-hire-date[data-user-id="${userId}"]`);
+                
+                if ($hireDateElement.length) {
+                    $hireDateElement.text(dashboard.formatTimeAgo(hireDate));
+                }
+            });
+        },
+
+        // Update specific employee row status without full refresh
+        updateEmployeeRowStatus: function(userId, status) {
+            const $row = $(`.employee-row[data-user-id="${userId}"]`);
+            if ($row.length) {
+                // Update status badge
+                const $statusBadge = $row.find('.status-badge');
+                $statusBadge.removeClass().addClass(`status-badge ${status === 'clocked_in' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`);
+                $statusBadge.text(status === 'clocked_in' ? 'Clocked In' : 'Clocked Out');
+                
+                // Update last action time
+                $row.find('.last-action-time').text('Just now');
+                
+                // Update data attribute
+                $row.find('.employee-status').attr('data-status', status);
             }
         }
     };
