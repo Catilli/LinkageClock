@@ -14,6 +14,40 @@ jQuery(document).ready(function($) {
         init: function() {
             this.bindEvents();
             this.loadInitialState();
+            this.startTimeSync();
+        },
+        
+        startTimeSync: function() {
+            // Sync timers with server time every 30 seconds to ensure accuracy
+            setInterval(function() {
+                if (Timer.isWorking || Timer.isOnBreak) {
+                    Timer.syncTimersWithServer();
+                }
+            }, 30000);
+        },
+        
+        syncTimersWithServer: function() {
+            // Get current timestamps from data attributes
+            const clockInTime = $('#work-timer').data('clock-in-time');
+            const breakStartTime = $('#break-timer').data('break-start-time');
+            
+            // Recalculate work timer if working
+            if (Timer.isWorking && clockInTime) {
+                const now = new Date();
+                const clockIn = new Date(clockInTime);
+                const elapsedSeconds = Math.floor((now - clockIn) / 1000);
+                Timer.workSeconds = Math.max(0, elapsedSeconds);
+                Timer.updateWorkDisplay();
+            }
+            
+            // Recalculate break timer if on break
+            if (Timer.isOnBreak && breakStartTime) {
+                const now = new Date();
+                const breakStart = new Date(breakStartTime);
+                const elapsedSeconds = Math.floor((now - breakStart) / 1000);
+                Timer.breakSeconds = Math.max(0, elapsedSeconds);
+                Timer.updateBreakDisplay();
+            }
         },
         
         bindEvents: function() {
@@ -33,18 +67,20 @@ jQuery(document).ready(function($) {
         },
         
         loadInitialState: function() {
-            // Check if user is already clocked in and load timers
-            const workTimer = $('#work-timer');
-            const breakTimer = $('#break-timer');
+            // Get the stored timestamps from the page
+            const clockInTime = $('#work-timer').data('clock-in-time');
+            const breakStartTime = $('#break-timer').data('break-start-time');
             
-            if (workTimer.is(':visible')) {
+            // Calculate and start work timer if user is clocked in
+            if (clockInTime) {
                 Timer.isWorking = true;
-                Timer.startWorkTimer();
+                Timer.calculateAndStartWorkTimer(clockInTime);
             }
             
-            if (breakTimer.is(':visible')) {
+            // Calculate and start break timer if user is on break
+            if (breakStartTime) {
                 Timer.isOnBreak = true;
-                Timer.startBreakTimer();
+                Timer.calculateAndStartBreakTimer(breakStartTime);
             }
         },
         
@@ -118,8 +154,13 @@ jQuery(document).ready(function($) {
                     Timer.showWorkTimer();
                     Timer.showBreakButton();
                     Timer.updateClockButton('clock_out', 'Clock Out', 'red');
-                    Timer.workSeconds = data.work_seconds || 0;
-                    Timer.startWorkTimer();
+                    // Use the actual clock in time from the response
+                    if (data.clock_in_time) {
+                        Timer.calculateAndStartWorkTimer(data.clock_in_time);
+                    } else {
+                        Timer.workSeconds = 0;
+                        Timer.startWorkTimer();
+                    }
                     Timer.isWorking = true;
                     break;
                     
@@ -138,8 +179,13 @@ jQuery(document).ready(function($) {
                     Timer.showBreakTimer();
                     Timer.updateBreakButton('break_end', 'End Break');
                     Timer.stopWorkTimer();
-                    Timer.breakSeconds = data.break_seconds || 0;
-                    Timer.startBreakTimer();
+                    // Use the actual break start time from the response
+                    if (data.break_start_time) {
+                        Timer.calculateAndStartBreakTimer(data.break_start_time);
+                    } else {
+                        Timer.breakSeconds = 0;
+                        Timer.startBreakTimer();
+                    }
                     Timer.isOnBreak = true;
                     break;
                     
@@ -147,11 +193,29 @@ jQuery(document).ready(function($) {
                     Timer.hideBreakTimer();
                     Timer.updateBreakButton('break_start', 'Start Break');
                     Timer.stopBreakTimer();
-                    Timer.workSeconds = data.work_seconds || 0;
-                    Timer.startWorkTimer();
+                    // Use the actual clock in time from the response to restart work timer
+                    if (data.clock_in_time) {
+                        Timer.calculateAndStartWorkTimer(data.clock_in_time);
+                    } else {
+                        Timer.workSeconds = 0;
+                        Timer.startWorkTimer();
+                    }
                     Timer.isOnBreak = false;
                     break;
             }
+        },
+        
+        calculateAndStartWorkTimer: function(clockInTime) {
+            // Calculate elapsed time since clock in
+            const now = new Date();
+            const clockIn = new Date(clockInTime);
+            const elapsedSeconds = Math.floor((now - clockIn) / 1000);
+            
+            // Set the current work seconds
+            Timer.workSeconds = Math.max(0, elapsedSeconds);
+            
+            // Start the timer from the calculated elapsed time
+            Timer.startWorkTimer();
         },
         
         startWorkTimer: function() {
@@ -167,6 +231,19 @@ jQuery(document).ready(function($) {
                 clearInterval(Timer.workTimer);
                 Timer.workTimer = null;
             }
+        },
+        
+        calculateAndStartBreakTimer: function(breakStartTime) {
+            // Calculate elapsed time since break start
+            const now = new Date();
+            const breakStart = new Date(breakStartTime);
+            const elapsedSeconds = Math.floor((now - breakStart) / 1000);
+            
+            // Set the current break seconds
+            Timer.breakSeconds = Math.max(0, elapsedSeconds);
+            
+            // Start the timer from the calculated elapsed time
+            Timer.startBreakTimer();
         },
         
         startBreakTimer: function() {
@@ -187,11 +264,25 @@ jQuery(document).ready(function($) {
         updateWorkDisplay: function() {
             const formatted = Timer.formatTime(Timer.workSeconds);
             $('#work-time').text(formatted);
+            
+            // Update the data attribute with current time for page refresh persistence
+            if (Timer.isWorking) {
+                const now = new Date();
+                const clockInTime = new Date(now.getTime() - (Timer.workSeconds * 1000));
+                $('#work-timer').attr('data-clock-in-time', clockInTime.toISOString());
+            }
         },
         
         updateBreakDisplay: function() {
             const formatted = Timer.formatTime(Timer.breakSeconds);
             $('#break-time').text(formatted);
+            
+            // Update the data attribute with current time for page refresh persistence
+            if (Timer.isOnBreak) {
+                const now = new Date();
+                const breakStartTime = new Date(now.getTime() - (Timer.breakSeconds * 1000));
+                $('#break-timer').attr('data-break-start-time', breakStartTime.toISOString());
+            }
         },
         
         formatTime: function(seconds) {
