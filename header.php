@@ -130,26 +130,70 @@
                     
                     <!-- Right Side - Clock Controls -->
                     <?php if (is_user_logged_in()): ?>
-                        <div class="clock-buttons flex items-center space-x-4">
-                            <!-- Timer Display -->
-                            <div class="timer bg-gray-100 px-4 py-2 rounded-lg">
-                                <span class="current text-lg font-mono text-gray-700">00:00:00</span>
+                        <?php 
+                        $current_user = wp_get_current_user();
+                        $employee_status = linkage_get_employee_status($current_user->ID);
+                        $is_clocked_in = $employee_status->status === 'clocked_in';
+                        ?>
+                        
+                        <div class="clock-buttons flex items-center space-x-4" id="clock-controls">
+                            <!-- Work Timer Display -->
+                            <div class="timer work-timer bg-gray-100 px-4 py-2 rounded-lg" id="work-timer" style="display: <?php echo $is_clocked_in ? 'block' : 'none'; ?>;">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                                    <span class="current text-lg font-mono text-gray-700" id="work-time">00:00:00</span>
+                                    <span class="text-xs text-gray-500">Work</span>
+                                </div>
+                            </div>
+                            
+                            <!-- Break Timer Display -->
+                            <div class="timer break-timer bg-orange-100 px-4 py-2 rounded-lg" id="break-timer" style="display: none;">
+                                <div class="flex items-center space-x-2">
+                                    <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
+                                    <span class="current text-lg font-mono text-orange-700" id="break-time">00:00:00</span>
+                                    <span class="text-xs text-orange-600">Break</span>
+                                </div>
                             </div>
                             
                             <!-- Clock Action Buttons -->
                             <div class="clock-panels flex items-center space-x-3">
-                                <button class="clock-in-btn flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <!-- Clock In/Out Button -->
+                                <button id="clock-toggle-btn" 
+                                        class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 font-medium
+                                               <?php echo $is_clocked_in ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'; ?>"
+                                        data-action="<?php echo $is_clocked_in ? 'clock_out' : 'clock_in'; ?>">
+                                    
+                                    <!-- Clock In Icon -->
+                                    <svg class="w-5 h-5 clock-in-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo $is_clocked_in ? 'none' : 'block'; ?>;">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
-                                    <span>Clock In</span>
+                                    
+                                    <!-- Clock Out Icon (Stop) -->
+                                    <svg class="w-5 h-5 clock-out-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo $is_clocked_in ? 'block' : 'none'; ?>;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z"></path>
+                                    </svg>
+                                    
+                                    <span id="clock-toggle-text"><?php echo $is_clocked_in ? 'Clock Out' : 'Clock In'; ?></span>
                                 </button>
                                 
-                                <button class="break-btn flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium">
-                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <!-- Break Button -->
+                                <button id="break-toggle-btn" 
+                                        class="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
+                                        style="display: <?php echo $is_clocked_in ? 'block' : 'none'; ?>;"
+                                        data-action="break_start">
+                                    
+                                    <!-- Start Break Icon -->
+                                    <svg class="w-5 h-5 break-start-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.5a3.5 3.5 0 110 7H9m-1-7h1m4-7v2m0 12v2m4.95-4.95l1.41 1.41m0-14.14l-1.41 1.41M6.464 20.536l1.414-1.414m0-14.14l-1.414 1.414M12 7a5 5 0 100 10 5 5 0 000-10z"></path>
                                     </svg>
-                                    <span>Start Break</span>
+                                    
+                                    <!-- End Break Icon -->
+                                    <svg class="w-5 h-5 break-end-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: none;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    
+                                    <span id="break-toggle-text">Start Break</span>
                                 </button>
                             </div>
                         </div>
