@@ -78,7 +78,7 @@ jQuery(document).ready(function($) {
                     show = false;
                 }
                 
-                // Status filter
+                // Status filter - handle clocked_in and clocked_out
                 if (statusFilter && statusFilter !== 'all' && status !== statusFilter) {
                     show = false;
                 }
