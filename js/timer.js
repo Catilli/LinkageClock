@@ -71,12 +71,26 @@ jQuery(document).ready(function($) {
             const clockInTime = $('#work-timer').data('clock-in-time');
             const breakStartTime = $('#break-timer').data('break-start-time');
             
-            // Check if user is on break first - if so, only start break timer
+            // Check if user is on break first - if so, start break timer AND calculate work time
             if (breakStartTime) {
                 Timer.isOnBreak = true;
                 Timer.calculateAndStartLunchTimer(breakStartTime);
+                
+                // Calculate and display the accumulated work time (but don't start the timer)
+                if (clockInTime) {
+                    Timer.calculateWorkTimeFromClockIn(clockInTime);
+                }
+                
                 // Show work timer but keep it paused when on break
                 Timer.showWorkTimer();
+                
+                // Hide the time button while on lunch
+                Timer.hideClockButton();
+                
+                // Show lunch button with correct state
+                Timer.showLunchButton();
+                Timer.updateLunchButton('break_end', 'Lunch End');
+                
                 Timer.isWorking = false; // Ensure work state is false
                 return;
             }
@@ -233,6 +247,19 @@ jQuery(document).ready(function($) {
             
             // Start the timer from the calculated elapsed time
             Timer.startWorkTimer();
+        },
+        
+        calculateWorkTimeFromClockIn: function(clockInTime) {
+            // Calculate elapsed time since clock in (for display purposes only)
+            const now = new Date();
+            const clockIn = new Date(clockInTime);
+            const elapsedSeconds = Math.floor((now - clockIn) / 1000);
+            
+            // Set the current work seconds without starting the timer
+            Timer.workSeconds = Math.max(0, elapsedSeconds);
+            
+            // Update the display to show the calculated time
+            Timer.updateWorkDisplay();
         },
         
         startWorkTimer: function() {
