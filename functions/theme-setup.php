@@ -99,3 +99,61 @@ function linkage_pingback_header() {
 }
 add_action('wp_head', 'linkage_pingback_header');
 
+/**
+ * Create default pages when theme is activated
+ */
+function linkage_create_default_pages() {
+    // Check if pages already exist to avoid duplicates
+    $account_page = get_page_by_title('Your Account');
+    $time_tracking_page = get_page_by_title('Time Tracking');
+    $approve_timesheets_page = get_page_by_title('Approve Timesheets');
+
+    // Create Account page if it doesn't exist
+    if (!$account_page) {
+        $account_page_id = wp_insert_post(array(
+            'post_title'    => 'Your Account',
+            'post_content'  => 'This is the account page for employees to manage their account.',
+            'post_status'   => 'publish',
+            'post_type'     => 'page',
+            'post_name'     => 'account',
+            'page_template' => 'page-employee.php'
+        ));
+        
+        if ($account_page_id) {
+            error_log('LinkageClock: Account page created with ID: ' . $account_page_id);
+        }
+    }
+    
+    // Create Time Tracking page if it doesn't exist
+    if (!$time_tracking_page) {
+        $time_tracking_page_id = wp_insert_post(array(
+            'post_title'    => 'Time Tracking',
+            'post_content'  => 'This is the time tracking page for employees to log their hours.',
+            'post_status'   => 'publish',
+            'post_type'     => 'page',
+            'post_name'     => 'time-tracking',
+            'page_template' => 'page-time-tracking.php'
+        ));
+        
+        if ($time_tracking_page_id) {
+            error_log('LinkageClock: Time Tracking page created with ID: ' . $time_tracking_page_id);
+        }
+    }
+    
+    // Create Approve Timesheets page if it doesn't exist
+    if (!$approve_timesheets_page) {
+        $approve_timesheets_page_id = wp_insert_post(array(
+            'post_title'    => 'Approve Timesheets',
+            'post_content'  => 'This page allows managers to approve employee timesheets.',
+            'post_status'   => 'publish',
+            'post_type'     => 'page',
+            'post_name'     => 'approve-timesheets',
+            'page_template' => 'page-approve-timesheets.php'
+        ));
+        
+        if ($approve_timesheets_page_id) {
+            error_log('LinkageClock: Approve Timesheets page created with ID: ' . $approve_timesheets_page_id);
+        }
+    } 
+}
+add_action('after_switch_theme', 'linkage_create_default_pages');
