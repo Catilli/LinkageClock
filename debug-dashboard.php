@@ -75,6 +75,49 @@ require_once get_template_directory() . '/functions/dashboard-functions.php';
                     echo '<p class="error">No employees found!</p>';
                 }
                 echo '</div>';
+                
+                echo '<div class="debug-section">';
+                echo '<h3>Time Button Debug</h3>';
+                linkage_debug_time_button();
+                echo '</div>';
+                break;
+                
+            case 'test_clock_in':
+                if (is_user_logged_in()) {
+                    $user_id = get_current_user_id();
+                    $result = linkage_update_employee_status($user_id, 'clocked_in', 'clock_in', 'Test clock in via debug');
+                    update_user_meta($user_id, 'linkage_clock_in_time', current_time('mysql'));
+                    echo '<div class="debug-section success">✓ Test Clock In completed. Status updated to: clocked_in</div>';
+                }
+                break;
+                
+            case 'test_clock_out':
+                if (is_user_logged_in()) {
+                    $user_id = get_current_user_id();
+                    $result = linkage_update_employee_status($user_id, 'clocked_out', 'clock_out', 'Test clock out via debug');
+                    delete_user_meta($user_id, 'linkage_clock_in_time');
+                    delete_user_meta($user_id, 'linkage_break_start_time');
+                    echo '<div class="debug-section success">✓ Test Clock Out completed. Status updated to: clocked_out</div>';
+                }
+                break;
+                
+            case 'test_break_start':
+                if (is_user_logged_in()) {
+                    $user_id = get_current_user_id();
+                    $result = linkage_update_employee_status($user_id, 'on_break', 'break_in', 'Test break start via debug');
+                    update_user_meta($user_id, 'linkage_break_start_time', current_time('mysql'));
+                    echo '<div class="debug-section success">✓ Test Break Start completed. Status updated to: on_break</div>';
+                }
+                break;
+                
+            case 'test_break_end':
+                if (is_user_logged_in()) {
+                    $user_id = get_current_user_id();
+                    $result = linkage_update_employee_status($user_id, 'clocked_in', 'break_out', 'Test break end via debug');
+                    delete_user_meta($user_id, 'linkage_break_start_time');
+                    update_user_meta($user_id, 'linkage_clock_in_time', current_time('mysql'));
+                    echo '<div class="debug-section success">✓ Test Break End completed. Status updated to: clocked_in</div>';
+                }
                 break;
         }
     }
@@ -98,15 +141,106 @@ require_once get_template_directory() . '/functions/dashboard-functions.php';
         $user_count = count_users();
         echo '<p><strong>Total Users:</strong> ' . $user_count['total_users'] . '</p>';
         
-        // Check employee count
-        $employees = linkage_get_all_employees_status();
-        echo '<p><strong>Employees Found:</strong> ' . count($employees) . '</p>';
-        
-        // Check user meta for employee status
-        $status_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = 'linkage_employee_status'");
-        echo '<p><strong>Users with Employee Status:</strong> ' . $status_count . '</p>';
+        // Check if user is logged in
+        if (is_user_logged_in()) {
+            $current_user = wp_get_current_user();
+            echo '<p class="success">✓ User logged in: ' . $current_user->display_name . '</p>';
+            
+            // Check employee status
+            $employee_status = linkage_get_employee_status($current_user->ID);
+            echo '<p><strong>Current Status:</strong> ' . $employee_status->status . '</p>';
+            echo '<p><strong>Last Action:</strong> ' . $employee_status->last_action_time . '</p>';
+            
+            // Check if clock button should be visible
+            $is_clocked_in = $employee_status->status === 'clocked_in';
+            $is_on_break = $employee_status->status === 'on_break';
+            $button_should_show = true; // Always true now
+            
+            echo '<p><strong>Clock Button Should Show:</strong> ' . ($button_should_show ? 'Yes' : 'No') . '</p>';
+            echo '<p><strong>Current Status:</strong> ' . $employee_status->status . '</p>';
+            
+        } else {
+            echo '<p class="error">✗ No user logged in</p>';
+        }
         ?>
     </div>
+    
+    <div class="debug-section">
+        <h2>Test Clock Functionality</h2>
+        <?php if (is_user_logged_in()): ?>
+            <p>Test the clock functionality:</p>
+            <form method="post">
+                <button type="submit" name="action" value="test_clock_in">Test Clock In</button>
+                <button type="submit" name="action" value="test_clock_out">Test Clock Out</button>
+                <button type="submit" name="action" value="test_break_start">Test Break Start</button>
+                <button type="submit" name="action" value="test_break_end">Test Break End</button>
+            </form>
+            
+            <div style="margin-top: 20px;">
+                <h3>JavaScript DOM Test</h3>
+                <button onclick="testButtonVisibility()">Test Button Visibility in DOM</button>
+                <div id="dom-test-results" style="margin-top: 10px; padding: 10px; background: #f0f0f0; border-radius: 3px;"></div>
+            </div>
+        <?php else: ?>
+            <p>Please log in to test clock functionality.</p>
+        <?php endif; ?>
+    </div>
+    
+    <script>
+    function testButtonVisibility() {
+        const resultsDiv = document.getElementById('dom-test-results');
+        const clockBtn = document.getElementById('clock-toggle-btn');
+        const breakBtn = document.getElementById('break-toggle-btn');
+        const workTimer = document.getElementById('work-timer');
+        const breakTimer = document.getElementById('break-timer');
+        
+        let results = '<h4>DOM Element Visibility Test:</h4>';
+        
+        if (clockBtn) {
+            const computedStyle = window.getComputedStyle(clockBtn);
+            const display = computedStyle.display;
+            const visibility = computedStyle.visibility;
+            const opacity = computedStyle.opacity;
+            
+            results += '<p><strong>Clock Button:</strong></p>';
+            results += '<ul>';
+            results += '<li>Element exists: ✓</li>';
+            results += '<li>Display: ' + display + '</li>';
+            results += '<li>Visibility: ' + visibility + '</li>';
+            results += '<li>Opacity: ' + opacity + '</li>';
+            results += '<li>Offset dimensions: ' + clockBtn.offsetWidth + 'x' + clockBtn.offsetHeight + '</li>';
+            results += '</ul>';
+        } else {
+            results += '<p><strong>Clock Button:</strong> ✗ Element not found in DOM</p>';
+        }
+        
+        if (breakBtn) {
+            const computedStyle = window.getComputedStyle(breakBtn);
+            const display = computedStyle.display;
+            results += '<p><strong>Break Button:</strong> Display: ' + display + '</p>';
+        } else {
+            results += '<p><strong>Break Button:</strong> ✗ Element not found in DOM</p>';
+        }
+        
+        if (workTimer) {
+            const computedStyle = window.getComputedStyle(workTimer);
+            const display = computedStyle.display;
+            results += '<p><strong>Work Timer:</strong> Display: ' + display + '</p>';
+        } else {
+            results += '<p><strong>Work Timer:</strong> ✗ Element not found in DOM</p>';
+        }
+        
+        if (breakTimer) {
+            const computedStyle = window.getComputedStyle(breakTimer);
+            const display = computedStyle.display;
+            results += '<p><strong>Break Timer:</strong> Display: ' + display + '</p>';
+        } else {
+            results += '<p><strong>Break Timer:</strong> ✗ Element not found in DOM</p>';
+        }
+        
+        resultsDiv.innerHTML = results;
+    }
+    </script>
 
     <div class="debug-section">
         <h2>Manual Fix Instructions</h2>
