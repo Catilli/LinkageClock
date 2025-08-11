@@ -129,6 +129,16 @@ if (!empty($attendance_logs)) {
             </div>
         <?php endif; ?>
 
+        <!-- AJAX Refresh Notification -->
+        <div id="ajax-notification" class="mb-6 bg-blue-100 border border-blue-400 text-blue-700 px-4 py-3 rounded-lg hidden">
+            <div class="flex items-center">
+                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span id="ajax-notification-text">Data refreshed successfully!</span>
+            </div>
+        </div>
+
         <!-- Page Header -->
         <div class="mb-8">
             <div class="flex items-center justify-between">
@@ -143,7 +153,7 @@ if (!empty($attendance_logs)) {
                     </p>
                 </div>
                 
-                <!-- Period Selector -->
+                <!-- Period Selector and Refresh Button -->
                 <div class="flex items-center space-x-4">
                     <label for="period-select" class="text-sm font-medium text-gray-700">Time Period:</label>
                     <select id="period-select" class="px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -152,6 +162,13 @@ if (!empty($attendance_logs)) {
                         <option value="last_month" <?php selected($period, 'last_month'); ?>>Last Month</option>
                         <option value="last_3_months" <?php selected($period, 'last_3_months'); ?>>Last 3 Months</option>
                     </select>
+                    
+                    <button id="refresh-data-btn" class="px-3 py-2 bg-blue-500 hover:bg-blue-600 text-white text-sm font-medium rounded-md transition-colors duration-200 flex items-center space-x-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        <span>Refresh</span>
+                    </button>
                 </div>
             </div>
         </div>
@@ -179,13 +196,13 @@ if (!empty($attendance_logs)) {
                         <h3 class="text-xl font-semibold text-gray-900">
                             <?php echo esc_html($viewing_user->display_name); ?>
                         </h3>
-                        <p class="text-sm text-gray-600">
+                        <p class="text-sm text-gray-600 employee-position" data-user-id="<?php echo esc_attr($viewing_user_id); ?>">
                             <?php echo esc_html($position); ?>
                         </p>
                         <p class="text-xs text-gray-500 mt-1">
                             Company ID: <?php echo esc_html($company_id ?: 'Not set'); ?>
                         </p>
-                        <p class="text-xs text-gray-500">
+                        <p class="text-xs text-gray-500 employee-hire-date" data-user-id="<?php echo esc_attr($viewing_user_id); ?>">
                             Hired: <?php echo $hire_date ? date('M Y', strtotime($hire_date)) : 'Not set'; ?>
                         </p>
                     </div>
@@ -208,14 +225,14 @@ if (!empty($attendance_logs)) {
                     <div class="space-y-3">
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Status:</span>
-                            <span class="px-2 py-1 text-xs font-semibold rounded-full <?php echo $status_class; ?>">
+                            <span class="px-2 py-1 text-xs font-semibold rounded-full status-badge <?php echo $status_class; ?>" data-user-id="<?php echo esc_attr($viewing_user_id); ?>">
                                 <?php echo $status_text; ?>
                             </span>
                         </div>
                         
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Last Action:</span>
-                            <span class="text-sm text-gray-900">
+                            <span class="text-sm text-gray-900 last-action-time time-ago" data-datetime="<?php echo esc_attr($employee_status->last_action_time); ?>">
                                 <?php echo linkage_format_actual_time($employee_status->last_action_time); ?>
                             </span>
                         </div>
@@ -568,6 +585,42 @@ document.addEventListener('DOMContentLoaded', function() {
             const currentUrl = new URL(window.location);
             currentUrl.searchParams.set('period', this.value);
             window.location.href = currentUrl.toString();
+        });
+    }
+
+    // Refresh data button handler
+    const refreshBtn = document.getElementById('refresh-data-btn');
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', function() {
+            // Show loading state
+            const originalText = this.innerHTML;
+            this.innerHTML = `
+                <svg class="w-4 h-4 animate-spin" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                </svg>
+                <span>Refreshing...</span>
+            `;
+            this.disabled = true;
+
+            // Call the dashboard refresh function if available
+            if (typeof dashboard !== 'undefined' && typeof dashboard.refreshEmployeeData === 'function') {
+                dashboard.refreshEmployeeData();
+                
+                // Show success notification
+                const notification = document.getElementById('ajax-notification');
+                if (notification) {
+                    notification.classList.remove('hidden');
+                    setTimeout(() => {
+                        notification.classList.add('hidden');
+                    }, 3000);
+                }
+            }
+
+            // Reset button after a short delay
+            setTimeout(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            }, 2000);
         });
     }
 });
