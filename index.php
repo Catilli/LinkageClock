@@ -115,10 +115,17 @@ get_header(); ?>
                                         </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap">
-                                        <span class="status-badge <?php echo $status_class; ?> px-2 inline-flex text-xs leading-5 font-semibold rounded-full employee-status" 
-                                              data-status="<?php echo esc_attr($employee->current_status); ?>">
-                                            <?php echo esc_html($status_text); ?>
-                                        </span>
+                                        <div class="flex flex-col space-y-1">
+                                            <span class="status-badge <?php echo $status_class; ?> px-2 inline-flex text-xs leading-5 font-semibold rounded-full employee-status" 
+                                                  data-status="<?php echo esc_attr($employee->current_status); ?>">
+                                                <?php echo esc_html($status_text); ?>
+                                            </span>
+                                            <?php if ($employee->current_status === 'clocked_in' && !empty($employee->break_start_time)): ?>
+                                                <span class="status-badge break-status px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 border border-orange-200">
+                                                    IN break
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                                         <?php echo esc_html($actual_time); ?>
