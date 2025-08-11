@@ -132,6 +132,12 @@ jQuery(document).ready(function($) {
             location.reload();
         },
         
+        updateTimeDisplays: function() {
+            // This function can be used to update time displays without full refresh
+            // For now, we'll use full page reload for simplicity
+            this.refreshEmployeeList();
+        },
+        
         startAutoRefresh: function() {
             // Auto-refresh every 30 seconds
             setInterval(function() {
