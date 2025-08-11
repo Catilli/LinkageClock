@@ -360,8 +360,28 @@ jQuery(document).ready(function($) {
                 if ($statusElement.length) {
                     // Update status badge
                     $statusElement.attr('data-status', status.status);
-                    $statusElement.find('.status-badge').removeClass().addClass(`status-badge ${status.status === 'clocked_in' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`);
-                    $statusElement.find('.status-badge').text(status.status === 'clocked_in' ? 'Clocked In' : 'Clocked Out');
+                    
+                    let statusClass = '';
+                    let statusText = '';
+                    
+                    switch (status.status) {
+                        case 'clocked_in':
+                            statusClass = 'bg-green-100 text-green-800';
+                            statusText = 'Clocked In';
+                            break;
+                        case 'on_break':
+                            statusClass = 'bg-orange-100 text-orange-800';
+                            statusText = 'On Break';
+                            break;
+                        case 'clocked_out':
+                        default:
+                            statusClass = 'bg-red-100 text-red-800';
+                            statusText = 'Clocked Out';
+                            break;
+                    }
+                    
+                    $statusElement.find('.status-badge').removeClass().addClass(`status-badge ${statusClass}`);
+                    $statusElement.find('.status-badge').text(statusText);
                     
                     // Update last action time
                     if (status.last_action_time) {
@@ -403,8 +423,28 @@ jQuery(document).ready(function($) {
             if ($row.length) {
                 // Update status badge
                 const $statusBadge = $row.find('.status-badge');
-                $statusBadge.removeClass().addClass(`status-badge ${status === 'clocked_in' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'}`);
-                $statusBadge.text(status === 'clocked_in' ? 'Clocked In' : 'Clocked Out');
+                
+                let statusClass = '';
+                let statusText = '';
+                
+                switch (status) {
+                    case 'clocked_in':
+                        statusClass = 'bg-green-100 text-green-800';
+                        statusText = 'Clocked In';
+                        break;
+                    case 'on_break':
+                        statusClass = 'bg-orange-100 text-orange-800';
+                        statusText = 'On Break';
+                        break;
+                    case 'clocked_out':
+                    default:
+                        statusClass = 'bg-red-100 text-red-800';
+                        statusText = 'Clocked Out';
+                        break;
+                }
+                
+                $statusBadge.removeClass().addClass(`status-badge ${statusClass}`);
+                $statusBadge.text(statusText);
                 
                 // Update last action time
                 $row.find('.last-action-time').text('Just now');
