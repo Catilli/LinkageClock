@@ -13,3 +13,6 @@ require_once get_template_directory() . '/functions/dashboard-functions.php';
 
 // Include avatar.php for avatar functionality
 require_once get_template_directory() . '/functions/avatar.php';
+
+// Include site-navigation.php for navigation functionality
+require_once get_template_directory() . '/functions/site-navigation.php';
