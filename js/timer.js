@@ -9,6 +9,7 @@ jQuery(document).ready(function($) {
         breakSeconds: 0,
         isWorking: false,
         isOnBreak: false,
+        lastAction: null,
         
         init: function() {
             this.bindEvents();
@@ -108,6 +109,9 @@ jQuery(document).ready(function($) {
         updateUI: function(data) {
             const action = data.action;
             const status = data.status;
+            
+            // Track the last action
+            Timer.lastAction = action;
             
             switch (action) {
                 case 'clock_in':
@@ -283,19 +287,22 @@ jQuery(document).ready(function($) {
         },
         
         refreshDashboardList: function() {
-            // Check if we're on the dashboard page (index.php)
+            // Only refresh if we're on the dashboard page AND it's a clock in/out action (not break actions)
             if ($('.employee-row').length > 0) {
-                // Reload the page to refresh the employee list
-                setTimeout(function() {
-                    location.reload();
-                }, 500); // Small delay to let the server update
-            }
-            
-            // Alternative: If there's a refresh function in dashboard.js, call it
-            if (typeof dashboard !== 'undefined' && typeof dashboard.refreshEmployeeList === 'function') {
-                setTimeout(function() {
-                    dashboard.refreshEmployeeList();
-                }, 500);
+                // Alternative: If there's a refresh function in dashboard.js, call it (without page reload)
+                if (typeof dashboard !== 'undefined' && typeof dashboard.refreshEmployeeList === 'function') {
+                    setTimeout(function() {
+                        dashboard.refreshEmployeeList();
+                    }, 500);
+                } else {
+                    // Only reload for clock in/out actions, not break actions
+                    const currentAction = Timer.lastAction;
+                    if (currentAction === 'clock_in' || currentAction === 'clock_out') {
+                        setTimeout(function() {
+                            location.reload();
+                        }, 1000); // Longer delay for clock actions
+                    }
+                }
             }
         },
         
