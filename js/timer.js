@@ -31,7 +31,7 @@ jQuery(document).ready(function($) {
             const clockInTime = $('#work-timer').data('clock-in-time');
             const breakStartTime = $('#break-timer').data('break-start-time');
             
-            // Recalculate work timer if working
+            // Recalculate work timer if working (not when on break)
             if (Timer.isWorking && clockInTime) {
                 const now = new Date();
                 const clockIn = new Date(clockInTime);
@@ -75,8 +75,8 @@ jQuery(document).ready(function($) {
             if (breakStartTime) {
                 Timer.isOnBreak = true;
                 Timer.calculateAndStartLunchTimer(breakStartTime);
-                // Hide work timer when on break and don't start work timer
-                Timer.hideWorkTimer();
+                // Show work timer but keep it paused when on break
+                Timer.showWorkTimer();
                 Timer.isWorking = false; // Ensure work state is false
                 return;
             }
@@ -174,7 +174,7 @@ jQuery(document).ready(function($) {
                     Timer.hideLunchButton();
                     Timer.updateClockButton('clock_in', 'Time In', 'green');
                     Timer.stopWorkTimer();
-                    Timer.stopBreakTimer();
+                    Timer.stopLunchTimer();
                     Timer.isWorking = false;
                     Timer.isOnBreak = false;
                     break;
@@ -190,6 +190,9 @@ jQuery(document).ready(function($) {
                     
                     // Hide the time out button while on lunch
                     Timer.hideClockButton();
+                    
+                    // Show work timer but keep it paused (don't hide it)
+                    Timer.showWorkTimer();
                     
                     // Use the actual break start time from the response
                     if (data.break_start_time) {
@@ -214,7 +217,7 @@ jQuery(document).ready(function($) {
                     // Resume work timer from where it was paused (don't recalculate from time-in time)
                     // The workSeconds should already contain the accumulated time before the lunch
                     Timer.startWorkTimer();
-                    Timer.showWorkTimer(); // Show the work timer again
+                    // Work timer is already visible, just resume counting
                     break;
             }
         },
@@ -280,6 +283,7 @@ jQuery(document).ready(function($) {
             $('#work-time').text(formatted);
             
             // Update the data attribute with current time for page refresh persistence
+            // Only update when actually working (not when paused during lunch)
             if (Timer.isWorking) {
                 const now = new Date();
                 const clockInTime = new Date(now.getTime() - (Timer.workSeconds * 1000));
@@ -317,7 +321,7 @@ jQuery(document).ready(function($) {
         
         hideWorkTimer: function() {
             $('#work-timer').fadeOut(300);
-            // Don't reset work seconds when hiding - preserve the time for when break ends
+            // Don't reset work seconds when hiding - preserve the time for when lunch ends
             // Timer.workSeconds will be preserved
         },
         
