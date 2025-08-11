@@ -106,6 +106,14 @@ jQuery(document).ready(function($) {
                 console.log('User is clocked in, starting work timer');
                 Timer.isWorking = true;
                 Timer.calculateAndStartWorkTimer(clockInTime);
+                
+                // Update clock button to show "Time Out" when clocked in
+                Timer.updateClockButton('clock_out', 'Time Out', 'red');
+            } else {
+                console.log('User is clocked out, showing clock in button');
+                // Ensure clock button is visible and shows "Time In" when clocked out
+                Timer.showClockButton();
+                Timer.updateClockButton('clock_in', 'Time In', 'green');
             }
         },
         
