@@ -75,8 +75,9 @@ jQuery(document).ready(function($) {
             if (breakStartTime) {
                 Timer.isOnBreak = true;
                 Timer.calculateAndStartBreakTimer(breakStartTime);
-                // Hide work timer when on break
+                // Hide work timer when on break and don't start work timer
                 Timer.hideWorkTimer();
+                Timer.isWorking = false; // Ensure work state is false
                 return;
             }
             
@@ -182,6 +183,7 @@ jQuery(document).ready(function($) {
                     Timer.showBreakTimer();
                     Timer.updateBreakButton('break_end', 'End Break');
                     Timer.stopWorkTimer();
+                    Timer.isWorking = false; // Ensure work state is false when on break
                     // Use the actual break start time from the response
                     if (data.break_start_time) {
                         Timer.calculateAndStartBreakTimer(data.break_start_time);
@@ -196,14 +198,16 @@ jQuery(document).ready(function($) {
                     Timer.hideBreakTimer();
                     Timer.updateBreakButton('break_start', 'Start Break');
                     Timer.stopBreakTimer();
+                    Timer.isOnBreak = false;
+                    Timer.isWorking = true; // Set working state back to true
                     // Use the actual clock in time from the response to restart work timer
                     if (data.clock_in_time) {
                         Timer.calculateAndStartWorkTimer(data.clock_in_time);
                     } else {
-                        Timer.workSeconds = 0;
+                        // If no clock_in_time in response, preserve existing work time
                         Timer.startWorkTimer();
                     }
-                    Timer.isOnBreak = false;
+                    Timer.showWorkTimer(); // Show the work timer again
                     break;
             }
         },
@@ -300,12 +304,14 @@ jQuery(document).ready(function($) {
         
         showWorkTimer: function() {
             $('#work-timer').fadeIn(300);
+            // Update the display to show the preserved work time
+            Timer.updateWorkDisplay();
         },
         
         hideWorkTimer: function() {
             $('#work-timer').fadeOut(300);
-            $('#work-time').text('00:00:00');
-            Timer.workSeconds = 0;
+            // Don't reset work seconds when hiding - preserve the time for when break ends
+            // Timer.workSeconds will be preserved
         },
         
         showBreakTimer: function() {
