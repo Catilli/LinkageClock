@@ -140,7 +140,9 @@
                         
                         <div class="clock-buttons flex items-center space-x-4" id="clock-controls">
                             <!-- Work Timer Display -->
-                            <div class="timer work-timer bg-gray-100 px-4 py-2 rounded-lg" id="work-timer" style="display: <?php echo $is_working ? 'block' : 'none'; ?>;">
+                            <div class="timer work-timer bg-gray-100 px-4 py-2 rounded-lg" id="work-timer" 
+                                 style="display: <?php echo $is_working ? 'block' : 'none'; ?>;"
+                                 data-clock-in-time="<?php echo esc_attr(get_user_meta($current_user->ID, 'linkage_clock_in_time', true)); ?>">
                                 <div class="flex items-center space-x-2">
                                     <div class="w-2 h-2 bg-green-500 rounded-full <?php echo $is_clocked_in ? 'animate-pulse' : ''; ?>"></div>
                                     <span class="current text-lg font-mono text-gray-700" id="work-time">00:00:00</span>
@@ -149,7 +151,9 @@
                             </div>
                             
                             <!-- Break Timer Display -->
-                            <div class="timer break-timer bg-orange-100 px-4 py-2 rounded-lg" id="break-timer" style="display: <?php echo $is_on_break ? 'block' : 'none'; ?>;">
+                            <div class="timer break-timer bg-orange-100 px-4 py-2 rounded-lg" id="break-timer" 
+                                 style="display: <?php echo $is_on_break ? 'block' : 'none'; ?>;"
+                                 data-break-start-time="<?php echo esc_attr(get_user_meta($current_user->ID, 'linkage_break_start_time', true)); ?>">
                                 <div class="flex items-center space-x-2">
                                     <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
                                     <span class="current text-lg font-mono text-orange-700" id="break-time">00:00:00</span>
