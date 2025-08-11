@@ -54,10 +54,10 @@ get_header(); ?>
                 </div>
             </div>
 
-            <!-- Employee Status Table -->
+            <!-- Employees Table -->
             <div class="bg-white rounded-lg shadow-md overflow-hidden">
                 <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-900">Employee Status</h2>
+                    <h2 class="text-xl font-semibold text-gray-900">Employees</h2>
                 </div>
                 
                 <div class="overflow-x-auto">
