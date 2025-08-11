@@ -60,10 +60,33 @@
                 <div class="relative border-t border-gray-200">
                     <!-- User Toggle Button -->
                     <button id="user-menu-toggle" class="w-full p-6 flex items-center space-x-3 hover:bg-gray-50 transition-colors duration-200">
-                        <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
-                            <span class="text-white text-sm font-medium">
-                                <?php echo strtoupper(substr(wp_get_current_user()->display_name, 0, 1)); ?>
-                            </span>
+                        <?php 
+                        $current_user = wp_get_current_user();
+                        $user_email = $current_user->user_email;
+                        $gravatar_url = get_avatar_url($user_email, array('size' => 32, 'default' => '404'));
+                        
+                        // Check if Gravatar exists
+                        $gravatar_exists = false;
+                        if (function_exists('wp_remote_get')) {
+                            $response = wp_remote_get($gravatar_url);
+                            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) == 200) {
+                                $gravatar_exists = true;
+                            }
+                        }
+                        ?>
+                        
+                        <div class="w-8 h-8 rounded-full overflow-hidden">
+                            <?php if ($gravatar_exists): ?>
+                                <img src="<?php echo esc_url($gravatar_url); ?>" 
+                                     alt="<?php echo esc_attr($current_user->display_name); ?>'s Avatar"
+                                     class="w-8 h-8 rounded-full object-cover">
+                            <?php else: ?>
+                                <div class="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center">
+                                    <span class="text-white text-sm font-medium">
+                                        <?php echo strtoupper(substr($current_user->display_name, 0, 1)); ?>
+                                    </span>
+                                </div>
+                            <?php endif; ?>
                         </div>
                         <div class="flex-1 text-left">
                             <p class="text-sm font-medium text-gray-900">
