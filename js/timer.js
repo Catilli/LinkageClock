@@ -71,16 +71,19 @@ jQuery(document).ready(function($) {
             const clockInTime = $('#work-timer').data('clock-in-time');
             const breakStartTime = $('#break-timer').data('break-start-time');
             
-            // Calculate and start work timer if user is clocked in
-            if (clockInTime) {
-                Timer.isWorking = true;
-                Timer.calculateAndStartWorkTimer(clockInTime);
-            }
-            
-            // Calculate and start break timer if user is on break
+            // Check if user is on break first - if so, only start break timer
             if (breakStartTime) {
                 Timer.isOnBreak = true;
                 Timer.calculateAndStartBreakTimer(breakStartTime);
+                // Hide work timer when on break
+                Timer.hideWorkTimer();
+                return;
+            }
+            
+            // Only start work timer if user is clocked in (not on break)
+            if (clockInTime) {
+                Timer.isWorking = true;
+                Timer.calculateAndStartWorkTimer(clockInTime);
             }
         },
         
