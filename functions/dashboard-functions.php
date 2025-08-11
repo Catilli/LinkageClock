@@ -329,6 +329,55 @@ function linkage_ajax_clock_action() {
 add_action('wp_ajax_linkage_clock_action', 'linkage_ajax_clock_action');
 
 /**
+ * AJAX handler for getting employee updates (for AJAX refresh)
+ */
+function linkage_ajax_get_employee_updates() {
+    if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
+        wp_die('Security check failed');
+    }
+    
+    if (!is_user_logged_in()) {
+        wp_send_json_error('User not logged in');
+    }
+    
+    // Get all employees with their current status
+    $employees = linkage_get_all_employees_status();
+    
+    $statuses = array();
+    $positions = array();
+    $hire_dates = array();
+    
+    foreach ($employees as $employee) {
+        $user_id = $employee->ID;
+        
+        // Get status information
+        $statuses[$user_id] = array(
+            'status' => $employee->current_status,
+            'last_action_time' => $employee->last_action_time,
+            'last_action_type' => $employee->last_action_type
+        );
+        
+        // Get position
+        $position = get_user_meta($user_id, 'linkage_position', true) ?: 'Employee';
+        $positions[$user_id] = $position;
+        
+        // Get hire date
+        $hire_date = get_user_meta($user_id, 'linkage_hire_date', true);
+        if ($hire_date) {
+            $hire_dates[$user_id] = $hire_date;
+        }
+    }
+    
+    wp_send_json_success(array(
+        'statuses' => $statuses,
+        'positions' => $positions,
+        'hire_dates' => $hire_dates,
+        'timestamp' => current_time('mysql')
+    ));
+}
+add_action('wp_ajax_linkage_get_employee_updates', 'linkage_ajax_get_employee_updates');
+
+/**
  * Enqueue dashboard scripts
  */
 function linkage_enqueue_dashboard_scripts() {
