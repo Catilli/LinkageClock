@@ -33,6 +33,7 @@ get_header(); ?>
                             <option value="all">All Status</option>
                             <option value="clocked_in">Clocked In</option>
                             <option value="clocked_out">Clocked Out</option>
+                            <option value="on_break">On Break</option>
                         </select>
                     </div>
                     
@@ -89,9 +90,25 @@ get_header(); ?>
                             if (!empty($employees)):
                                 foreach ($employees as $employee):
                                     // Determine status display logic
-                                    $is_working = $employee->current_status === 'clocked_in' || $employee->current_status === 'on_break';
-                                    $status_class = $is_working ? 'clocked-in' : 'clocked-out';
-                                    $status_text = $is_working ? 'Clocked In' : 'Clocked Out';
+                                    $status_class = '';
+                                    $status_text = '';
+                                    
+                                    switch ($employee->current_status) {
+                                        case 'clocked_in':
+                                            $status_class = 'clocked-in';
+                                            $status_text = 'Clocked In';
+                                            break;
+                                        case 'on_break':
+                                            $status_class = 'break-status';
+                                            $status_text = 'On Break';
+                                            break;
+                                        case 'clocked_out':
+                                        default:
+                                            $status_class = 'clocked-out';
+                                            $status_text = 'Clocked Out';
+                                            break;
+                                    }
+                                    
                                     $role_display = linkage_get_user_role_display($employee->ID);
                                     $actual_time = linkage_format_actual_time($employee->last_action_time);
                             ?>
@@ -149,17 +166,25 @@ get_header(); ?>
             </div>
 
             <!-- Quick Stats -->
-            <div class="grid md:grid-cols-3 gap-6 mt-8">
+            <div class="grid md:grid-cols-4 gap-6 mt-8">
                 <?php
                 $total_employees = count($employees);
                 $clocked_in_count = 0;
+                $on_break_count = 0;
                 $clocked_out_count = 0;
                 
                 foreach ($employees as $employee) {
-                    if ($employee->current_status === 'clocked_in' || $employee->current_status === 'on_break') {
-                        $clocked_in_count++;
-                    } else {
-                        $clocked_out_count++;
+                    switch ($employee->current_status) {
+                        case 'clocked_in':
+                            $clocked_in_count++;
+                            break;
+                        case 'on_break':
+                            $on_break_count++;
+                            break;
+                        case 'clocked_out':
+                        default:
+                            $clocked_out_count++;
+                            break;
                     }
                 }
                 ?>
@@ -186,8 +211,22 @@ get_header(); ?>
                             </div>
                         </div>
                         <div class="ml-4">
-                            <div class="text-sm font-medium text-gray-500">Currently Working</div>
+                            <div class="text-sm font-medium text-gray-500">Clocked In</div>
                             <div class="text-lg font-semibold text-gray-900"><?php echo $clocked_in_count; ?></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="bg-white p-6 rounded-lg shadow-md">
+                    <div class="flex items-center">
+                        <div class="flex-shrink-0">
+                            <div class="w-8 h-8 bg-orange-500 rounded-full flex items-center justify-center">
+                                <span class="text-white text-sm font-bold"><?php echo $on_break_count; ?></span>
+                            </div>
+                        </div>
+                        <div class="ml-4">
+                            <div class="text-sm font-medium text-gray-500">On Break</div>
+                            <div class="text-lg font-semibold text-gray-900"><?php echo $on_break_count; ?></div>
                         </div>
                     </div>
                 </div>
@@ -200,7 +239,7 @@ get_header(); ?>
                             </div>
                         </div>
                         <div class="ml-4">
-                            <div class="text-sm font-medium text-gray-500">Off Duty</div>
+                            <div class="text-sm font-medium text-gray-500">Clocked Out</div>
                             <div class="text-lg font-semibold text-gray-900"><?php echo $clocked_out_count; ?></div>
                         </div>
                     </div>
