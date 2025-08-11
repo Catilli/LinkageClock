@@ -91,7 +91,37 @@ function linkage_get_employee_status($user_id) {
 }
 
 /**
- * Format time difference for display
+ * Format actual time for display (instead of relative time)
+ */
+function linkage_format_actual_time($datetime) {
+    if ($datetime === 'Never' || empty($datetime)) {
+        return 'Never';
+    }
+    
+    $time = strtotime($datetime);
+    $now = current_time('timestamp');
+    $diff = $now - $time;
+    
+    // If it's today, show time only
+    if ($diff < 86400 && date('Y-m-d', $time) === date('Y-m-d', $now)) {
+        return date('g:i A', $time); // e.g., "2:30 PM"
+    }
+    // If it's yesterday
+    elseif ($diff < 172800 && date('Y-m-d', $time) === date('Y-m-d', $now - 86400)) {
+        return 'Yesterday ' . date('g:i A', $time); // e.g., "Yesterday 2:30 PM"
+    }
+    // If it's within the last week
+    elseif ($diff < 604800) {
+        return date('D g:i A', $time); // e.g., "Mon 2:30 PM"
+    }
+    // If it's older
+    else {
+        return date('M j, g:i A', $time); // e.g., "Jan 15, 2:30 PM"
+    }
+}
+
+/**
+ * Format time difference for display (kept for backward compatibility)
  */
 function linkage_format_time_ago($datetime) {
     if ($datetime === 'Never' || empty($datetime)) {
