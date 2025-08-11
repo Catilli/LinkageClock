@@ -162,7 +162,26 @@
                             </div>
                             
                             <!-- Clock Action Buttons -->
-                            <div class="clock-panels flex items-center space-x-3">
+                            <div class="clock-panels flex items-center space-x-3">                                
+                                <!-- Break Button -->
+                                <button id="break-toggle-btn" 
+                                        class="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
+                                        style="display: <?php echo ($is_clocked_in || $is_on_break) ? 'flex' : 'none'; ?>;"
+                                        data-action="<?php echo $is_on_break ? 'break_end' : 'break_start'; ?>">
+                                    
+                                    <!-- Start Break Icon -->
+                                    <svg class="w-5 h-5 break-start-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo $is_on_break ? 'none' : 'block'; ?>;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.5a3.5 3.5 0 110 7H9m-1-7h1m4-7v2m0 12v2m4.95-4.95l1.41 1.41m0-14.14l-1.41 1.41M6.464 20.536l1.414-1.414m0-14.14l-1.414 1.414M12 7a5 5 0 100 10 5 5 0 000-10z"></path>
+                                    </svg>
+                                    
+                                    <!-- End Break Icon -->
+                                    <svg class="w-5 h-5 break-end-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo $is_on_break ? 'block' : 'none'; ?>;">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    
+                                    <span id="break-toggle-text"><?php echo $is_on_break ? 'Lunch End' : 'Lunch Start'; ?></span>
+                                </button>
+
                                 <!-- Clock In/Out Button -->
                                 <button id="clock-toggle-btn" 
                                         class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 font-medium
@@ -181,25 +200,6 @@
                                     </svg>
                                     
                                     <span id="clock-toggle-text"><?php echo ($is_clocked_in || $is_on_break) ? 'Time Out' : 'Time In'; ?></span>
-                                </button>
-                                
-                                <!-- Break Button -->
-                                <button id="break-toggle-btn" 
-                                        class="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
-                                        style="display: <?php echo ($is_clocked_in || $is_on_break) ? 'flex' : 'none'; ?>;"
-                                        data-action="<?php echo $is_on_break ? 'break_end' : 'break_start'; ?>">
-                                    
-                                    <!-- Start Break Icon -->
-                                    <svg class="w-5 h-5 break-start-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo $is_on_break ? 'none' : 'block'; ?>;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.5a3.5 3.5 0 110 7H9m-1-7h1m4-7v2m0 12v2m4.95-4.95l1.41 1.41m0-14.14l-1.41 1.41M6.464 20.536l1.414-1.414m0-14.14l-1.414 1.414M12 7a5 5 0 100 10 5 5 0 000-10z"></path>
-                                    </svg>
-                                    
-                                    <!-- End Break Icon -->
-                                    <svg class="w-5 h-5 break-end-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo $is_on_break ? 'block' : 'none'; ?>;">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    
-                                    <span id="break-toggle-text"><?php echo $is_on_break ? 'Lunch End' : 'Lunch Start'; ?></span>
                                 </button>
                             </div>
                         </div>
