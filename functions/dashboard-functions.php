@@ -486,3 +486,53 @@ function linkage_force_initialize_all_users() {
     echo "<p><strong>Initialized $initialized_count users as employees!</strong></p>";
     return $initialized_count;
 }
+
+/**
+ * Debug function to check time button visibility
+ */
+function linkage_debug_time_button() {
+    if (!is_user_logged_in()) {
+        echo "<p><strong>Debug:</strong> User not logged in</p>";
+        return;
+    }
+    
+    $current_user = wp_get_current_user();
+    $employee_status = linkage_get_employee_status($current_user->ID);
+    
+    echo "<h3>Debug: Time Button Visibility</h3>";
+    echo "<p><strong>User ID:</strong> " . $current_user->ID . "</p>";
+    echo "<p><strong>User Name:</strong> " . $current_user->display_name . "</p>";
+    echo "<p><strong>Employee Status:</strong> " . $employee_status->status . "</p>";
+    echo "<p><strong>Last Action Time:</strong> " . $employee_status->last_action_time . "</p>";
+    echo "<p><strong>Last Action Type:</strong> " . $employee_status->last_action_type . "</p>";
+    
+    // Check clock in time
+    $clock_in_time = get_user_meta($current_user->ID, 'linkage_clock_in_time', true);
+    echo "<p><strong>Clock In Time:</strong> " . ($clock_in_time ?: 'Not set') . "</p>";
+    
+    // Check break start time
+    $break_start_time = get_user_meta($current_user->ID, 'linkage_break_start_time', true);
+    echo "<p><strong>Break Start Time:</strong> " . ($break_start_time ?: 'Not set') . "</p>";
+    
+    // Calculate display logic
+    $is_clocked_in = $employee_status->status === 'clocked_in';
+    $is_on_break = $employee_status->status === 'on_break';
+    $is_working = $is_clocked_in || $is_on_break;
+    
+    echo "<p><strong>Is Clocked In:</strong> " . ($is_clocked_in ? 'Yes' : 'No') . "</p>";
+    echo "<p><strong>Is On Break:</strong> " . ($is_on_break ? 'Yes' : 'No') . "</p>";
+    echo "<p><strong>Is Working:</strong> " . ($is_working ? 'Yes' : 'No') . "</p>";
+    
+    // Check button display logic
+    $clock_button_display = 'flex'; // We changed this to always show
+    $break_button_display = ($is_clocked_in || $is_on_break) ? 'flex' : 'none';
+    
+    echo "<p><strong>Clock Button Display:</strong> " . $clock_button_display . "</p>";
+    echo "<p><strong>Break Button Display:</strong> " . $break_button_display . "</p>";
+    
+    // Check if button should be visible
+    $button_should_be_visible = true; // Always true now
+    echo "<p><strong>Button Should Be Visible:</strong> " . ($button_should_be_visible ? 'Yes' : 'No') . "</p>";
+    
+    echo "<hr>";
+}
