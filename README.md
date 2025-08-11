@@ -1,5 +1,5 @@
-# LinkageClock
-Linkage - Payroll Time Tracking Theme (Work in Progress)
+# LinkageClock (Work in Progress)
+Linkage - Payroll Time Tracking Theme
 
 ## Overview
 LinkageClock is a payroll time tracking theme designed for efficient employee time management and payroll processing.
