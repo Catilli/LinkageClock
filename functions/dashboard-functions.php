@@ -199,7 +199,7 @@ add_action('wp_ajax_linkage_update_employee_status', 'linkage_ajax_update_employ
  * Enqueue dashboard scripts
  */
 function linkage_enqueue_dashboard_scripts() {
-    if (is_front_page() && is_user_logged_in()) {
+    if (is_user_logged_in()) {
         wp_enqueue_script('linkage-dashboard', get_template_directory_uri() . '/js/dashboard.js', array('jquery'), '1.0.0', true);
         wp_localize_script('linkage-dashboard', 'linkage_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
