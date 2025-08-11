@@ -128,5 +128,20 @@
 
     <!-- Main Content Area -->
     <div id="main-content" class="ml-64 transition-all duration-300">
+        <header id="toolbar" class="toolbar">
+            <div class="container mx-auto px-4 py-8">
+                <h1><?php echo get_the_title(); ?></h1>
+                <div class="clock-buttons">
+                    <div class="timer">
+                        <span class="current">00:00:00</span>
+                    </div>
+                    <div class="clock-panels">
+                        <button>Clock In</button>
+                        <button>Start a Break</button>
+                    </div>
+                </div>
+            </div>
+        </header>
+
         <div id="content" class="site-content">
             <main id="main" class="site-main">
