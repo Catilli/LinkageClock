@@ -71,14 +71,20 @@ jQuery(document).ready(function($) {
             const clockInTime = $('#work-timer').data('clock-in-time');
             const breakStartTime = $('#break-timer').data('break-start-time');
             
+            console.log('Initial state - clockInTime:', clockInTime, 'breakStartTime:', breakStartTime);
+            
             // Check if user is on break first - if so, start break timer AND calculate work time
             if (breakStartTime) {
+                console.log('User is on break, setting up break state');
                 Timer.isOnBreak = true;
                 Timer.calculateAndStartLunchTimer(breakStartTime);
                 
                 // Calculate and display the accumulated work time (but don't start the timer)
                 if (clockInTime) {
+                    console.log('Calculating work time from clock in:', clockInTime);
                     Timer.calculateWorkTimeFromClockIn(clockInTime);
+                } else {
+                    console.log('No clock in time found, work timer will show 00:00:00');
                 }
                 
                 // Show work timer but keep it paused when on break
@@ -97,6 +103,7 @@ jQuery(document).ready(function($) {
             
             // Only start work timer if user is clocked in (not on break)
             if (clockInTime) {
+                console.log('User is clocked in, starting work timer');
                 Timer.isWorking = true;
                 Timer.calculateAndStartWorkTimer(clockInTime);
             }
@@ -250,13 +257,19 @@ jQuery(document).ready(function($) {
         },
         
         calculateWorkTimeFromClockIn: function(clockInTime) {
+            console.log('calculateWorkTimeFromClockIn called with:', clockInTime);
+            
             // Calculate elapsed time since clock in (for display purposes only)
             const now = new Date();
             const clockIn = new Date(clockInTime);
             const elapsedSeconds = Math.floor((now - clockIn) / 1000);
             
+            console.log('Calculated elapsed seconds:', elapsedSeconds);
+            
             // Set the current work seconds without starting the timer
             Timer.workSeconds = Math.max(0, elapsedSeconds);
+            
+            console.log('Set Timer.workSeconds to:', Timer.workSeconds);
             
             // Update the display to show the calculated time
             Timer.updateWorkDisplay();
@@ -307,6 +320,8 @@ jQuery(document).ready(function($) {
         
         updateWorkDisplay: function() {
             const formatted = Timer.formatTime(Timer.workSeconds);
+            console.log('updateWorkDisplay - workSeconds:', Timer.workSeconds, 'formatted:', formatted);
+            
             $('#work-time').text(formatted);
             
             // Update the data attribute with current time for page refresh persistence
