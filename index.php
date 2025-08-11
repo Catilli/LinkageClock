@@ -7,35 +7,6 @@ get_header(); ?>
 
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-7xl mx-auto">
-        
-        <!-- Dashboard Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-4xl font-bold text-gray-900 mb-4">
-                Dashboard
-            </h1>
-            <p class="text-xl text-gray-600 mb-6">
-                Live employee status tracking and management
-            </p>
-            
-            <?php if (is_user_logged_in()): ?>
-                <div class="flex justify-center space-x-4 mb-6">
-                    <a href="<?php echo esc_url(home_url('/time-tracking')); ?>" 
-                       class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-200">
-                        Log Time
-                    </a>
-                    <?php if (current_user_can('linkage_approve_timesheets')): ?>
-                        <a href="<?php echo esc_url(home_url('/approve-timesheets')); ?>" 
-                           class="bg-green-500 hover:bg-green-700 text-white font-bold py-3 px-6 rounded-lg text-lg transition duration-200">
-                            Approve Timesheets
-                        </a>
-                    <?php endif; ?>
-                </div>
-            <?php else: ?>
-                <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
-                    Please <a href="<?php echo esc_url(wp_login_url()); ?>" class="underline">log in</a> to access the dashboard.
-                </div>
-            <?php endif; ?>
-        </div>
 
         <?php if (is_user_logged_in()): ?>
             <!-- Search and Filter Controls -->
@@ -103,10 +74,7 @@ get_header(); ?>
                                     Status
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Last Action & Time
-                                </th>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
+                                    Last Action Time
                                 </th>
                             </tr>
                         </thead>
@@ -124,29 +92,6 @@ get_header(); ?>
                                     $status_text = $employee->current_status === 'clocked_in' ? 'Clocked In' : 'Clocked Out';
                                     $role_display = linkage_get_user_role_display($employee->ID);
                                     $actual_time = linkage_format_actual_time($employee->last_action_time);
-                                    
-                                    // Format action type for display
-                                    $action_type_display = '';
-                                    switch ($employee->last_action_type) {
-                                        case 'clock_in':
-                                            $action_type_display = 'Clocked In';
-                                            break;
-                                        case 'clock_out':
-                                            $action_type_display = 'Clocked Out';
-                                            break;
-                                        case 'break_in':
-                                            $action_type_display = 'Started Break';
-                                            break;
-                                        case 'break_out':
-                                            $action_type_display = 'Ended Break';
-                                            break;
-                                        case 'initial':
-                                        case 'force_initial':
-                                            $action_type_display = 'Initialized';
-                                            break;
-                                        default:
-                                            $action_type_display = ucfirst(str_replace('_', ' ', $employee->last_action_type));
-                                    }
                             ?>
                                 <tr class="employee-row hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -179,34 +124,8 @@ get_header(); ?>
                                             <?php echo esc_html($status_text); ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                        <div class="text-gray-900 font-medium">
-                                            <?php echo esc_html($action_type_display); ?>
-                                        </div>
-                                        <div class="text-gray-500 text-xs">
-                                            <?php echo esc_html($actual_time); ?>
-                                        </div>
-                                    </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <?php if (current_user_can('linkage_manage_employees')): ?>
-                                            <?php if ($employee->current_status === 'clocked_out'): ?>
-                                                <button class="status-update-btn bg-green-500 hover:bg-green-700 text-white text-xs px-3 py-1 rounded transition duration-200"
-                                                        data-user-id="<?php echo esc_attr($employee->ID); ?>"
-                                                        data-status="clocked_in"
-                                                        data-action-type="clock_in">
-                                                    Clock In
-                                                </button>
-                                            <?php else: ?>
-                                                <button class="status-update-btn bg-red-500 hover:bg-red-700 text-white text-xs px-3 py-1 rounded transition duration-200"
-                                                        data-user-id="<?php echo esc_attr($employee->ID); ?>"
-                                                        data-status="clocked_out"
-                                                        data-action-type="clock_out">
-                                                    Clock Out
-                                                </button>
-                                            <?php endif; ?>
-                                        <?php else: ?>
-                                            <span class="text-gray-400">No permissions</span>
-                                        <?php endif; ?>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                        <?php echo esc_html($actual_time); ?>
                                     </td>
                                 </tr>
                             <?php 
@@ -214,7 +133,7 @@ get_header(); ?>
                             else:
                             ?>
                                 <tr>
-                                    <td colspan="5" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">
                                         No employees found. Please add employees to see their status.
                                     </td>
                                 </tr>
