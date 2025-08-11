@@ -188,6 +188,9 @@ jQuery(document).ready(function($) {
                     // Preserve the current work time - don't reset it
                     // Timer.workSeconds will keep the accumulated work time
                     
+                    // Hide the clock out button while on break
+                    Timer.hideClockButton();
+                    
                     // Use the actual break start time from the response
                     if (data.break_start_time) {
                         Timer.calculateAndStartBreakTimer(data.break_start_time);
@@ -204,6 +207,9 @@ jQuery(document).ready(function($) {
                     Timer.stopBreakTimer();
                     Timer.isOnBreak = false;
                     Timer.isWorking = true; // Set working state back to true
+                    
+                    // Show the clock button again when break ends
+                    Timer.showClockButton();
                     
                     // Resume work timer from where it was paused (don't recalculate from clock-in time)
                     // The workSeconds should already contain the accumulated time before the break
@@ -331,6 +337,14 @@ jQuery(document).ready(function($) {
         
         hideBreakButton: function() {
             $('#break-toggle-btn').fadeOut(300);
+        },
+        
+        hideClockButton: function() {
+            $('#clock-toggle-btn').fadeOut(300);
+        },
+        
+        showClockButton: function() {
+            $('#clock-toggle-btn').fadeIn(300);
         },
         
         updateClockButton: function(action, text, color) {
