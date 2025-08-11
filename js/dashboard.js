@@ -10,6 +10,7 @@ jQuery(document).ready(function($) {
             this.startAutoRefresh();
             this.initDrawerToggle();
             this.initUserDropdown();
+            this.setActiveMenuItem();
         },
         
         bindEvents: function() {
@@ -289,6 +290,29 @@ jQuery(document).ready(function($) {
             
             $userDropdown.removeClass('opacity-100 visible translate-y-0').addClass('opacity-0 invisible translate-y-2');
             $userArrow.removeClass('rotate-180');
+        },
+        
+        setActiveMenuItem: function() {
+            const currentPath = window.location.pathname;
+            const currentUrl = window.location.href;
+            
+            // Remove any existing active classes
+            $('.menu-item a').removeClass('active');
+            
+            // Set active class based on current page
+            $('.menu-item a').each(function() {
+                const href = $(this).attr('href');
+                
+                if (href && (currentUrl === href || currentPath === new URL(href).pathname)) {
+                    $(this).addClass('active');
+                    return false; // Break the loop
+                }
+            });
+            
+            // Fallback: if no exact match and we're on home page, highlight dashboard
+            if (!$('.menu-item a.active').length && (currentPath === '/' || currentPath === '')) {
+                $('.menu-item-dashboard a').addClass('active');
+            }
         }
     };
     
@@ -380,6 +404,32 @@ jQuery(document).ready(function($) {
             }
             .rotate-180 {
                 transform: rotate(180deg);
+            }
+            
+            /* Menu item styles */
+            .menu-item a {
+                transition: all 0.2s ease-in-out;
+            }
+            
+            /* Collapsed menu item styles */
+            #masthead.drawer-collapsed .menu-item a span {
+                opacity: 0;
+                visibility: hidden;
+            }
+            #masthead.drawer-collapsed .menu-item a {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            #masthead.drawer-collapsed .menu-item a svg {
+                margin-right: 0;
+            }
+            
+            /* Active menu item */
+            .menu-item a.active,
+            .menu-item-dashboard a[href*="/"]:not([href*="/time-tracking"]):not([href*="/approve-timesheets"]):not([href*="/account"]) {
+                background-color: #dbeafe;
+                color: #1d4ed8;
             }
         </style>
     `;
