@@ -271,7 +271,7 @@ function linkage_ajax_clock_action() {
             if ($current_status !== 'clocked_in') {
                 wp_send_json_error('Must be clocked in to start break');
             }
-            $result = linkage_update_employee_status($user_id, 'on_break', 'break_start', 'Started break via toolbar');
+            $result = linkage_update_employee_status($user_id, 'on_break', 'break_in', 'Started break via toolbar');
             // Store break start time and pause work timer
             update_user_meta($user_id, 'linkage_break_start_time', current_time('mysql'));
             
@@ -289,7 +289,7 @@ function linkage_ajax_clock_action() {
             if ($current_status !== 'on_break') {
                 wp_send_json_error('Must be on break to end break');
             }
-            $result = linkage_update_employee_status($user_id, 'clocked_in', 'break_end', 'Ended break via toolbar');
+            $result = linkage_update_employee_status($user_id, 'clocked_in', 'break_out', 'Ended break via toolbar');
             
             // Calculate break time and restart work timer
             $break_start_time = get_user_meta($user_id, 'linkage_break_start_time', true);
