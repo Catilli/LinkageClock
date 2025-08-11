@@ -42,7 +42,6 @@ function linkage_theme_setup() {
     // Register navigation menus
     register_nav_menus(array(
         'primary' => __('Primary Menu', 'linkageclock'),
-        'footer'  => __('Footer Menu', 'linkageclock'),
     ));
 }
 add_action('after_setup_theme', 'linkage_theme_setup');
