@@ -97,29 +97,7 @@ get_header(); ?>
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
-                                                <?php 
-                                                // Check if employee has a Gravatar
-                                                $employee_gravatar_url = get_avatar_url($employee->user_email, array('size' => 40, 'default' => '404'));
-                                                $employee_has_gravatar = false;
-                                                if (function_exists('wp_remote_get')) {
-                                                    $response = wp_remote_get($employee_gravatar_url);
-                                                    if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) == 200) {
-                                                        $employee_has_gravatar = true;
-                                                    }
-                                                }
-                                                ?>
-                                                
-                                                <?php if ($employee_has_gravatar): ?>
-                                                    <img src="<?php echo esc_url($employee_gravatar_url); ?>" 
-                                                         alt="<?php echo esc_attr($employee->display_name); ?>'s Avatar"
-                                                         class="h-10 w-10 rounded-full object-cover border border-gray-200">
-                                                <?php else: ?>
-                                                    <div class="h-10 w-10 rounded-full bg-gray-300 flex items-center justify-center">
-                                                        <span class="text-sm font-medium text-gray-700">
-                                                            <?php echo strtoupper(substr($employee->display_name, 0, 1)); ?>
-                                                        </span>
-                                                    </div>
-                                                <?php endif; ?>
+                                                <?php echo linkage_get_medium_avatar($employee->user_email, $employee->display_name); ?>
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900 employee-name">
