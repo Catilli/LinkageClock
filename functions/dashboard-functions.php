@@ -49,7 +49,8 @@ function linkage_get_all_employees_status() {
             'user_email' => $user->user_email,
             'current_status' => $status,
             'last_action_time' => $last_action_time,
-            'last_action_type' => $last_action_type
+            'last_action_type' => $last_action_type,
+            'break_start_time' => get_user_meta($user->ID, 'linkage_break_start_time', true)
         );
     }
     
