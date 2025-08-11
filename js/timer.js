@@ -184,6 +184,10 @@ jQuery(document).ready(function($) {
                     Timer.updateBreakButton('break_end', 'End Break');
                     Timer.stopWorkTimer();
                     Timer.isWorking = false; // Ensure work state is false when on break
+                    
+                    // Preserve the current work time - don't reset it
+                    // Timer.workSeconds will keep the accumulated work time
+                    
                     // Use the actual break start time from the response
                     if (data.break_start_time) {
                         Timer.calculateAndStartBreakTimer(data.break_start_time);
@@ -200,13 +204,10 @@ jQuery(document).ready(function($) {
                     Timer.stopBreakTimer();
                     Timer.isOnBreak = false;
                     Timer.isWorking = true; // Set working state back to true
-                    // Use the actual clock in time from the response to restart work timer
-                    if (data.clock_in_time) {
-                        Timer.calculateAndStartWorkTimer(data.clock_in_time);
-                    } else {
-                        // If no clock_in_time in response, preserve existing work time
-                        Timer.startWorkTimer();
-                    }
+                    
+                    // Resume work timer from where it was paused (don't recalculate from clock-in time)
+                    // The workSeconds should already contain the accumulated time before the break
+                    Timer.startWorkTimer();
                     Timer.showWorkTimer(); // Show the work timer again
                     break;
             }
