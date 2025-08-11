@@ -33,16 +33,6 @@ if ( isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'],
 
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-4xl mx-auto">
-        
-        <!-- Page Header -->
-        <div class="text-center mb-8">
-            <h1 class="text-3xl font-bold text-gray-900 mb-2">
-                Your Account
-            </h1>
-            <p class="text-lg text-gray-600">
-                Manage your profile information and account settings
-            </p>
-        </div>
 
         <!-- Success Message -->
         <?php if (isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'], 'update_profile')): ?>
