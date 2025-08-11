@@ -119,17 +119,49 @@
 
     <!-- Main Content Area -->
     <div id="main-content" class="ml-64 transition-all duration-300">
-        <header id="toolbar" class="toolbar">
-            <div class="container mx-auto px-4 py-8">
-                <h1><?php echo get_the_title(); ?></h1>
-                <div class="clock-buttons">
-                    <div class="timer">
-                        <span class="current">00:00:00</span>
+        <header id="toolbar" class="toolbar bg-white border-b border-gray-200 shadow-sm">
+            <div class="container mx-auto px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <!-- Left Side - Page Title -->
+                    <div class="flex-1">
+                        <h1 class="text-2xl font-bold text-gray-900">
+                            <?php 
+                            $page_title = get_the_title();
+                            if (is_front_page() || empty($page_title)) {
+                                echo 'Dashboard';
+                            } else {
+                                echo esc_html($page_title);
+                            }
+                            ?>
+                        </h1>
                     </div>
-                    <div class="clock-panels">
-                        <button>Clock In</button>
-                        <button>Start a Break</button>
-                    </div>
+                    
+                    <!-- Right Side - Clock Controls -->
+                    <?php if (is_user_logged_in()): ?>
+                        <div class="clock-buttons flex items-center space-x-4">
+                            <!-- Timer Display -->
+                            <div class="timer bg-gray-100 px-4 py-2 rounded-lg">
+                                <span class="current text-lg font-mono text-gray-700">00:00:00</span>
+                            </div>
+                            
+                            <!-- Clock Action Buttons -->
+                            <div class="clock-panels flex items-center space-x-3">
+                                <button class="clock-in-btn flex items-center space-x-2 bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                    </svg>
+                                    <span>Clock In</span>
+                                </button>
+                                
+                                <button class="break-btn flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1.5a3.5 3.5 0 110 7H9m-1-7h1m4-7v2m0 12v2m4.95-4.95l1.41 1.41m0-14.14l-1.41 1.41M6.464 20.536l1.414-1.414m0-14.14l-1.414 1.414M12 7a5 5 0 100 10 5 5 0 000-10z"></path>
+                                    </svg>
+                                    <span>Start Break</span>
+                                </button>
+                            </div>
+                        </div>
+                    <?php endif; ?>
                 </div>
             </div>
         </header>
