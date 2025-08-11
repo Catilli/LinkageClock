@@ -62,6 +62,7 @@ jQuery(document).ready(function($) {
                     if (response.success) {
                         Timer.updateUI(response.data);
                         Timer.showNotification(response.data.message, 'success');
+                        Timer.refreshDashboardList();
                     } else {
                         Timer.showNotification(response.data || 'Error occurred', 'error');
                     }
@@ -90,6 +91,7 @@ jQuery(document).ready(function($) {
                     if (response.success) {
                         Timer.updateUI(response.data);
                         Timer.showNotification(response.data.message, 'success');
+                        Timer.refreshDashboardList();
                     } else {
                         Timer.showNotification(response.data || 'Error occurred', 'error');
                     }
@@ -278,6 +280,23 @@ jQuery(document).ready(function($) {
             const btn = $('#' + buttonId);
             btn.prop('disabled', false);
             btn.find('.loading-spinner').remove();
+        },
+        
+        refreshDashboardList: function() {
+            // Check if we're on the dashboard page (index.php)
+            if ($('.employee-row').length > 0) {
+                // Reload the page to refresh the employee list
+                setTimeout(function() {
+                    location.reload();
+                }, 500); // Small delay to let the server update
+            }
+            
+            // Alternative: If there's a refresh function in dashboard.js, call it
+            if (typeof dashboard !== 'undefined' && typeof dashboard.refreshEmployeeList === 'function') {
+                setTimeout(function() {
+                    dashboard.refreshEmployeeList();
+                }, 500);
+            }
         },
         
         showNotification: function(message, type) {
