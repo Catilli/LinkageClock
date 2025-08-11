@@ -141,7 +141,7 @@
                         <div class="clock-buttons flex items-center space-x-4" id="clock-controls">
                             <!-- Work Timer Display -->
                             <div class="timer work-timer bg-gray-100 px-4 py-2 rounded-lg" id="work-timer" 
-                                 style="display: <?php echo $is_working ? 'block' : 'none'; ?>;"
+                                 style="display: <?php echo $is_clocked_in ? 'block' : 'none'; ?>;"
                                  data-clock-in-time="<?php echo esc_attr(get_user_meta($current_user->ID, 'linkage_clock_in_time', true)); ?>">
                                 <div class="flex items-center space-x-2">
                                     <div class="w-2 h-2 bg-green-500 rounded-full <?php echo $is_clocked_in ? 'animate-pulse' : ''; ?>"></div>
@@ -166,27 +166,27 @@
                                 <!-- Clock In/Out Button -->
                                 <button id="clock-toggle-btn" 
                                         class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 font-medium
-                                               <?php echo $is_working ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'; ?>"
-                                        data-action="<?php echo $is_working ? 'clock_out' : 'clock_in'; ?>">
+                                               <?php echo ($is_clocked_in || $is_on_break) ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'; ?>"
+                                        data-action="<?php echo ($is_clocked_in || $is_on_break) ? 'clock_out' : 'clock_in'; ?>">
                                     
                                     <!-- Clock In Icon -->
-                                    <svg class="w-5 h-5 clock-in-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo $is_working ? 'none' : 'block'; ?>;">
+                                    <svg class="w-5 h-5 clock-in-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo ($is_clocked_in || $is_on_break) ? 'none' : 'block'; ?>;">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                     
                                     <!-- Clock Out Icon (Stop) -->
-                                    <svg class="w-5 h-5 clock-out-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo $is_working ? 'block' : 'none'; ?>;">
+                                    <svg class="w-5 h-5 clock-out-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo ($is_clocked_in || $is_on_break) ? 'block' : 'none'; ?>;">
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z"></path>
                                     </svg>
                                     
-                                    <span id="clock-toggle-text"><?php echo $is_working ? 'Clock Out' : 'Clock In'; ?></span>
+                                    <span id="clock-toggle-text"><?php echo ($is_clocked_in || $is_on_break) ? 'Clock Out' : 'Clock In'; ?></span>
                                 </button>
                                 
                                 <!-- Break Button -->
                                 <button id="break-toggle-btn" 
                                         class="flex items-center space-x-2 bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 font-medium"
-                                        style="display: <?php echo $is_working ? 'flex' : 'none'; ?>;"
+                                        style="display: <?php echo ($is_clocked_in || $is_on_break) ? 'flex' : 'none'; ?>;"
                                         data-action="<?php echo $is_on_break ? 'break_end' : 'break_start'; ?>">
                                     
                                     <!-- Start Break Icon -->
