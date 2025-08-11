@@ -1,7 +1,7 @@
 <?php
 /**
  * Site Navigation functions for LinkageClock theme
- * Handles custom menu items and navigation structure
+ * Handles custom menu items and navigation structure with proper collapse behavior
  */
 
 /**
@@ -20,22 +20,22 @@ function linkage_add_custom_menu_items($items, $args) {
     
     // Dashboard menu item (first item)
     $dashboard_item = '<li class="menu-item menu-item-dashboard">
-        <a href="' . esc_url(home_url('/')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors duration-200">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <a href="' . esc_url(home_url('/')) . '" class="nav-link flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors duration-200">
+            <svg class="nav-icon w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 2 0 01-2-2v0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 0 01-2-2v0z"></path>
             </svg>
-            <span>Dashboard</span>
+            <span class="nav-text">Dashboard</span>
         </a>
     </li>';
     
     // Time Tracking menu item
     $time_tracking_item = '<li class="menu-item menu-item-time-tracking">
-        <a href="' . esc_url(home_url('/time-tracking')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-colors duration-200">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <a href="' . esc_url(home_url('/time-tracking')) . '" class="nav-link flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-colors duration-200">
+            <svg class="nav-icon w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
             </svg>
-            <span>Time Tracking</span>
+            <span class="nav-text">Time Tracking</span>
         </a>
     </li>';
     
@@ -43,11 +43,11 @@ function linkage_add_custom_menu_items($items, $args) {
     $approve_item = '';
     if (current_user_can('linkage_approve_timesheets')) {
         $approve_item = '<li class="menu-item menu-item-approve-timesheets">
-            <a href="' . esc_url(home_url('/approve-timesheets')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg transition-colors duration-200">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <a href="' . esc_url(home_url('/approve-timesheets')) . '" class="nav-link flex items-center px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg transition-colors duration-200">
+                <svg class="nav-icon w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
-                <span>Approve Timesheets</span>
+                <span class="nav-text">Approve Timesheets</span>
             </a>
         </li>';
     }
@@ -75,33 +75,33 @@ function linkage_get_custom_navigation_items($include_wrapper = true) {
     
     // Dashboard menu item
     $items .= '<li class="menu-item menu-item-dashboard">
-        <a href="' . esc_url(home_url('/')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors duration-200">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <a href="' . esc_url(home_url('/')) . '" class="nav-link flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors duration-200">
+            <svg class="nav-icon w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 2 0 01-2-2v0z"></path>
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 0 01-2-2v0z"></path>
             </svg>
-            <span>Dashboard</span>
+            <span class="nav-text">Dashboard</span>
         </a>
     </li>';
     
     // Time Tracking menu item (commented out as per user preference)
     // $items .= '<li class="menu-item menu-item-time-tracking">
-    //     <a href="' . esc_url(home_url('/time-tracking')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-colors duration-200">
-    //         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //     <a href="' . esc_url(home_url('/time-tracking')) . '" class="nav-link flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-colors duration-200">
+    //         <svg class="nav-icon w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     //             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
     //         </svg>
-    //         <span>Time Tracking</span>
+    //         <span class="nav-text">Time Tracking</span>
     //     </a>
     // </li>';
     
     // Approve Timesheets menu item (only for managers) - commented out as per user preference
     // if (current_user_can('linkage_approve_timesheets')) {
     //     $items .= '<li class="menu-item menu-item-approve-timesheets">
-    //         <a href="' . esc_url(home_url('/approve-timesheets')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg transition-colors duration-200">
-    //             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //         <a href="' . esc_url(home_url('/approve-timesheets')) . '" class="nav-link flex items-center px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg transition-colors duration-200">
+    //             <svg class="nav-icon w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
     //                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
     //             </svg>
-    //             <span>Approve Timesheets</span>
+    //             <span class="nav-text">Approve Timesheets</span>
     //         </a>
     //     </li>';
     // }
@@ -172,7 +172,7 @@ function linkage_nav_menu_link_attributes($atts, $item, $args) {
     if ($args->theme_location === 'primary') {
         // Add consistent classes to all navigation links
         $existing_class = isset($atts['class']) ? $atts['class'] . ' ' : '';
-        $atts['class'] = $existing_class . 'flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors duration-200';
+        $atts['class'] = $existing_class . 'nav-link flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors duration-200';
         
         // Add active state for current page
         if (in_array('current-menu-item', $item->classes)) {
@@ -183,6 +183,58 @@ function linkage_nav_menu_link_attributes($atts, $item, $args) {
     return $atts;
 }
 add_filter('nav_menu_link_attributes', 'linkage_nav_menu_link_attributes', 10, 3);
+
+/**
+ * Add navigation collapse styles to dashboard CSS
+ */
+function linkage_add_navigation_collapse_styles() {
+    if (is_user_logged_in()) {
+        ?>
+        <style>
+            /* Navigation collapse styles */
+            .nav-link {
+                transition: all 0.3s ease-in-out;
+            }
+            
+            .nav-icon {
+                transition: margin 0.3s ease-in-out;
+            }
+            
+            .nav-text {
+                transition: all 0.3s ease-in-out;
+                white-space: nowrap;
+            }
+            
+            /* When drawer is collapsed */
+            #masthead.drawer-collapsed .nav-link {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
+            
+            #masthead.drawer-collapsed .nav-icon {
+                margin-right: 0 !important;
+            }
+            
+            #masthead.drawer-collapsed .nav-text {
+                opacity: 0;
+                visibility: hidden;
+                width: 0;
+                overflow: hidden;
+            }
+            
+            /* User section avatar and text */
+            #masthead.drawer-collapsed .employee-name,
+            #masthead.drawer-collapsed .employee-email,
+            #masthead.drawer-collapsed .employee-role {
+                opacity: 0;
+                visibility: hidden;
+            }
+        </style>
+        <?php
+    }
+}
+add_action('wp_head', 'linkage_add_navigation_collapse_styles');
 
 /**
  * Helper function to check if current page matches menu item
