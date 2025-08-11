@@ -42,67 +42,7 @@
         <div class="flex-1 overflow-y-auto flex flex-col">
             <!-- Navigation -->
             <nav id="site-navigation" class="main-navigation p-6">
-                <?php
-                // Check if a primary menu is assigned
-                $menu_items = '';
-                if (has_nav_menu('primary')) {
-                    // If menu exists, use wp_nav_menu which will trigger our filter
-                    wp_nav_menu(array(
-                        'theme_location' => 'primary',
-                        'menu_id'        => 'primary-menu',
-                        'menu_class'     => 'space-y-2',
-                        'container'      => false,
-                    ));
-                } else {
-                    // If no menu assigned, show our custom menu items directly
-                    if (is_user_logged_in()) {
-                        echo '<ul id="primary-menu" class="space-y-2">';
-                        
-                        // Dashboard menu item
-                        echo '<li class="menu-item menu-item-dashboard">
-                            <a href="' . esc_url(home_url('/')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-blue-50 hover:text-blue-700 rounded-lg transition-colors duration-200">
-                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2H5a2 2 0 00-2-2z"></path>
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 5a2 2 0 012-2h4a2 2 0 012 2v0a2 2 0 01-2 2H10a2 2 0 01-2-2v0z"></path>
-                                </svg>
-                                <span>Dashboard</span>
-                            </a>
-                        </li>';
-                        
-                        // Time Tracking menu item
-                        echo '<li class="menu-item menu-item-time-tracking">
-                            <a href="' . esc_url(home_url('/time-tracking')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-colors duration-200">
-                                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                </svg>
-                                <span>Time Tracking</span>
-                            </a>
-                        </li>';
-                        
-                        // Approve Timesheets menu item (only for managers)
-                        if (current_user_can('linkage_approve_timesheets')) {
-                            echo '<li class="menu-item menu-item-approve-timesheets">
-                                <a href="' . esc_url(home_url('/approve-timesheets')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg transition-colors duration-200">
-                                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                                    </svg>
-                                    <span>Approve Timesheets</span>
-                                </a>
-                            </li>';
-                        }
-                        
-                        echo '</ul>';
-                    } else {
-                        // For logged out users, show login prompt or basic navigation
-                        echo '<div class="text-center text-gray-500">
-                            <p class="text-sm mb-4">Please log in to access navigation</p>
-                            <a href="' . esc_url(wp_login_url()) . '" class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200">
-                                Log In
-                            </a>
-                        </div>';
-                    }
-                }
-                ?>
+                <?php linkage_display_navigation(); ?>
             </nav>
 
             <!-- Spacer to push user section to bottom -->
