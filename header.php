@@ -141,7 +141,7 @@
                         <div class="clock-buttons flex items-center space-x-4" id="clock-controls">
                             <!-- Work Timer Display -->
                             <div class="timer work-timer bg-gray-100 px-4 py-2 rounded-lg" id="work-timer" 
-                                 style="display: <?php echo $is_clocked_in ? 'block' : 'none'; ?>;"
+                                 style="display: <?php echo ($is_clocked_in || $is_on_break) ? 'block' : 'none'; ?>;"
                                  data-clock-in-time="<?php echo esc_attr(get_user_meta($current_user->ID, 'linkage_clock_in_time', true)); ?>">
                                 <div class="flex items-center space-x-2">
                                     <div class="w-2 h-2 bg-green-500 rounded-full <?php echo $is_clocked_in ? 'animate-pulse' : ''; ?>"></div>
@@ -186,7 +186,8 @@
                                 <button id="clock-toggle-btn" 
                                         class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 font-medium
                                                <?php echo ($is_clocked_in || $is_on_break) ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'; ?>"
-                                        data-action="<?php echo ($is_clocked_in || $is_on_break) ? 'clock_out' : 'clock_in'; ?>">
+                                        data-action="<?php echo ($is_clocked_in || $is_on_break) ? 'clock_out' : 'clock_in'; ?>"
+                                        style="display: <?php echo $is_clocked_in ? 'flex' : 'none'; ?>;">
                                     
                                     <!-- Clock In Icon -->
                                     <svg class="w-5 h-5 clock-in-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24" style="display: <?php echo ($is_clocked_in || $is_on_break) ? 'none' : 'block'; ?>;">
