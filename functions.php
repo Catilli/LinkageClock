@@ -10,3 +10,6 @@ require_once get_template_directory() . '/functions/theme-setup.php';
 
 // Include dashboard-functions.php for dashboard functionality
 require_once get_template_directory() . '/functions/dashboard-functions.php';
+
+// Include avatar.php for avatar functionality
+require_once get_template_directory() . '/functions/avatar.php';
