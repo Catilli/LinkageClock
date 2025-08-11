@@ -212,7 +212,7 @@ function linkage_add_custom_menu_items($items, $args) {
     }
     
     // Combine custom items and add them before existing menu items
-    $custom_items = $dashboard_item . $time_tracking_item . $approve_item . $account_item;
+    $custom_items = $dashboard_item . $time_tracking_item . $approve_item;
     
     return $custom_items . $items;
 }
