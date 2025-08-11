@@ -205,28 +205,28 @@ function linkage_add_custom_menu_items($items, $args) {
         </a>
     </li>';
     
-    // Time Tracking menu item
-    $time_tracking_item = '<li class="menu-item menu-item-time-tracking">
-        <a href="' . esc_url(home_url('/time-tracking')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-colors duration-200">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span>Time Tracking</span>
-        </a>
-    </li>';
+    // // Time Tracking menu item
+    // $time_tracking_item = '<li class="menu-item menu-item-time-tracking">
+    //     <a href="' . esc_url(home_url('/time-tracking')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-green-50 hover:text-green-700 rounded-lg transition-colors duration-200">
+    //         <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    //         </svg>
+    //         <span>Time Tracking</span>
+    //     </a>
+    // </li>';
     
-    // Approve Timesheets menu item (only for managers)
-    $approve_item = '';
-    if (current_user_can('linkage_approve_timesheets')) {
-        $approve_item = '<li class="menu-item menu-item-approve-timesheets">
-            <a href="' . esc_url(home_url('/approve-timesheets')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg transition-colors duration-200">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span>Approve Timesheets</span>
-            </a>
-        </li>';
-    }
+    // // Approve Timesheets menu item (only for managers)
+    // $approve_item = '';
+    // if (current_user_can('linkage_approve_timesheets')) {
+    //     $approve_item = '<li class="menu-item menu-item-approve-timesheets">
+    //         <a href="' . esc_url(home_url('/approve-timesheets')) . '" class="flex items-center px-4 py-2 text-gray-700 hover:bg-orange-50 hover:text-orange-700 rounded-lg transition-colors duration-200">
+    //             <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    //                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+    //             </svg>
+    //             <span>Approve Timesheets</span>
+    //         </a>
+    //     </li>';
+    // }
     
     // Combine custom items and add them before existing menu items
     $custom_items = $dashboard_item . $time_tracking_item . $approve_item;
