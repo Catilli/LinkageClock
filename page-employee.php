@@ -218,8 +218,24 @@ if (!empty($attendance_logs)) {
                     </h3>
                     
                     <?php 
-                    $status_class = $employee_status->status === 'clocked_in' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800';
-                    $status_text = $employee_status->status === 'clocked_in' ? 'Clocked In' : 'Clocked Out';
+                    $status_class = '';
+                    $status_text = '';
+                    
+                    switch ($employee_status->status) {
+                        case 'clocked_in':
+                            $status_class = 'bg-green-100 text-green-800';
+                            $status_text = 'Clocked In';
+                            break;
+                        case 'on_break':
+                            $status_class = 'bg-orange-100 text-orange-800';
+                            $status_text = 'On Break';
+                            break;
+                        case 'clocked_out':
+                        default:
+                            $status_class = 'bg-red-100 text-red-800';
+                            $status_text = 'Clocked Out';
+                            break;
+                    }
                     ?>
                     
                     <div class="space-y-3">
