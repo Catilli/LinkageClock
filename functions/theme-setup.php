@@ -110,6 +110,7 @@ add_action('wp_head', 'linkage_pingback_header');
 function linkage_create_default_pages() {
     // Check if pages already exist to avoid duplicates
     $account_page = get_page_by_title('Your Account');
+    $clocking_portal_page = get_page_by_title('Clocking Portal');
     $time_tracking_page = get_page_by_title('Time Tracking');
     $approve_timesheets_page = get_page_by_title('Approve Timesheets');
 
@@ -126,6 +127,22 @@ function linkage_create_default_pages() {
         
         if ($account_page_id) {
             error_log('LinkageClock: Account page created with ID: ' . $account_page_id);
+        }
+    }
+
+    // Create Clocking Portal page if it doesn't exist
+    if (!$clocking_portal_page) {
+        $clocking_portal_page_id = wp_insert_post(array(
+            'post_title'    => 'Clocking Portal',
+            'post_content'  => 'This is the clocking portal page for employees to clock in and out.',
+            'post_status'   => 'publish',
+            'post_type'     => 'page',
+            'post_name'     => 'clocking-portal',
+            'page_template' => 'page-clocking-portal.php'
+        ));
+        
+        if ($clocking_portal_page_id) {
+            error_log('LinkageClock: Account page created with ID: ' . $clocking_portal_page_id);
         }
     }
     
