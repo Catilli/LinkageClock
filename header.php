@@ -157,7 +157,7 @@
                                 <div class="flex items-center space-x-2">
                                     <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
                                     <span class="current text-lg font-mono text-orange-700" id="break-time">00:00:00</span>
-                                    <span class="text-xs text-orange-600">Break</span>
+                                    <span class="text-xs text-orange-600">Lunch</span>
                                 </div>
                             </div>
                             
@@ -180,7 +180,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 10h6v4H9z"></path>
                                     </svg>
                                     
-                                    <span id="clock-toggle-text"><?php echo ($is_clocked_in || $is_on_break) ? 'Clock Out' : 'Clock In'; ?></span>
+                                    <span id="clock-toggle-text"><?php echo ($is_clocked_in || $is_on_break) ? 'Time Out' : 'Time In'; ?></span>
                                 </button>
                                 
                                 <!-- Break Button -->
@@ -199,7 +199,7 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                                     </svg>
                                     
-                                    <span id="break-toggle-text"><?php echo $is_on_break ? 'End Break' : 'Start Break'; ?></span>
+                                    <span id="break-toggle-text"><?php echo $is_on_break ? 'Lunch End' : 'Lunch Start'; ?></span>
                                 </button>
                             </div>
                         </div>
