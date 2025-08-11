@@ -351,14 +351,6 @@ jQuery(document).ready(function($) {
             .status-badge {
                 transition: all 0.3s ease;
             }
-            .status-badge.clocked-in {
-                background-color: #d4edda;
-                color: #155724;
-            }
-            .status-badge.clocked-out {
-                background-color: #f8d7da;
-                color: #721c24;
-            }
             
             /* Drawer collapse styles */
             #masthead {
