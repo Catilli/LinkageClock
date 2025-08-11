@@ -88,8 +88,10 @@ get_header(); ?>
                             
                             if (!empty($employees)):
                                 foreach ($employees as $employee):
-                                    $status_class = $employee->current_status === 'clocked_in' ? 'clocked-in' : 'clocked-out';
-                                    $status_text = $employee->current_status === 'clocked_in' ? 'Clocked In' : 'Clocked Out';
+                                    // Determine status display logic
+                                    $is_working = $employee->current_status === 'clocked_in' || $employee->current_status === 'on_break';
+                                    $status_class = $is_working ? 'clocked-in' : 'clocked-out';
+                                    $status_text = $is_working ? 'Clocked In' : 'Clocked Out';
                                     $role_display = linkage_get_user_role_display($employee->ID);
                                     $actual_time = linkage_format_actual_time($employee->last_action_time);
                             ?>
@@ -120,7 +122,7 @@ get_header(); ?>
                                                   data-status="<?php echo esc_attr($employee->current_status); ?>">
                                                 <?php echo esc_html($status_text); ?>
                                             </span>
-                                            <?php if ($employee->current_status === 'clocked_in' && !empty($employee->break_start_time)): ?>
+                                            <?php if ($employee->current_status === 'on_break'): ?>
                                                 <span class="status-badge break-status px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-orange-100 text-orange-800 border border-orange-200">
                                                     IN break
                                                 </span>
@@ -154,7 +156,7 @@ get_header(); ?>
                 $clocked_out_count = 0;
                 
                 foreach ($employees as $employee) {
-                    if ($employee->current_status === 'clocked_in') {
+                    if ($employee->current_status === 'clocked_in' || $employee->current_status === 'on_break') {
                         $clocked_in_count++;
                     } else {
                         $clocked_out_count++;
