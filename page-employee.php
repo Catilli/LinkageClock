@@ -90,14 +90,7 @@ if ( isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'],
                             
                             <?php 
                             // Check if current email has Gravatar
-                            $current_gravatar_url = get_avatar_url($current_user->user_email, array('size' => 80, 'default' => '404'));
-                            $current_has_gravatar = false;
-                            if (function_exists('wp_remote_get')) {
-                                $response = wp_remote_get($current_gravatar_url);
-                                if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) == 200) {
-                                    $current_has_gravatar = true;
-                                }
-                            }
+                            $current_has_gravatar = linkage_has_gravatar($current_user->user_email);
                             ?>
                             
                             <div class="mt-2 p-3 <?php echo $current_has_gravatar ? 'bg-green-50 border-green-200' : 'bg-blue-50 border-blue-200'; ?> border rounded-md">
@@ -180,42 +173,17 @@ if ( isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'],
                 <div class="bg-white rounded-lg shadow-md p-6">
                     <div class="text-center">
                         <?php 
-                        // Check if user has a Gravatar
-                        $user_email = $current_user->user_email;
-                        $gravatar_url = get_avatar_url($user_email, array('size' => 80, 'default' => '404'));
-                        
-                        // Check if Gravatar exists by trying to get a response
-                        $gravatar_exists = false;
-                        if (function_exists('wp_remote_get')) {
-                            $response = wp_remote_get($gravatar_url);
-                            if (!is_wp_error($response) && wp_remote_retrieve_response_code($response) == 200) {
-                                $gravatar_exists = true;
-                            }
-                        }
+                        echo linkage_get_large_avatar(
+                            $current_user->user_email, 
+                            $current_user->display_name,
+                            array(
+                                'wrapper_class' => 'mx-auto mb-4',
+                                'show_indicator' => true,
+                                'fallback_bg' => 'bg-blue-500',
+                                'fallback_text_color' => 'text-white'
+                            )
+                        );
                         ?>
-                        
-                        <div class="relative w-20 h-20 mx-auto mb-4">
-                            <?php if ($gravatar_exists): ?>
-                                <img src="<?php echo esc_url($gravatar_url); ?>" 
-                                     alt="<?php echo esc_attr($current_user->display_name); ?>'s Avatar"
-                                     class="w-20 h-20 rounded-full object-cover border-2 border-gray-200">
-                            <?php else: ?>
-                                <div class="w-20 h-20 bg-blue-500 rounded-full flex items-center justify-center">
-                                    <span class="text-white text-2xl font-bold">
-                                        <?php echo strtoupper(substr($current_user->display_name, 0, 1)); ?>
-                                    </span>
-                                </div>
-                            <?php endif; ?>
-                            
-                            <!-- Gravatar indicator -->
-                            <?php if ($gravatar_exists): ?>
-                                <div class="absolute -bottom-1 -right-1 w-6 h-6 bg-green-500 rounded-full border-2 border-white flex items-center justify-center">
-                                    <svg class="w-3 h-3 text-white" fill="currentColor" viewBox="0 0 20 20">
-                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"></path>
-                                    </svg>
-                                </div>
-                            <?php endif; ?>
-                        </div>
                         <h3 class="text-lg font-semibold text-gray-900">
                             <?php echo esc_html($current_user->display_name); ?>
                         </h3>
