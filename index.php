@@ -103,7 +103,7 @@ get_header(); ?>
                                     Status
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Last Action
+                                    Last Action & Time
                                 </th>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Actions
@@ -123,7 +123,30 @@ get_header(); ?>
                                     $status_class = $employee->current_status === 'clocked_in' ? 'clocked-in' : 'clocked-out';
                                     $status_text = $employee->current_status === 'clocked_in' ? 'Clocked In' : 'Clocked Out';
                                     $role_display = linkage_get_user_role_display($employee->ID);
-                                    $time_ago = linkage_format_time_ago($employee->last_action_time);
+                                    $actual_time = linkage_format_actual_time($employee->last_action_time);
+                                    
+                                    // Format action type for display
+                                    $action_type_display = '';
+                                    switch ($employee->last_action_type) {
+                                        case 'clock_in':
+                                            $action_type_display = 'Clocked In';
+                                            break;
+                                        case 'clock_out':
+                                            $action_type_display = 'Clocked Out';
+                                            break;
+                                        case 'break_in':
+                                            $action_type_display = 'Started Break';
+                                            break;
+                                        case 'break_out':
+                                            $action_type_display = 'Ended Break';
+                                            break;
+                                        case 'initial':
+                                        case 'force_initial':
+                                            $action_type_display = 'Initialized';
+                                            break;
+                                        default:
+                                            $action_type_display = ucfirst(str_replace('_', ' ', $employee->last_action_type));
+                                    }
                             ?>
                                 <tr class="employee-row hover:bg-gray-50">
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -156,8 +179,13 @@ get_header(); ?>
                                             <?php echo esc_html($status_text); ?>
                                         </span>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                                        <?php echo esc_html($time_ago); ?>
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                        <div class="text-gray-900 font-medium">
+                                            <?php echo esc_html($action_type_display); ?>
+                                        </div>
+                                        <div class="text-gray-500 text-xs">
+                                            <?php echo esc_html($actual_time); ?>
+                                        </div>
                                     </td>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
                                         <?php if (current_user_can('linkage_manage_employees')): ?>
