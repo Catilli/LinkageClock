@@ -126,11 +126,20 @@
 }
 
 .status-badge.break-status {
-    background-color: #fff7ed;
+    background-color: #fed7aa;
     color: #9a3412;
-    border: 1px solid #fed7aa;
-    font-size: 0.625rem;
-    padding: 0.125rem 0.5rem;
+    border: 1px solid #fdba74;
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+}
+
+/* Additional status badge styles for dynamic updates */
+.status-badge.bg-orange-100 {
+    background-color: #fed7aa !important;
+}
+
+.status-badge.text-orange-800 {
+    color: #9a3412 !important;
 }
 
 /* Drawer Animation */
