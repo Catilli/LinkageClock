@@ -226,12 +226,121 @@ function linkage_ajax_update_employee_status() {
 add_action('wp_ajax_linkage_update_employee_status', 'linkage_ajax_update_employee_status');
 
 /**
+ * AJAX handler for clock actions (clock in/out, break start/end)
+ */
+function linkage_ajax_clock_action() {
+    if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
+        wp_die('Security check failed');
+    }
+    
+    if (!is_user_logged_in()) {
+        wp_send_json_error('User not logged in');
+    }
+    
+    $user_id = get_current_user_id();
+    $action = sanitize_text_field($_POST['action_type']);
+    
+    $allowed_actions = array('clock_in', 'clock_out', 'break_start', 'break_end');
+    if (!in_array($action, $allowed_actions)) {
+        wp_send_json_error('Invalid action');
+    }
+    
+    // Get current employee status
+    $current_status = get_user_meta($user_id, 'linkage_employee_status', true);
+    
+    // Handle different actions
+    switch ($action) {
+        case 'clock_in':
+            $result = linkage_update_employee_status($user_id, 'clocked_in', 'clock_in', 'Clocked in via toolbar');
+            // Store clock in time for timer calculation
+            update_user_meta($user_id, 'linkage_clock_in_time', current_time('mysql'));
+            update_user_meta($user_id, 'linkage_work_seconds', 0); // Reset work timer
+            update_user_meta($user_id, 'linkage_break_seconds', 0); // Reset break timer
+            break;
+            
+        case 'clock_out':
+            $result = linkage_update_employee_status($user_id, 'clocked_out', 'clock_out', 'Clocked out via toolbar');
+            // Clear timer data
+            delete_user_meta($user_id, 'linkage_clock_in_time');
+            delete_user_meta($user_id, 'linkage_break_start_time');
+            delete_user_meta($user_id, 'linkage_work_seconds');
+            delete_user_meta($user_id, 'linkage_break_seconds');
+            break;
+            
+        case 'break_start':
+            if ($current_status !== 'clocked_in') {
+                wp_send_json_error('Must be clocked in to start break');
+            }
+            $result = linkage_update_employee_status($user_id, 'on_break', 'break_start', 'Started break via toolbar');
+            // Store break start time and pause work timer
+            update_user_meta($user_id, 'linkage_break_start_time', current_time('mysql'));
+            
+            // Calculate and store current work time
+            $clock_in_time = get_user_meta($user_id, 'linkage_clock_in_time', true);
+            $current_work_seconds = get_user_meta($user_id, 'linkage_work_seconds', true) ?: 0;
+            if ($clock_in_time) {
+                $work_time_since_last = strtotime(current_time('mysql')) - strtotime($clock_in_time);
+                $total_work_seconds = $current_work_seconds + $work_time_since_last;
+                update_user_meta($user_id, 'linkage_work_seconds', $total_work_seconds);
+            }
+            break;
+            
+        case 'break_end':
+            if ($current_status !== 'on_break') {
+                wp_send_json_error('Must be on break to end break');
+            }
+            $result = linkage_update_employee_status($user_id, 'clocked_in', 'break_end', 'Ended break via toolbar');
+            
+            // Calculate break time and restart work timer
+            $break_start_time = get_user_meta($user_id, 'linkage_break_start_time', true);
+            $current_break_seconds = get_user_meta($user_id, 'linkage_break_seconds', true) ?: 0;
+            if ($break_start_time) {
+                $break_duration = strtotime(current_time('mysql')) - strtotime($break_start_time);
+                $total_break_seconds = $current_break_seconds + $break_duration;
+                update_user_meta($user_id, 'linkage_break_seconds', $total_break_seconds);
+            }
+            
+            // Reset clock in time for work timer continuation
+            update_user_meta($user_id, 'linkage_clock_in_time', current_time('mysql'));
+            delete_user_meta($user_id, 'linkage_break_start_time');
+            break;
+    }
+    
+    if ($result !== false) {
+        // Get updated employee status for response
+        $employee_status = linkage_get_employee_status($user_id);
+        $work_seconds = get_user_meta($user_id, 'linkage_work_seconds', true) ?: 0;
+        $break_seconds = get_user_meta($user_id, 'linkage_break_seconds', true) ?: 0;
+        
+        wp_send_json_success(array(
+            'message' => 'Action completed successfully',
+            'status' => $employee_status->status,
+            'action' => $action,
+            'work_seconds' => $work_seconds,
+            'break_seconds' => $break_seconds,
+            'clock_in_time' => get_user_meta($user_id, 'linkage_clock_in_time', true),
+            'break_start_time' => get_user_meta($user_id, 'linkage_break_start_time', true)
+        ));
+    } else {
+        wp_send_json_error('Failed to update status');
+    }
+}
+add_action('wp_ajax_linkage_clock_action', 'linkage_ajax_clock_action');
+
+/**
  * Enqueue dashboard scripts
  */
 function linkage_enqueue_dashboard_scripts() {
     if (is_user_logged_in()) {
         wp_enqueue_script('linkage-dashboard', get_template_directory_uri() . '/js/dashboard.js', array('jquery'), '1.0.0', true);
+        wp_enqueue_script('linkage-timer', get_template_directory_uri() . '/js/timer.js', array('jquery'), '1.0.0', true);
+        
         wp_localize_script('linkage-dashboard', 'linkage_ajax', array(
+            'ajax_url' => admin_url('admin-ajax.php'),
+            'nonce' => wp_create_nonce('linkage_dashboard_nonce')
+        ));
+        
+        wp_localize_script('linkage-timer', 'linkage_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
             'nonce' => wp_create_nonce('linkage_dashboard_nonce')
         ));
