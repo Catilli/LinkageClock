@@ -29,6 +29,7 @@ if (!$viewing_user) {
 
 // Get employee data
 $employee_status = linkage_get_employee_status($viewing_user_id);
+$company_id = get_user_meta($viewing_user_id, 'linkage_company_id', true) ?: '';
 $position = get_user_meta($viewing_user_id, 'linkage_position', true) ?: 'Employee';
 $hire_date = get_user_meta($viewing_user_id, 'linkage_hire_date', true) ?: $viewing_user->user_registered;
 
@@ -41,13 +42,26 @@ if ( isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'],
     );
     wp_update_user($userdata);
 
+    // Update employee-specific fields
+    if (isset($_POST['company_id'])) {
+        update_user_meta($current_user_id, 'linkage_company_id', sanitize_text_field($_POST['company_id']));
+    }
+    if (isset($_POST['position'])) {
+        update_user_meta($current_user_id, 'linkage_position', sanitize_text_field($_POST['position']));
+    }
+    if (isset($_POST['hire_date'])) {
+        update_user_meta($current_user_id, 'linkage_hire_date', sanitize_text_field($_POST['hire_date']));
+    }
+
     if ( ! empty($_POST['password']) && $_POST['password'] === $_POST['confirm_password'] ) {
         wp_set_password($_POST['password'], $current_user_id);
         wp_redirect( wp_login_url() ); // User will need to log in again
         exit;
     }
     
-    echo '<div class="notice">Profile updated successfully!</div>';
+    // Redirect to refresh the page and show updated values
+    wp_redirect(add_query_arg('updated', '1', $_SERVER['REQUEST_URI']));
+    exit;
 }
 
 // Get attendance data for the selected period
@@ -104,13 +118,13 @@ if (!empty($attendance_logs)) {
     <div class="max-w-7xl mx-auto">
 
         <!-- Success Message -->
-        <?php if (isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'], 'update_profile')): ?>
+        <?php if (isset($_GET['updated']) && $_GET['updated'] === '1'): ?>
             <div class="mb-6 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-lg">
                 <div class="flex items-center">
                     <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                     </svg>
-                    <span>Profile updated successfully!</span>
+                    <span>Profile and employee information updated successfully!</span>
                 </div>
             </div>
         <?php endif; ?>
@@ -169,10 +183,10 @@ if (!empty($attendance_logs)) {
                             <?php echo esc_html($position); ?>
                         </p>
                         <p class="text-xs text-gray-500 mt-1">
-                            ID: <?php echo esc_html($viewing_user_id); ?>
+                            Company ID: <?php echo esc_html($company_id ?: 'Not set'); ?>
                         </p>
                         <p class="text-xs text-gray-500">
-                            Hired: <?php echo date('M Y', strtotime($hire_date)); ?>
+                            Hired: <?php echo $hire_date ? date('M Y', strtotime($hire_date)) : 'Not set'; ?>
                         </p>
                     </div>
                 </div>
@@ -339,6 +353,52 @@ if (!empty($attendance_logs)) {
                                         <?php endif; ?>
                                     </div>
                                 </div>
+                            </div>
+                        </div>
+
+                        <!-- Employee Information Section -->
+                        <div class="border-t border-gray-200 pt-6">
+                            <h3 class="text-lg font-medium text-gray-900 mb-4">Employee Information</h3>
+                            
+                            <!-- Company ID -->
+                            <div class="mb-4">
+                                <label for="company_id" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Company ID
+                                </label>
+                                <input type="text" 
+                                       id="company_id"
+                                       name="company_id" 
+                                       value="<?php echo esc_attr($company_id); ?>"
+                                       placeholder="Enter your company ID"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p class="mt-1 text-sm text-gray-500">Your unique company identifier</p>
+                            </div>
+
+                            <!-- Position -->
+                            <div class="mb-4">
+                                <label for="position" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Position
+                                </label>
+                                <input type="text" 
+                                       id="position"
+                                       name="position" 
+                                       value="<?php echo esc_attr($position); ?>"
+                                       placeholder="Enter your job position"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p class="mt-1 text-sm text-gray-500">Your job title or occupation</p>
+                            </div>
+
+                            <!-- Hire Date -->
+                            <div class="mb-4">
+                                <label for="hire_date" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Hire Date
+                                </label>
+                                <input type="date" 
+                                       id="hire_date"
+                                       name="hire_date" 
+                                       value="<?php echo esc_attr($hire_date ? date('Y-m-d', strtotime($hire_date)) : ''); ?>"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                                <p class="mt-1 text-sm text-gray-500">The date you were hired</p>
                             </div>
                         </div>
 
