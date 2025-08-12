@@ -88,12 +88,6 @@ get_header(); ?>
                                     <button onclick="deleteAllTimeLogs()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
                                         Delete All Time Logs
                                     </button>
-                                    <button onclick="analyzeAndFixDatabase()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm">
-                                        Analyze & Fix Database
-                                    </button>
-                                    <button onclick="testConcurrentAccess()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">
-                                        Test Concurrent Access
-                                    </button>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -108,10 +102,7 @@ get_header(); ?>
                         <p class="text-sm text-yellow-700">
                             <strong>Clock Button Action:</strong> <?php echo ($current_status->status === 'clocked_in' || $current_status->status === 'on_break') ? 'Time Out' : 'Time In'; ?>
                         </p>
-                        <p class="text-sm text-yellow-700">
-                            <strong>Clock Capability:</strong> <?php echo current_user_can('linkage_clock_in_out') ? '✅ Yes' : '❌ No'; ?>
-                            <strong>Break Capability:</strong> <?php echo current_user_can('linkage_take_break') ? '✅ Yes' : '❌ No'; ?>
-                        </p>
+
                         
                         <!-- Database Debug Info -->
                         <details class="mt-3">
@@ -140,39 +131,7 @@ get_header(); ?>
                         }
                     }
                     
-                    function analyzeAndFixDatabase() {
-                        if (confirm('Analyze and fix database state issues?\n\nThis will:\n• Check for duplicate active records\n• Fix corrupted attendance data\n• Clean up inconsistent states\n\nThis is safe to run and will not delete valid data.')) {
-                            var form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = window.location.href;
-                            
-                            var input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'analyze_and_fix_database';
-                            input.value = '1';
-                            
-                            form.appendChild(input);
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    }
-                    
-                    function testConcurrentAccess() {
-                        if (confirm('Test concurrent access with multiple users?\n\nThis will:\n• Clear existing active records\n• Simulate multiple users clocking in simultaneously\n• Test break start/end actions\n• Test clock out actions\n• Check for duplicate records\n\nThis is safe to run and will test system reliability.')) {
-                            var form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = window.location.href;
-                            
-                            var input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'test_concurrent_access';
-                            input.value = '1';
-                            
-                            form.appendChild(input);
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    }
+
                     </script>
                     
                     <?php
@@ -186,25 +145,7 @@ get_header(); ?>
                         echo '</div>';
                     }
                     
-                    // Handle the analyze and fix database action
-                    if (isset($_POST['analyze_and_fix_database']) && current_user_can('administrator')) {
-                        $result = linkage_analyze_and_fix_database_state();
-                        echo '<div class="mb-4 p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">';
-                        echo "<p><strong>$result</strong></p>";
-                        echo '<p>Database analysis and fixes have been completed.</p>';
-                        echo '<p>Please refresh the page to see the updated status.</p>';
-                        echo '</div>';
-                    }
-                    
-                    // Handle the test concurrent access action
-                    if (isset($_POST['test_concurrent_access']) && current_user_can('administrator')) {
-                        $result = linkage_test_concurrent_clock_actions();
-                        echo '<div class="mb-4 p-3 bg-purple-100 border border-purple-400 text-purple-700 rounded">';
-                        echo "<p><strong>Concurrent Access Test Results:</strong></p>";
-                        echo "<p class='text-sm mt-2'>$result</p>";
-                        echo '<p class="mt-2">Test completed. Check results above for any failures or duplicate records.</p>';
-                        echo '</div>';
-                    }
+
                     ?>
                 <?php endif; ?>
 
@@ -229,9 +170,6 @@ get_header(); ?>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
                             <?php
-                            // Initialize employee status for users who don't have status records
-                            linkage_initialize_employee_status();
-                            
                             // Get all employees with their status
                             $employees = linkage_get_all_employees_status();
                             
