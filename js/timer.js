@@ -79,13 +79,8 @@ jQuery(document).ready(function($) {
                 Timer.isOnBreak = true;
                 Timer.calculateAndStartLunchTimer(breakStartTime);
                 
-                // Calculate and display the accumulated work time (but don't start the timer)
-                if (clockInTime) {
-                    console.log('Calculating work time from clock in:', clockInTime);
-                    Timer.calculateWorkTimeFromClockIn(clockInTime);
-                } else {
-                    console.log('No clock in time found, work timer will show 00:00:00');
-                }
+                // Get work time from server instead of calculating client-side
+                Timer.getTimeFromServer();
                 
                 // Show work timer but keep it paused when on break
                 Timer.showWorkTimer();
@@ -105,7 +100,9 @@ jQuery(document).ready(function($) {
             if (clockInTime) {
                 console.log('User is clocked in, starting work timer');
                 Timer.isWorking = true;
-                Timer.calculateAndStartWorkTimer(clockInTime);
+                
+                // Get work time from server instead of calculating client-side
+                Timer.getTimeFromServer();
                 
                 // Update clock button to show "Time Out" when clocked in
                 Timer.updateClockButton('clock_out', 'Time Out', 'red');
@@ -498,6 +495,47 @@ jQuery(document).ready(function($) {
                     $(this).remove();
                 });
             }, 3000);
+        },
+
+        getTimeFromServer: function() {
+            if (!linkage_ajax || !linkage_ajax.ajax_url) {
+                console.error('Linkage AJAX not initialized or missing URL.');
+                return;
+            }
+
+            $.post(linkage_ajax.ajax_url, {
+                action: 'linkage_get_time_updates',
+                nonce: linkage_ajax.nonce
+            }, function(response) {
+                if (response.success) {
+                    var data = response.data;
+                    
+                    // Update work time display
+                    if (data.work_time_display) {
+                        $('#work-time').text(data.work_time_display);
+                    }
+                    
+                    // Update break time display
+                    if (data.break_time_display) {
+                        $('#break-time').text(data.break_time_display);
+                    }
+                    
+                    // Update status if changed
+                    if (data.status) {
+                        updateStatusDisplay(data.status);
+                    }
+                    
+                    // Update workSeconds from server data
+                    if (data.work_seconds) {
+                        Timer.workSeconds = Math.max(0, parseInt(data.work_seconds));
+                        Timer.updateWorkDisplay();
+                    }
+                } else {
+                    console.error('Failed to get time updates from server:', response.data || 'Unknown error');
+                }
+            }).fail(function() {
+                console.error('Network error getting time updates from server');
+            });
         }
     };
     
