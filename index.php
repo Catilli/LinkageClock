@@ -102,6 +102,14 @@ get_header(); ?>
                             <strong>Clock Capability:</strong> <?php echo current_user_can('linkage_clock_in_out') ? '✅ Yes' : '❌ No'; ?>
                             <strong>Break Capability:</strong> <?php echo current_user_can('linkage_take_break') ? '✅ Yes' : '❌ No'; ?>
                         </p>
+                        
+                        <!-- Database Debug Info -->
+                        <details class="mt-3">
+                            <summary class="cursor-pointer text-sm font-medium text-yellow-800">Show Database Debug Info</summary>
+                            <div class="mt-2 p-2 bg-yellow-100 rounded text-xs">
+                                <?php linkage_debug_user_database_state($current_user->ID); ?>
+                            </div>
+                        </details>
                     </div>
                     
                     <script>
