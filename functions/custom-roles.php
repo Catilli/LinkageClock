@@ -82,23 +82,13 @@ function linkage_create_custom_roles() {
 add_action('after_switch_theme', 'linkage_create_custom_roles');
 
 /**
- * Migrate hr_manager users to manager role
+ * Remove the old hr_manager role (users already manually deleted)
  */
-function linkage_migrate_hr_manager_to_manager() {
-    $hr_managers = get_users(array('role' => 'hr_manager'));
-    
-    foreach ($hr_managers as $user) {
-        $user_obj = new WP_User($user->ID);
-        $user_obj->remove_role('hr_manager');
-        $user_obj->add_role('manager');
-    }
-    
-    // Remove the old hr_manager role
+function linkage_cleanup_old_hr_manager_role() {
+    // Remove the old hr_manager role since users were manually deleted
     remove_role('hr_manager');
-    
-    return count($hr_managers);
 }
-add_action('after_switch_theme', 'linkage_migrate_hr_manager_to_manager');
+add_action('after_switch_theme', 'linkage_cleanup_old_hr_manager_role');
 
 /**
  * Add custom capabilities
