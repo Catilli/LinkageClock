@@ -83,9 +83,16 @@ get_header(); ?>
                     <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
                         <div class="flex items-center justify-between mb-2">
                             <h4 class="font-semibold text-yellow-800">Debug: Current User Status</h4>
-                            <button onclick="fixCapabilities()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                                Fix Capabilities
-                            </button>
+                            <div class="flex space-x-2">
+                                <button onclick="fixCapabilities()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                    Fix Capabilities
+                                </button>
+                                <?php if (current_user_can('administrator')): ?>
+                                    <button onclick="clearLegacyMeta()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                        Clear Legacy Meta
+                                    </button>
+                                <?php endif; ?>
+                            </div>
                         </div>
                         <p class="text-sm text-yellow-700">
                             <strong>User:</strong> <?php echo esc_html($current_user->display_name); ?> 
@@ -130,6 +137,23 @@ get_header(); ?>
                             form.submit();
                         }
                     }
+                    
+                    function clearLegacyMeta() {
+                        if (confirm('Clear all legacy user meta keys? This will remove old status data and ensure the system uses only the attendance logs table.')) {
+                            var form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = window.location.href;
+                            
+                            var input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'clear_legacy_meta';
+                            input.value = '1';
+                            
+                            form.appendChild(input);
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
                     </script>
                     
                     <?php
@@ -139,6 +163,16 @@ get_header(); ?>
                         echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
                         echo "<p><strong>$result</strong></p>";
                         echo '<p>Please refresh the page to see the updated capabilities.</p>';
+                        echo '</div>';
+                    }
+                    
+                    // Handle the clear legacy meta action
+                    if (isset($_POST['clear_legacy_meta']) && current_user_can('administrator')) {
+                        $result = linkage_clear_legacy_user_meta();
+                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
+                        echo "<p><strong>$result</strong></p>";
+                        echo '<p>Legacy user meta has been cleared. The system now uses only the attendance logs table.</p>';
+                        echo '<p>Please refresh the page to see the updated status.</p>';
                         echo '</div>';
                     }
                     ?>
