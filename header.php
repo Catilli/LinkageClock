@@ -186,6 +186,7 @@
                                 <button id="clock-toggle-btn" 
                                         class="flex items-center space-x-2 px-4 py-2 rounded-lg transition-colors duration-200 font-medium
                                                <?php echo ($is_clocked_in || $is_on_break) ? 'bg-red-500 hover:bg-red-600 text-white' : 'bg-green-500 hover:bg-green-600 text-white'; ?>"
+                                        style="display: <?php echo ($is_on_break) ? 'none' : 'flex'; ?>;"
                                         data-action="<?php echo ($is_clocked_in || $is_on_break) ? 'clock_out' : 'clock_in'; ?>">
                                     
                                     <!-- Clock In Icon -->
