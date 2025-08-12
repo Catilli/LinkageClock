@@ -239,6 +239,11 @@ function linkage_ajax_clock_action() {
         wp_send_json_error('User not logged in');
     }
     
+    // Check if user has clock capabilities
+    if (!current_user_can('linkage_clock_in_out') && !current_user_can('administrator')) {
+        wp_send_json_error('Insufficient permissions for clock actions');
+    }
+    
     $user_id = get_current_user_id();
     $action = sanitize_text_field($_POST['action_type']);
     
@@ -289,6 +294,12 @@ function linkage_ajax_clock_action() {
             if ($current_status !== 'clocked_in') {
                 wp_send_json_error('Must be clocked in to start break');
             }
+            
+            // Check break capability
+            if (!current_user_can('linkage_take_break') && !current_user_can('administrator')) {
+                wp_send_json_error('Insufficient permissions for break actions');
+            }
+            
             $result = linkage_update_employee_status($user_id, 'on_break', 'break_in', 'Started break via toolbar');
             
             // Update attendance log record with lunch start time
@@ -304,6 +315,12 @@ function linkage_ajax_clock_action() {
             if ($current_status !== 'on_break') {
                 wp_send_json_error('Must be on break to end break');
             }
+            
+            // Check break capability
+            if (!current_user_can('linkage_take_break') && !current_user_can('administrator')) {
+                wp_send_json_error('Insufficient permissions for break actions');
+            }
+            
             $result = linkage_update_employee_status($user_id, 'clocked_in', 'break_out', 'Ended break via toolbar');
             
             // Update attendance log record with lunch end time
@@ -406,6 +423,7 @@ function linkage_ajax_get_time_updates() {
         wp_send_json_error('User not logged in');
     }
     
+    // All logged-in users can get their own time updates
     $user_id = get_current_user_id();
     $employee_status = linkage_get_employee_status_from_database($user_id);
     
@@ -525,6 +543,12 @@ function linkage_force_initialize_all_users() {
         if ($result !== false) {
             $initialized_count++;
         }
+    }
+    
+    // Update capabilities for all users
+    if (function_exists('linkage_update_existing_users_capabilities')) {
+        $capabilities_updated = linkage_update_existing_users_capabilities();
+        echo "<p><strong>Updated capabilities for $capabilities_updated users!</strong></p>";
     }
     
     echo "<p><strong>Initialized $initialized_count users as employees!</strong></p>";
