@@ -14,6 +14,8 @@ function linkage_create_custom_roles() {
             'upload_files' => true,
             'linkage_submit_timesheet' => true,
             'linkage_view_own_timesheet' => true,
+            'linkage_clock_in_out' => true,
+            'linkage_take_break' => true,
         )
     );
 
@@ -32,6 +34,8 @@ function linkage_create_custom_roles() {
             'linkage_view_all_timesheets' => true,
             'linkage_approve_timesheets' => true,
             'linkage_manage_employees' => true,
+            'linkage_clock_in_out' => true,
+            'linkage_take_break' => true,
         )
     );
 }
@@ -50,6 +54,8 @@ function linkage_add_custom_capabilities() {
     if ($employee_role) {
         $employee_role->add_cap('linkage_submit_timesheet');
         $employee_role->add_cap('linkage_view_own_timesheet');
+        $employee_role->add_cap('linkage_clock_in_out');
+        $employee_role->add_cap('linkage_take_break');
     }
 
     // Add custom capabilities to hr_manager role
@@ -59,6 +65,8 @@ function linkage_add_custom_capabilities() {
         $hr_manager_role->add_cap('linkage_view_all_timesheets');
         $hr_manager_role->add_cap('linkage_approve_timesheets');
         $hr_manager_role->add_cap('linkage_manage_employees');
+        $hr_manager_role->add_cap('linkage_clock_in_out');
+        $hr_manager_role->add_cap('linkage_take_break');
     }
 
     // Add custom capabilities to administrator role
@@ -68,9 +76,84 @@ function linkage_add_custom_capabilities() {
         $administrator_role->add_cap('linkage_view_all_timesheets');
         $administrator_role->add_cap('linkage_approve_timesheets');
         $administrator_role->add_cap('linkage_manage_employees');
+        $administrator_role->add_cap('linkage_clock_in_out');
+        $administrator_role->add_cap('linkage_take_break');
     }
 }
 add_action('after_switch_theme', 'linkage_add_custom_capabilities');
+
+/**
+ * Ensure all users have necessary clock capabilities
+ * This function runs when users log in to ensure they have the required permissions
+ */
+function linkage_ensure_user_capabilities($user_login, $user) {
+    // Add clock capabilities to all users if they don't have them
+    if (!user_can($user->ID, 'linkage_clock_in_out')) {
+        $user->add_cap('linkage_clock_in_out');
+    }
+    
+    if (!user_can($user->ID, 'linkage_take_break')) {
+        $user->add_cap('linkage_take_break');
+    }
+    
+    // Ensure administrator has all capabilities
+    if (in_array('administrator', $user->roles)) {
+        $user->add_cap('linkage_submit_timesheet');
+        $user->add_cap('linkage_view_own_timesheet');
+        $user->add_cap('linkage_view_all_timesheets');
+        $user->add_cap('linkage_approve_timesheets');
+        $user->add_cap('linkage_manage_employees');
+        $user->add_cap('linkage_clock_in_out');
+        $user->add_cap('linkage_take_break');
+    }
+}
+add_action('wp_login', 'linkage_ensure_user_capabilities', 10, 2);
+
+/**
+ * Update existing users with new capabilities
+ * This function can be called manually to update all existing users
+ */
+function linkage_update_existing_users_capabilities() {
+    $users = get_users();
+    $updated_count = 0;
+    
+    foreach ($users as $user) {
+        $user_obj = get_user_by('ID', $user->ID);
+        
+        // Add clock capabilities to all users
+        if (!user_can($user->ID, 'linkage_clock_in_out')) {
+            $user_obj->add_cap('linkage_clock_in_out');
+            $updated_count++;
+        }
+        
+        if (!user_can($user->ID, 'linkage_take_break')) {
+            $user_obj->add_cap('linkage_take_break');
+            $updated_count++;
+        }
+        
+        // Ensure administrator has all capabilities
+        if (in_array('administrator', $user->roles)) {
+            $capabilities = array(
+                'linkage_submit_timesheet',
+                'linkage_view_own_timesheet',
+                'linkage_view_all_timesheets',
+                'linkage_approve_timesheets',
+                'linkage_manage_employees',
+                'linkage_clock_in_out',
+                'linkage_take_break'
+            );
+            
+            foreach ($capabilities as $cap) {
+                if (!user_can($user->ID, $cap)) {
+                    $user_obj->add_cap($cap);
+                    $updated_count++;
+                }
+            }
+        }
+    }
+    
+    return $updated_count;
+}
 
 /**
  * Restrict WordPress admin access to administrators only
@@ -93,7 +176,7 @@ function linkage_restrict_admin_access() {
         }
         
         // Redirect all other roles to frontend
-        wp_redirect(home_url('/?message=admin_restricted'));
+        wp_redirect(home_url('/'));
         exit;
     }
 }
@@ -132,8 +215,8 @@ function linkage_redirect_non_admin_users() {
             return;
         }
         
-        // Redirect all other roles to frontend with message
-        wp_redirect(home_url('/?message=admin_restricted'));
+        // Redirect all other roles to frontend
+        wp_redirect(home_url('/'));
         exit;
     }
 }
@@ -279,7 +362,7 @@ function linkage_block_admin_url_access() {
         // Check if trying to access wp-admin URLs
         $current_url = $_SERVER['REQUEST_URI'];
         if (strpos($current_url, '/wp-admin/') !== false || $current_url === '/wp-admin') {
-            wp_redirect(home_url('/?message=admin_restricted'));
+            wp_redirect(home_url('/'));
             exit;
         }
     }
