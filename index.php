@@ -84,18 +84,15 @@ get_header(); ?>
                         <div class="flex items-center justify-between mb-2">
                             <h4 class="font-semibold text-yellow-800">Debug: Current User Status</h4>
                             <div class="flex space-x-2">
-                                <button onclick="fixCapabilities()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                                    Fix Capabilities
-                                </button>
                                 <?php if (current_user_can('administrator')): ?>
-                                    <button onclick="clearLegacyMeta()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
-                                        Clear Legacy Meta
-                                    </button>
                                     <button onclick="deleteAllTimeLogs()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
                                         Delete All Time Logs
                                     </button>
-                                    <button onclick="comprehensiveReset()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">
-                                        Comprehensive Reset
+                                    <button onclick="analyzeAndFixDatabase()" class="bg-orange-600 hover:bg-orange-700 text-white px-3 py-1 rounded text-sm">
+                                        Analyze & Fix Database
+                                    </button>
+                                    <button onclick="testConcurrentAccess()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">
+                                        Test Concurrent Access
                                     </button>
                                 <?php endif; ?>
                             </div>
@@ -123,54 +120,9 @@ get_header(); ?>
                                 <?php linkage_debug_user_database_state($current_user->ID); ?>
                             </div>
                         </details>
-                        
-                        <!-- Current Database State (Admin Only) -->
-                        <?php if (current_user_can('administrator')): ?>
-                        <details class="mt-3">
-                            <summary class="cursor-pointer text-sm font-medium text-yellow-800">Show All Database Records</summary>
-                            <div class="mt-2 p-2 bg-yellow-100 rounded text-xs">
-                                <?php linkage_debug_current_database_state(); ?>
-                            </div>
-                        </details>
-                        <?php endif; ?>
                     </div>
                     
                     <script>
-                    function fixCapabilities() {
-                        if (confirm('Fix missing capabilities for current user?')) {
-                            // Create a form to submit the fix action
-                            var form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = window.location.href;
-                            
-                            var input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'fix_capabilities';
-                            input.value = '1';
-                            
-                            form.appendChild(input);
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    }
-                    
-                    function clearLegacyMeta() {
-                        if (confirm('Clear all legacy user meta keys? This will remove old status data and ensure the system uses only the attendance logs table.')) {
-                            var form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = window.location.href;
-                            
-                            var input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'clear_legacy_meta';
-                            input.value = '1';
-                            
-                            form.appendChild(input);
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    }
-                    
                     function deleteAllTimeLogs() {
                         if (confirm('⚠️ WARNING: This will DELETE ALL time logs from the attendance logs table!\n\nThis action cannot be undone and will reset all employee statuses to "clocked out".\n\nAre you sure you want to continue?')) {
                             var form = document.createElement('form');
@@ -188,15 +140,32 @@ get_header(); ?>
                         }
                     }
                     
-                    function comprehensiveReset() {
-                        if (confirm('⚠️ WARNING: This will perform a COMPREHENSIVE RESET!\n\nThis will:\n• Delete ALL time logs from the attendance logs table\n• Clear ALL legacy user meta keys\n• Reset the entire system to a clean state\n\nThis action cannot be undone!\n\nAre you sure you want to continue?')) {
+                    function analyzeAndFixDatabase() {
+                        if (confirm('Analyze and fix database state issues?\n\nThis will:\n• Check for duplicate active records\n• Fix corrupted attendance data\n• Clean up inconsistent states\n\nThis is safe to run and will not delete valid data.')) {
                             var form = document.createElement('form');
                             form.method = 'POST';
                             form.action = window.location.href;
                             
                             var input = document.createElement('input');
                             input.type = 'hidden';
-                            input.name = 'comprehensive_reset';
+                            input.name = 'analyze_and_fix_database';
+                            input.value = '1';
+                            
+                            form.appendChild(input);
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
+                    
+                    function testConcurrentAccess() {
+                        if (confirm('Test concurrent access with multiple users?\n\nThis will:\n• Clear existing active records\n• Simulate multiple users clocking in simultaneously\n• Test break start/end actions\n• Test clock out actions\n• Check for duplicate records\n\nThis is safe to run and will test system reliability.')) {
+                            var form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = window.location.href;
+                            
+                            var input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'test_concurrent_access';
                             input.value = '1';
                             
                             form.appendChild(input);
@@ -207,25 +176,6 @@ get_header(); ?>
                     </script>
                     
                     <?php
-                    // Handle the fix capabilities action
-                    if (isset($_POST['fix_capabilities']) && is_user_logged_in()) {
-                        $result = linkage_fix_current_user_capabilities();
-                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
-                        echo "<p><strong>$result</strong></p>";
-                        echo '<p>Please refresh the page to see the updated capabilities.</p>';
-                        echo '</div>';
-                    }
-                    
-                    // Handle the clear legacy meta action
-                    if (isset($_POST['clear_legacy_meta']) && current_user_can('administrator')) {
-                        $result = linkage_clear_legacy_user_meta();
-                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
-                        echo "<p><strong>$result</strong></p>";
-                        echo '<p>Legacy user meta has been cleared. The system now uses only the attendance logs table.</p>';
-                        echo '<p>Please refresh the page to see the updated status.</p>';
-                        echo '</div>';
-                    }
-                    
                     // Handle the delete all time logs action
                     if (isset($_POST['delete_all_time_logs']) && current_user_can('administrator')) {
                         $result = linkage_delete_all_time_logs();
@@ -236,84 +186,28 @@ get_header(); ?>
                         echo '</div>';
                     }
                     
-                    // Handle the comprehensive reset action
-                    if (isset($_POST['comprehensive_reset']) && current_user_can('administrator')) {
-                        $result = linkage_comprehensive_reset();
-                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
+                    // Handle the analyze and fix database action
+                    if (isset($_POST['analyze_and_fix_database']) && current_user_can('administrator')) {
+                        $result = linkage_analyze_and_fix_database_state();
+                        echo '<div class="mb-4 p-3 bg-blue-100 border border-blue-400 text-blue-700 rounded">';
                         echo "<p><strong>$result</strong></p>";
-                        echo '<p>The system has been completely reset to a clean state.</p>';
-                        echo '<p>All employees will now show as "clocked out". Please refresh the page to see the updated status.</p>';
+                        echo '<p>Database analysis and fixes have been completed.</p>';
+                        echo '<p>Please refresh the page to see the updated status.</p>';
+                        echo '</div>';
+                    }
+                    
+                    // Handle the test concurrent access action
+                    if (isset($_POST['test_concurrent_access']) && current_user_can('administrator')) {
+                        $result = linkage_test_concurrent_clock_actions();
+                        echo '<div class="mb-4 p-3 bg-purple-100 border border-purple-400 text-purple-700 rounded">';
+                        echo "<p><strong>Concurrent Access Test Results:</strong></p>";
+                        echo "<p class='text-sm mt-2'>$result</p>";
+                        echo '<p class="mt-2">Test completed. Check results above for any failures or duplicate records.</p>';
                         echo '</div>';
                     }
                     ?>
                 <?php endif; ?>
-                
-                <!-- Debug: All Users Capabilities -->
-                <?php if (current_user_can('administrator')): ?>
-                    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="font-semibold text-blue-800">Debug: All Users Capabilities</h4>
-                            <button onclick="updateAllUsersCapabilities()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
-                                Update All Users Capabilities
-                            </button>
-                        </div>
-                        <?php
-                        $users = get_users(array(
-                            'role__in' => array('employee', 'hr_manager', 'administrator'),
-                            'orderby' => 'display_name'
-                        ));
-                        
-                        if (empty($users)) {
-                            $users = get_users(array('exclude' => array(1), 'orderby' => 'display_name'));
-                        }
-                        
-                        foreach ($users as $user) {
-                            $user_obj = get_user_by('ID', $user->ID);
-                            $has_clock = user_can($user->ID, 'linkage_clock_in_out');
-                            $has_break = user_can($user->ID, 'linkage_take_break');
-                            $roles = implode(', ', $user_obj->roles);
-                            
-                            echo '<div class="text-sm text-blue-700 mb-2">';
-                            echo '<strong>' . esc_html($user->display_name) . '</strong> (' . esc_html($roles) . '): ';
-                            echo 'Clock: ' . ($has_clock ? '✅' : '❌') . ' | ';
-                            echo 'Break: ' . ($has_break ? '✅' : '❌');
-                            echo '</div>';
-                        }
-                        ?>
-                    </div>
-                    
-                    <script>
-                    function updateAllUsersCapabilities() {
-                        if (confirm('Update capabilities for ALL users? This will ensure everyone can perform time tracking actions.')) {
-                            // Create a form to submit the update action
-                            var form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = window.location.href;
-                            
-                            var input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'update_all_capabilities';
-                            input.value = '1';
-                            
-                            form.appendChild(input);
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    }
-                    </script>
-                    
-                    <?php
-                    // Handle the update all capabilities action
-                    if (isset($_POST['update_all_capabilities']) && current_user_can('administrator')) {
-                        $updated_count = linkage_force_update_all_users_capabilities();
-                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
-                        echo "<p><strong>Updated capabilities for $updated_count users!</strong></p>";
-                        echo '<p>All users now have the necessary permissions for time tracking.</p>';
-                        echo '<p>Please refresh the page to see the updated capabilities.</p>';
-                        echo '</div>';
-                    }
-                    ?>
-                <?php endif; ?>
+
                 
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -413,7 +307,7 @@ get_header(); ?>
                     </table>
                 </div>
             </div>
-            
+
             <!-- Quick Stats -->
             <div class="grid md:grid-cols-3 gap-6 mt-8">
                 <?php
