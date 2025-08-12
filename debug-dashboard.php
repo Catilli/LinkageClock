@@ -304,7 +304,7 @@ require_once get_template_directory() . '/functions/dashboard-functions.php';
         <?php
         if (is_user_logged_in()) {
             $current_user = wp_get_current_user();
-            $employee_status = linkage_get_employee_status_with_times($current_user->ID);
+            $employee_status = linkage_get_employee_status_from_database($current_user->ID);
             
             echo '<p><strong>Current User:</strong> ' . esc_html($current_user->display_name) . '</p>';
             echo '<p><strong>Status:</strong> ' . esc_html($employee_status->status) . '</p>';
@@ -317,6 +317,31 @@ require_once get_template_directory() . '/functions/dashboard-functions.php';
             echo '<h3>Direct Function Tests:</h3>';
             echo '<p><strong>Work Time Calculation:</strong> ' . esc_html(linkage_format_time_display(linkage_calculate_current_work_time($current_user->ID))) . '</p>';
             echo '<p><strong>Break Time Calculation:</strong> ' . esc_html(linkage_format_time_display(linkage_calculate_current_break_time($current_user->ID))) . '</p>';
+            
+            // Show database record information
+            echo '<h3>Database Record Information:</h3>';
+            global $wpdb;
+            $table = $wpdb->prefix . 'linkage_attendance_logs';
+            $work_date = current_time('Y-m-d');
+            
+            $record = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table WHERE user_id = %d AND work_date = %s ORDER BY id DESC LIMIT 1",
+                $current_user->ID,
+                $work_date
+            ));
+            
+            if ($record) {
+                echo '<p><strong>Record ID:</strong> ' . esc_html($record->id) . '</p>';
+                echo '<p><strong>Work Date:</strong> ' . esc_html($record->work_date) . '</p>';
+                echo '<p><strong>Time In:</strong> ' . esc_html($record->time_in ?: 'Not set') . '</p>';
+                echo '<p><strong>Time Out:</strong> ' . esc_html($record->time_out ?: 'Not set') . '</p>';
+                echo '<p><strong>Lunch Start:</strong> ' . esc_html($record->lunch_start ?: 'Not set') . '</p>';
+                echo '<p><strong>Lunch End:</strong> ' . esc_html($record->lunch_end ?: 'Not set') . '</p>';
+                echo '<p><strong>Total Hours:</strong> ' . esc_html($record->total_hours ?: 'Not calculated') . '</p>';
+                echo '<p><strong>Status:</strong> ' . esc_html($record->status) . '</p>';
+            } else {
+                echo '<p><strong>No attendance record found for today.</strong></p>';
+            }
         } else {
             echo '<p>Please log in to test time calculations.</p>';
         }
