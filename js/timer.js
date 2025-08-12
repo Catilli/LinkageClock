@@ -1,502 +1,26 @@
 jQuery(document).ready(function($) {
     'use strict';
     
-    // Timer functionality
-    const Timer = {
-        workTimer: null,
-        breakTimer: null,
+    /**
+     * Timer functionality for LinkageClock
+     */
+    var Timer = {
         workSeconds: 0,
         breakSeconds: 0,
-        isWorking: false,
-        isOnBreak: false,
-        lastAction: null,
+        isRunning: false,
+        workInterval: null,
+        breakInterval: null,
         
         init: function() {
-            this.bindEvents();
             this.loadInitialState();
-            this.startTimeSync();
-        },
-        
-        startTimeSync: function() {
-            // Sync timers with server time every 30 seconds to ensure accuracy
-            setInterval(function() {
-                if (Timer.isWorking || Timer.isOnBreak) {
-                    Timer.syncTimersWithServer();
-                }
-            }, 30000);
-        },
-        
-        syncTimersWithServer: function() {
-            // Get current timestamps from data attributes
-            const clockInTime = $('#work-timer').data('clock-in-time');
-            const breakStartTime = $('#break-timer').data('break-start-time');
-            
-            // Recalculate work timer if working (not when on break)
-            if (Timer.isWorking && clockInTime) {
-                const now = new Date();
-                const clockIn = new Date(clockInTime);
-                const elapsedSeconds = Math.floor((now - clockIn) / 1000);
-                Timer.workSeconds = Math.max(0, elapsedSeconds);
-                Timer.updateWorkDisplay();
-            }
-            
-            // Recalculate break timer if on break
-            if (Timer.isOnBreak && breakStartTime) {
-                const now = new Date();
-                const breakStart = new Date(breakStartTime);
-                const elapsedSeconds = Math.floor((now - breakStart) / 1000);
-                Timer.breakSeconds = Math.max(0, elapsedSeconds);
-                Timer.updateLunchDisplay();
-            }
-        },
-        
-        bindEvents: function() {
-                    // Time In/Out button
-        $('#clock-toggle-btn').on('click', function(e) {
-            e.preventDefault();
-            const action = $(this).data('action');
-            Timer.handleClockAction(action);
-        });
-        
-        // Lunch button
-        $('#break-toggle-btn').on('click', function(e) {
-            e.preventDefault();
-            const action = $(this).data('action');
-            Timer.handleBreakAction(action);
-        });
+            this.bindEvents();
         },
         
         loadInitialState: function() {
-            // Get the stored timestamps from the page
-            const clockInTime = $('#work-timer').data('clock-in-time');
-            const breakStartTime = $('#break-timer').data('break-start-time');
-            
-            console.log('Initial state - clockInTime:', clockInTime, 'breakStartTime:', breakStartTime);
-            
-            // Check if user is on break first - if so, start break timer AND calculate work time
-            if (breakStartTime) {
-                console.log('User is on break, setting up break state');
-                Timer.isOnBreak = true;
-                Timer.calculateAndStartLunchTimer(breakStartTime);
-                
-                // Get work time from server instead of calculating client-side
-                Timer.getTimeFromServer();
-                
-                // Show work timer but keep it paused when on break
-                Timer.showWorkTimer();
-                
-                // Hide the time button while on lunch
-                Timer.hideClockButton();
-                
-                // Show lunch button with correct state
-                Timer.showLunchButton();
-                Timer.updateLunchButton('break_end', 'Lunch End');
-                
-                Timer.isWorking = false; // Ensure work state is false
-                return;
-            }
-            
-            // Only start work timer if user is clocked in (not on break)
-            if (clockInTime) {
-                console.log('User is clocked in, starting work timer');
-                Timer.isWorking = true;
-                
-                // Get work time from server instead of calculating client-side
-                Timer.getTimeFromServer();
-                
-                // Update clock button to show "Time Out" when clocked in
-                Timer.updateClockButton('clock_out', 'Time Out', 'red');
-            } else {
-                console.log('User is clocked out, showing clock in button');
-                // Ensure clock button is visible and shows "Time In" when clocked out
-                Timer.showClockButton();
-                Timer.updateClockButton('clock_in', 'Time In', 'green');
-            }
+            // Get initial state from server instead of client-side calculation
+            this.getTimeFromServer();
         },
         
-        handleClockAction: function(action) {
-            Timer.showLoading('clock-toggle-btn');
-            
-            $.ajax({
-                url: linkage_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'linkage_clock_action',
-                    action_type: action,
-                    nonce: linkage_ajax.nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        Timer.updateUI(response.data);
-                        Timer.showNotification(response.data.message, 'success');
-                        Timer.refreshDashboardList();
-                    } else {
-                        Timer.showNotification(response.data || 'Error occurred', 'error');
-                    }
-                },
-                error: function() {
-                    Timer.showNotification('Network error', 'error');
-                },
-                complete: function() {
-                    Timer.hideLoading('clock-toggle-btn');
-                }
-            });
-        },
-        
-        handleBreakAction: function(action) {
-            Timer.showLoading('break-toggle-btn');
-            
-            $.ajax({
-                url: linkage_ajax.ajax_url,
-                type: 'POST',
-                data: {
-                    action: 'linkage_clock_action',
-                    action_type: action,
-                    nonce: linkage_ajax.nonce
-                },
-                success: function(response) {
-                    if (response.success) {
-                        Timer.updateUI(response.data);
-                        Timer.showNotification(response.data.message, 'success');
-                        Timer.refreshDashboardList();
-                    } else {
-                        Timer.showNotification(response.data || 'Error occurred', 'error');
-                    }
-                },
-                error: function() {
-                    Timer.showNotification('Network error', 'error');
-                },
-                complete: function() {
-                    Timer.hideLoading('break-toggle-btn');
-                }
-            });
-        },
-        
-        updateUI: function(data) {
-            const action = data.action;
-            const status = data.status;
-            
-            // Track the last action
-            Timer.lastAction = action;
-            
-            switch (action) {
-                case 'clock_in':
-                    Timer.showWorkTimer();
-                    Timer.showLunchButton();
-                    Timer.updateClockButton('clock_out', 'Time Out', 'red');
-                    // Use the actual clock in time from the response
-                    if (data.clock_in_time) {
-                        Timer.calculateAndStartWorkTimer(data.clock_in_time);
-                    } else {
-                        Timer.workSeconds = 0;
-                        Timer.startWorkTimer();
-                    }
-                    Timer.isWorking = true;
-                    break;
-                    
-                case 'clock_out':
-                    Timer.hideWorkTimer();
-                    Timer.hideLunchTimer();
-                    Timer.hideLunchButton();
-                    Timer.updateClockButton('clock_in', 'Time In', 'green');
-                    Timer.stopWorkTimer();
-                    Timer.stopLunchTimer();
-                    Timer.isWorking = false;
-                    Timer.isOnBreak = false;
-                    break;
-                    
-                case 'break_start':
-                    Timer.showLunchTimer();
-                    Timer.updateLunchButton('break_end', 'Lunch End');
-                    Timer.stopWorkTimer();
-                    Timer.isWorking = false; // Ensure work state is false when on break
-                    
-                    // Preserve the current work time - don't reset it
-                    // Timer.workSeconds will keep the accumulated work time
-                    
-                    // Hide the time out button while on lunch
-                    Timer.hideClockButton();
-                    
-                    // Show work timer but keep it paused (don't hide it)
-                    Timer.showWorkTimer();
-                    
-                    // Use the actual break start time from the response
-                    if (data.break_start_time) {
-                        Timer.calculateAndStartLunchTimer(data.break_start_time);
-                    } else {
-                        Timer.breakSeconds = 0;
-                        Timer.startLunchTimer();
-                    }
-                    Timer.isOnBreak = true;
-                    break;
-                    
-                case 'break_end':
-                    Timer.hideLunchTimer();
-                    Timer.updateLunchButton('break_start', 'Lunch Start');
-                    Timer.stopLunchTimer();
-                    Timer.isOnBreak = false;
-                    Timer.isWorking = true; // Set working state back to true
-                    
-                    // Show the time button again when lunch ends
-                    Timer.showClockButton();
-                    
-                    // Resume work timer from where it was paused (don't recalculate from time-in time)
-                    // The workSeconds should already contain the accumulated time before the lunch
-                    Timer.startWorkTimer();
-                    // Work timer is already visible, just resume counting
-                    break;
-            }
-            
-            // Trigger custom event for other components to listen to
-            $(document).trigger('clockActionCompleted', data);
-        },
-        
-        calculateAndStartWorkTimer: function(clockInTime) {
-            // Calculate elapsed time since clock in
-            const now = new Date();
-            const clockIn = new Date(clockInTime);
-            const elapsedSeconds = Math.floor((now - clockIn) / 1000);
-            
-            // Set the current work seconds
-            Timer.workSeconds = Math.max(0, elapsedSeconds);
-            
-            // Start the timer from the calculated elapsed time
-            Timer.startWorkTimer();
-        },
-        
-        calculateWorkTimeFromClockIn: function(clockInTime) {
-            console.log('calculateWorkTimeFromClockIn called with:', clockInTime);
-            
-            // Calculate elapsed time since clock in (for display purposes only)
-            const now = new Date();
-            const clockIn = new Date(clockInTime);
-            const elapsedSeconds = Math.floor((now - clockIn) / 1000);
-            
-            console.log('Calculated elapsed seconds:', elapsedSeconds);
-            
-            // Set the current work seconds without starting the timer
-            Timer.workSeconds = Math.max(0, elapsedSeconds);
-            
-            console.log('Set Timer.workSeconds to:', Timer.workSeconds);
-            
-            // Update the display to show the calculated time
-            Timer.updateWorkDisplay();
-        },
-        
-        startWorkTimer: function() {
-            Timer.stopWorkTimer(); // Clear any existing timer
-            Timer.workTimer = setInterval(function() {
-                Timer.workSeconds++;
-                Timer.updateWorkDisplay();
-            }, 1000);
-        },
-        
-        stopWorkTimer: function() {
-            if (Timer.workTimer) {
-                clearInterval(Timer.workTimer);
-                Timer.workTimer = null;
-            }
-        },
-        
-        calculateAndStartLunchTimer: function(breakStartTime) {
-            // Calculate elapsed time since break start
-            const now = new Date();
-            const breakStart = new Date(breakStartTime);
-            const elapsedSeconds = Math.floor((now - breakStart) / 1000);
-            
-            // Set the current break seconds
-            Timer.breakSeconds = Math.max(0, elapsedSeconds);
-            
-            // Start the timer from the calculated elapsed time
-            Timer.startLunchTimer();
-        },
-        
-        startLunchTimer: function() {
-            Timer.stopLunchTimer(); // Clear any existing timer
-            Timer.breakTimer = setInterval(function() {
-                Timer.breakSeconds++;
-                Timer.updateLunchDisplay();
-            }, 1000);
-        },
-        
-        stopLunchTimer: function() {
-            if (Timer.breakTimer) {
-                clearInterval(Timer.breakTimer);
-                Timer.breakTimer = null;
-            }
-        },
-        
-        updateWorkDisplay: function() {
-            const formatted = Timer.formatTime(Timer.workSeconds);
-            console.log('updateWorkDisplay - workSeconds:', Timer.workSeconds, 'formatted:', formatted);
-            
-            $('#work-time').text(formatted);
-            
-            // Update the data attribute with current time for page refresh persistence
-            // Only update when actually working (not when paused during lunch)
-            if (Timer.isWorking) {
-                const now = new Date();
-                const clockInTime = new Date(now.getTime() - (Timer.workSeconds * 1000));
-                $('#work-timer').attr('data-clock-in-time', clockInTime.toISOString());
-            }
-        },
-        
-        updateLunchDisplay: function() {
-            const formatted = Timer.formatTime(Timer.breakSeconds);
-            $('#break-time').text(formatted);
-            
-            // Update the data attribute with current time for page refresh persistence
-            if (Timer.isOnBreak) {
-                const now = new Date();
-                const breakStartTime = new Date(now.getTime() - (Timer.breakSeconds * 1000));
-                $('#break-timer').attr('data-break-start-time', breakStartTime.toISOString());
-            }
-        },
-        
-        formatTime: function(seconds) {
-            const hours = Math.floor(seconds / 3600);
-            const minutes = Math.floor((seconds % 3600) / 60);
-            const secs = seconds % 60;
-            
-            return String(hours).padStart(2, '0') + ':' + 
-                   String(minutes).padStart(2, '0') + ':' + 
-                   String(secs).padStart(2, '0');
-        },
-        
-        showWorkTimer: function() {
-            $('#work-timer').fadeIn(300);
-            // Update the display to show the preserved work time
-            Timer.updateWorkDisplay();
-        },
-        
-        hideWorkTimer: function() {
-            $('#work-timer').fadeOut(300);
-            // Don't reset work seconds when hiding - preserve the time for when lunch ends
-            // Timer.workSeconds will be preserved
-        },
-        
-        showLunchTimer: function() {
-            $('#break-timer').fadeIn(300);
-        },
-        
-        hideLunchTimer: function() {
-            $('#break-timer').fadeOut(300);
-            $('#break-time').text('00:00:00');
-            Timer.breakSeconds = 0;
-        },
-        
-        showLunchButton: function() {
-            $('#break-toggle-btn').fadeIn(300);
-        },
-        
-        hideLunchButton: function() {
-            $('#break-toggle-btn').fadeOut(300);
-        },
-        
-        hideClockButton: function() {
-            $('#clock-toggle-btn').fadeOut(300);
-        },
-        
-        showClockButton: function() {
-            $('#clock-toggle-btn').fadeIn(300);
-        },
-        
-        updateClockButton: function(action, text, color) {
-            const btn = $('#clock-toggle-btn');
-            const colorClasses = {
-                'green': 'bg-green-500 hover:bg-green-600',
-                'red': 'bg-red-500 hover:bg-red-600'
-            };
-            
-            // Update button data and text
-            btn.data('action', action);
-            $('#clock-toggle-text').text(text);
-            
-            // Update button colors
-            btn.removeClass('bg-green-500 hover:bg-green-600 bg-red-500 hover:bg-red-600')
-               .addClass(colorClasses[color]);
-            
-            // Toggle icons
-            if (action === 'clock_in') {
-                $('.clock-in-icon').show();
-                $('.clock-out-icon').hide();
-            } else {
-                $('.clock-in-icon').hide();
-                $('.clock-out-icon').show();
-            }
-        },
-        
-        updateLunchButton: function(action, text) {
-            const btn = $('#break-toggle-btn');
-            
-            // Update button data and text
-            btn.data('action', action);
-            $('#break-toggle-text').text(text);
-            
-            // Toggle icons
-            if (action === 'break_start') {
-                $('.break-start-icon').show();
-                $('.break-end-icon').hide();
-            } else {
-                $('.break-start-icon').hide();
-                $('.break-end-icon').show();
-            }
-        },
-        
-        showLoading: function(buttonId) {
-            const btn = $('#' + buttonId);
-            btn.prop('disabled', true);
-            btn.find('span').append(' <span class="loading-spinner">⏳</span>');
-        },
-        
-        hideLoading: function(buttonId) {
-            const btn = $('#' + buttonId);
-            btn.prop('disabled', false);
-            btn.find('.loading-spinner').remove();
-        },
-        
-        refreshDashboardList: function() {
-            // Only refresh if we're on the dashboard page AND it's a clock in/out action (not break actions)
-            if ($('.employee-row').length > 0) {
-                // Alternative: If there's a refresh function in dashboard.js, call it (without page reload)
-                if (typeof dashboard !== 'undefined' && typeof dashboard.refreshEmployeeList === 'function') {
-                    setTimeout(function() {
-                        dashboard.refreshEmployeeList();
-                    }, 500);
-                } else {
-                    // Only reload for clock in/out actions, not break actions
-                    const currentAction = Timer.lastAction;
-                    if (currentAction === 'clock_in' || currentAction === 'clock_out') {
-                        setTimeout(function() {
-                            location.reload();
-                        }, 1000); // Longer delay for clock actions
-                    }
-                }
-            }
-        },
-        
-        showNotification: function(message, type) {
-            const className = type === 'success' ? 'bg-green-100 text-green-700 border-green-200' : 'bg-red-100 text-red-700 border-red-200';
-            const icon = type === 'success' ? '✓' : '✗';
-            
-            const notification = $(`
-                <div class="timer-notification fixed top-4 right-4 z-50 p-4 rounded-lg shadow-lg border ${className}">
-                    <div class="flex items-center">
-                        <span class="mr-2">${icon}</span>
-                        <span>${message}</span>
-                    </div>
-                </div>
-            `);
-            
-            $('body').append(notification);
-            
-            setTimeout(function() {
-                notification.fadeOut(function() {
-                    $(this).remove();
-                });
-            }, 3000);
-        },
-
         getTimeFromServer: function() {
             if (!linkage_ajax || !linkage_ajax.ajax_url) {
                 console.error('Linkage AJAX not initialized or missing URL.');
@@ -528,7 +52,13 @@ jQuery(document).ready(function($) {
                     // Update workSeconds from server data
                     if (data.work_seconds) {
                         Timer.workSeconds = Math.max(0, parseInt(data.work_seconds));
-                        Timer.updateWorkDisplay();
+                Timer.updateWorkDisplay();
+            }
+            
+                    // Update breakSeconds from server data
+                    if (data.break_seconds) {
+                        Timer.breakSeconds = Math.max(0, parseInt(data.break_seconds));
+                        Timer.updateBreakDisplay();
                     }
                 } else {
                     console.error('Failed to get time updates from server:', response.data || 'Unknown error');
@@ -536,16 +66,182 @@ jQuery(document).ready(function($) {
             }).fail(function() {
                 console.error('Network error getting time updates from server');
             });
+        },
+        
+        updateWorkDisplay: function() {
+            var display = this.formatTime(this.workSeconds);
+            $('#work-time').text(display);
+        },
+        
+        updateBreakDisplay: function() {
+            var display = this.formatTime(this.breakSeconds);
+            $('#break-time').text(display);
+        },
+        
+        formatTime: function(seconds) {
+            if (seconds < 0) seconds = 0;
+            
+            var hours = Math.floor(seconds / 3600);
+            var minutes = Math.floor((seconds % 3600) / 60);
+            var secs = seconds % 60;
+            
+            if (hours > 0) {
+                return String(hours).padStart(2, '0') + ':' + String(minutes).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+            } else {
+                return String(minutes).padStart(2, '0') + ':' + String(secs).padStart(2, '0');
+            }
+        },
+        
+        bindEvents: function() {
+            var self = this;
+            
+            // Clock in/out button
+            $('#clock-toggle-btn').on('click', function() {
+                var action = $(this).data('action');
+                self.performClockAction(action);
+            });
+            
+            // Break start/end button
+            $('#break-toggle-btn').on('click', function() {
+                var action = $(this).data('action');
+                self.performBreakAction(action);
+        });
+        },
+        
+        performClockAction: function(action) {
+            var self = this;
+            
+            $.post(linkage_ajax.ajax_url, {
+                action: 'linkage_clock_action',
+                action_type: action,
+                nonce: linkage_ajax.nonce
+            }, function(response) {
+                if (response.success) {
+                    var data = response.data;
+                    
+                    // Update button states
+                    self.updateButtonStates(data.status);
+                    
+                    // Update time displays with server-calculated times
+                    if (data.work_seconds !== undefined) {
+                        self.workSeconds = data.work_seconds;
+                        self.updateWorkDisplay();
+                    }
+                    
+                    if (data.break_seconds !== undefined) {
+                        self.breakSeconds = data.break_seconds;
+                        self.updateBreakDisplay();
+                    }
+                    
+                    // Update status display
+                    updateStatusDisplay(data.status);
+                    
+                    // Trigger custom event for other components
+                    $(document).trigger('clockActionCompleted', data);
+                    
+                    console.log('Clock action completed:', data);
+                    } else {
+                    console.error('Clock action failed:', response.data);
+                    alert('Action failed: ' + (response.data || 'Unknown error'));
+                }
+            }).fail(function() {
+                console.error('Network error during clock action');
+                alert('Network error. Please try again.');
+            });
+        },
+        
+        performBreakAction: function(action) {
+            var self = this;
+            
+            $.post(linkage_ajax.ajax_url, {
+                    action: 'linkage_clock_action',
+                    action_type: action,
+                    nonce: linkage_ajax.nonce
+            }, function(response) {
+                    if (response.success) {
+                    var data = response.data;
+                    
+                    // Update button states
+                    self.updateButtonStates(data.status);
+                    
+                    // Update time displays with server-calculated times
+                    if (data.work_seconds !== undefined) {
+                        self.workSeconds = data.work_seconds;
+                        self.updateWorkDisplay();
+                    }
+                    
+                    if (data.break_seconds !== undefined) {
+                        self.breakSeconds = data.break_seconds;
+                        self.updateBreakDisplay();
+                    }
+                    
+                    // Update status display
+                    updateStatusDisplay(data.status);
+                    
+                    // Trigger custom event for other components
+                    $(document).trigger('clockActionCompleted', data);
+                    
+                    console.log('Break action completed:', data);
+                    } else {
+                    console.error('Break action failed:', response.data);
+                    alert('Action failed: ' + (response.data || 'Unknown error'));
+                }
+            }).fail(function() {
+                console.error('Network error during break action');
+                alert('Network error. Please try again.');
+            });
+        },
+        
+        updateButtonStates: function(status) {
+            var clockButton = $('#clock-toggle-btn');
+            var breakButton = $('#break-toggle-btn');
+            
+            switch (status) {
+                case 'clocked_in':
+                    clockButton.data('action', 'clock_out');
+                    $('#clock-toggle-text').text('Time Out');
+                    clockButton.removeClass('bg-green-500 hover:bg-green-600').addClass('bg-red-500 hover:bg-red-600');
+                    $('.clock-in-icon').hide();
+                    $('.clock-out-icon').show();
+                    breakButton.show();
+                    breakButton.data('action', 'break_start');
+                    $('#break-toggle-text').text('Lunch Start');
+                    $('.break-start-icon').show();
+                    $('.break-end-icon').hide();
+                    break;
+                    
+                case 'on_break':
+                    clockButton.data('action', 'clock_out');
+                    $('#clock-toggle-text').text('Time Out');
+                    clockButton.removeClass('bg-green-500 hover:bg-green-600').addClass('bg-red-500 hover:bg-red-600');
+                    $('.clock-in-icon').hide();
+                    $('.clock-out-icon').show();
+                    breakButton.show();
+                    breakButton.data('action', 'break_end');
+                    $('#break-toggle-text').text('Lunch End');
+                    $('.break-start-icon').hide();
+                    $('.break-end-icon').show();
+                    break;
+                    
+                case 'clocked_out':
+                    clockButton.data('action', 'clock_in');
+                    $('#clock-toggle-text').text('Time In');
+                    clockButton.removeClass('bg-red-500 hover:bg-red-600').addClass('bg-green-500 hover:bg-green-600');
+                    $('.clock-in-icon').show();
+                    $('.clock-out-icon').hide();
+                    breakButton.hide();
+                    break;
+            }
         }
     };
-    
+
     // Initialize timer
     Timer.init();
-    
+
     // Server-side time tracking (more accurate than local timers)
     var serverTimeUpdateInterval;
     var lastServerUpdate = 0;
-    
+
     /**
      * Start server-side time updates
      */
@@ -562,7 +258,7 @@ jQuery(document).ready(function($) {
         // Initial update
         updateTimeFromServer();
     }
-    
+
     /**
      * Stop server-side time updates
      */
@@ -572,7 +268,7 @@ jQuery(document).ready(function($) {
             serverTimeUpdateInterval = null;
         }
     }
-    
+
     /**
      * Update time display from server
      */
@@ -603,13 +299,22 @@ jQuery(document).ready(function($) {
                     updateStatusDisplay(data.status);
                 }
                 
+                // Update Timer object with server data
+                if (data.work_seconds !== undefined) {
+                    Timer.workSeconds = Math.max(0, parseInt(data.work_seconds));
+                }
+                
+                if (data.break_seconds !== undefined) {
+                    Timer.breakSeconds = Math.max(0, parseInt(data.break_seconds));
+                }
+                
                 lastServerUpdate = Date.now();
             }
         }).fail(function() {
             console.log('Failed to get time update from server');
         });
     }
-    
+
     /**
      * Update status display
      */
@@ -623,22 +328,18 @@ jQuery(document).ready(function($) {
     }
 
     /**
-     * Check if user is currently working (clocked in or on break)
+     * Check if user is currently working
      */
     function isUserWorking() {
-        var statusElement = $('.employee-status');
-        if (statusElement.length) {
-            var status = statusElement.text().toLowerCase().replace(/\s+/g, '_');
-            return status === 'clocked_in' || status === 'on_break';
-        }
-        return false;
+        var status = $('.employee-status').text().toLowerCase();
+        return status.includes('clocked in') || status.includes('on break');
     }
     
     // Initialize server-side time tracking when page loads
     if (isUserWorking()) {
         startServerTimeUpdates();
     }
-    
+
     // Start/stop server updates based on clock actions
     $(document).on('clockActionCompleted', function(e, data) {
         if (data.status === 'clocked_in' || data.status === 'on_break') {
