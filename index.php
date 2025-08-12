@@ -3,6 +3,14 @@
  * The main template file - Employee Dashboard
  */
 
+// Debug information
+if (is_user_logged_in()) {
+    $current_user = wp_get_current_user();
+    echo "<!-- Debug: User logged in - ID: " . $current_user->ID . ", Roles: " . implode(', ', $current_user->roles) . " -->";
+} else {
+    echo "<!-- Debug: No user logged in -->";
+}
+
 get_header(); ?>
 
 <div class="container mx-auto px-4 py-8">
