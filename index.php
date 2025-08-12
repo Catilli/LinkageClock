@@ -134,6 +134,8 @@ get_header(); ?>
                     }
                     
 
+                    
+
                     </script>
                     
                     <?php
@@ -146,6 +148,8 @@ get_header(); ?>
                         echo '<p>All employees will now show as "clocked out". Please refresh the page to see the updated status.</p>';
                         echo '</div>';
                     }
+                    
+
                     
 
                     ?>
