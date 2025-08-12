@@ -64,10 +64,37 @@ get_header(); ?>
             </div>
 
             <!-- Employees Table -->
-            <div class="bg-white rounded-lg shadow-md overflow-hidden">
-                <div class="px-6 py-4 border-b border-gray-200">
-                    <h2 class="text-xl font-semibold text-gray-900">Employees</h2>
+            <div class="bg-white shadow-md rounded-lg p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-xl font-semibold text-gray-900">Employee Status</h2>
+                    <div class="flex space-x-2">
+                        <button onclick="location.reload()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                            Refresh
+                        </button>
+                    </div>
                 </div>
+                
+                <!-- Debug Info for Current User -->
+                <?php if (is_user_logged_in()): ?>
+                    <?php 
+                    $current_user = wp_get_current_user();
+                    $current_status = linkage_get_employee_status_from_database($current_user->ID);
+                    ?>
+                    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
+                        <h4 class="font-semibold text-yellow-800">Debug: Current User Status</h4>
+                        <p class="text-sm text-yellow-700">
+                            <strong>User:</strong> <?php echo esc_html($current_user->display_name); ?> 
+                            <strong>Role:</strong> <?php echo implode(', ', $current_user->roles); ?>
+                        </p>
+                        <p class="text-sm text-yellow-700">
+                            <strong>Database Status:</strong> <?php echo esc_html($current_status->status); ?>
+                            <strong>Last Action:</strong> <?php echo esc_html($current_status->last_action_time); ?>
+                        </p>
+                        <p class="text-sm text-yellow-700">
+                            <strong>Clock Button Action:</strong> <?php echo ($current_status->status === 'clocked_in' || $current_status->status === 'on_break') ? 'Time Out' : 'Time In'; ?>
+                        </p>
+                    </div>
+                <?php endif; ?>
                 
                 <div class="overflow-x-auto">
                     <table class="min-w-full divide-y divide-gray-200">
@@ -167,6 +194,14 @@ get_header(); ?>
                     </table>
                 </div>
             </div>
+            
+            <!-- Debug Database Status -->
+            <?php if (current_user_can('administrator')): ?>
+                <div class="mt-8 bg-white shadow-md rounded-lg p-6">
+                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Database Debug Info (Admin Only)</h3>
+                    <?php linkage_debug_database_status(); ?>
+                </div>
+            <?php endif; ?>
 
             <!-- Quick Stats -->
             <div class="grid md:grid-cols-3 gap-6 mt-8">
