@@ -249,6 +249,9 @@ jQuery(document).ready(function($) {
                     // Work timer is already visible, just resume counting
                     break;
             }
+            
+            // Trigger custom event for other components to listen to
+            $(document).trigger('clockActionCompleted', data);
         },
         
         calculateAndStartWorkTimer: function(clockInTime) {
@@ -500,6 +503,112 @@ jQuery(document).ready(function($) {
     
     // Initialize timer
     Timer.init();
+    
+    // Server-side time tracking (more accurate than local timers)
+    var serverTimeUpdateInterval;
+    var lastServerUpdate = 0;
+    
+    /**
+     * Start server-side time updates
+     */
+    function startServerTimeUpdates() {
+        if (serverTimeUpdateInterval) {
+            clearInterval(serverTimeUpdateInterval);
+        }
+        
+        // Update every 5 seconds for real-time accuracy
+        serverTimeUpdateInterval = setInterval(function() {
+            updateTimeFromServer();
+        }, 5000);
+        
+        // Initial update
+        updateTimeFromServer();
+    }
+    
+    /**
+     * Stop server-side time updates
+     */
+    function stopServerTimeUpdates() {
+        if (serverTimeUpdateInterval) {
+            clearInterval(serverTimeUpdateInterval);
+            serverTimeUpdateInterval = null;
+        }
+    }
+    
+    /**
+     * Update time display from server
+     */
+    function updateTimeFromServer() {
+        if (!linkage_ajax || !linkage_ajax.ajax_url) {
+            return;
+        }
+        
+        $.post(linkage_ajax.ajax_url, {
+            action: 'linkage_get_time_updates',
+            nonce: linkage_ajax.nonce
+        }, function(response) {
+            if (response.success) {
+                var data = response.data;
+                
+                // Update work time display
+                if (data.work_time_display) {
+                    $('#work-time').text(data.work_time_display);
+                }
+                
+                // Update break time display
+                if (data.break_time_display) {
+                    $('#break-time').text(data.break_time_display);
+                }
+                
+                // Update status if changed
+                if (data.status) {
+                    updateStatusDisplay(data.status);
+                }
+                
+                lastServerUpdate = Date.now();
+            }
+        }).fail(function() {
+            console.log('Failed to get time update from server');
+        });
+    }
+    
+    /**
+     * Update status display
+     */
+    function updateStatusDisplay(status) {
+        var statusElement = $('.employee-status');
+        if (statusElement.length) {
+            statusElement.text(status.replace('_', ' ').replace(/\b\w/g, function(l) {
+                return l.toUpperCase();
+            }));
+        }
+    }
+
+    /**
+     * Check if user is currently working (clocked in or on break)
+     */
+    function isUserWorking() {
+        var statusElement = $('.employee-status');
+        if (statusElement.length) {
+            var status = statusElement.text().toLowerCase().replace(/\s+/g, '_');
+            return status === 'clocked_in' || status === 'on_break';
+        }
+        return false;
+    }
+    
+    // Initialize server-side time tracking when page loads
+    if (isUserWorking()) {
+        startServerTimeUpdates();
+    }
+    
+    // Start/stop server updates based on clock actions
+    $(document).on('clockActionCompleted', function(e, data) {
+        if (data.status === 'clocked_in' || data.status === 'on_break') {
+            startServerTimeUpdates();
+        } else if (data.status === 'clocked_out') {
+            stopServerTimeUpdates();
+        }
+    });
     
     // Add CSS for animations
     const timerCSS = `
