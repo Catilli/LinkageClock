@@ -310,10 +310,10 @@ jQuery(document).ready(function($) {
             clearInterval(serverTimeUpdateInterval);
         }
         
-        // Update every 5 seconds for real-time accuracy
+        // Update every 1 second for real-time accuracy
         serverTimeUpdateInterval = setInterval(function() {
             updateTimeFromServer();
-        }, 5000);
+        }, 1000);
         
         // Initial update
         updateTimeFromServer();
