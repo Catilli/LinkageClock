@@ -351,12 +351,14 @@ function linkage_enqueue_dashboard_scripts() {
         
         wp_localize_script('linkage-dashboard', 'linkage_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('linkage_dashboard_nonce')
+            'nonce' => wp_create_nonce('linkage_dashboard_nonce'),
+            'current_user_id' => get_current_user_id()
         ));
         
         wp_localize_script('linkage-timer', 'linkage_ajax', array(
             'ajax_url' => admin_url('admin-ajax.php'),
-            'nonce' => wp_create_nonce('linkage_dashboard_nonce')
+            'nonce' => wp_create_nonce('linkage_dashboard_nonce'),
+            'current_user_id' => get_current_user_id()
         ));
     }
 }
