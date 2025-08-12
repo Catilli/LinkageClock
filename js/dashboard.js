@@ -101,33 +101,6 @@ jQuery(document).ready(function($) {
             $('#employee-count').text(`${visibleCount} of ${totalCount} employees`);
         },
         
-        // updateEmployeeStatus: function(userId, status, actionType, notes) {
-        //     $.ajax({
-        //         url: linkage_ajax.ajax_url,
-        //         type: 'POST',
-        //         data: {
-        //             action: 'linkage_update_employee_status',
-        //             user_id: userId,
-        //             status: status,
-        //             action_type: actionType,
-        //             notes: notes || '',
-        //             nonce: linkage_ajax.nonce
-        //         },
-        //         success: function(response) {
-        //             if (response.success) {
-        //                 dashboard.showNotification('Status updated successfully', 'success');
-        //                 // Update specific row instead of refreshing entire list
-        //                 dashboard.updateEmployeeRowStatus(userId, status);
-        //             } else {
-        //                 dashboard.showNotification('Failed to update status', 'error');
-        //             }
-        //         },
-        //         error: function() {
-        //             dashboard.showNotification('Error updating status', 'error');
-        //         }
-        //     });
-        // },
-        
         refreshEmployeeList: function() {
             // Use AJAX to refresh employee data instead of page reload
             this.refreshEmployeeData();
