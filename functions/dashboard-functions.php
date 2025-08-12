@@ -253,19 +253,35 @@ function linkage_ajax_clock_action() {
     switch ($action) {
         case 'clock_in':
             $result = linkage_update_employee_status($user_id, 'clocked_in', 'clock_in', 'Clocked in via toolbar');
-            // Store clock in time for timer calculation
-            update_user_meta($user_id, 'linkage_clock_in_time', current_time('mysql'));
-            update_user_meta($user_id, 'linkage_work_seconds', 0); // Reset work timer
-            update_user_meta($user_id, 'linkage_break_seconds', 0); // Reset break timer
+            
+            // Create new attendance log record
+            $attendance_id = linkage_create_attendance_log($user_id, 'clock_in');
+            
+            // Store minimal meta for backward compatibility (but don't create new ones)
+            if (get_user_meta($user_id, 'linkage_employee_status', true)) {
+                update_user_meta($user_id, 'linkage_employee_status', 'clocked_in');
+            }
+            if (get_user_meta($user_id, 'linkage_clock_in_time', true)) {
+                update_user_meta($user_id, 'linkage_clock_in_time', current_time('mysql'));
+            }
             break;
             
         case 'clock_out':
             $result = linkage_update_employee_status($user_id, 'clocked_out', 'clock_out', 'Clocked out via toolbar');
-            // Clear timer data
-            delete_user_meta($user_id, 'linkage_clock_in_time');
-            delete_user_meta($user_id, 'linkage_break_start_time');
-            delete_user_meta($user_id, 'linkage_work_seconds');
-            delete_user_meta($user_id, 'linkage_break_seconds');
+            
+            // Update attendance log record with clock out time and calculate total hours
+            $attendance_id = linkage_update_attendance_log($user_id, 'clock_out');
+            
+            // Clear minimal meta for backward compatibility (but don't create new ones)
+            if (get_user_meta($user_id, 'linkage_employee_status', true)) {
+                delete_user_meta($user_id, 'linkage_employee_status');
+            }
+            if (get_user_meta($user_id, 'linkage_clock_in_time', true)) {
+                delete_user_meta($user_id, 'linkage_clock_in_time');
+            }
+            if (get_user_meta($user_id, 'linkage_break_start_time', true)) {
+                delete_user_meta($user_id, 'linkage_break_start_time');
+            }
             break;
             
         case 'break_start':
@@ -273,16 +289,13 @@ function linkage_ajax_clock_action() {
                 wp_send_json_error('Must be clocked in to start break');
             }
             $result = linkage_update_employee_status($user_id, 'on_break', 'break_in', 'Started break via toolbar');
-            // Store break start time and pause work timer
-            update_user_meta($user_id, 'linkage_break_start_time', current_time('mysql'));
             
-            // Calculate and store current work time
-            $clock_in_time = get_user_meta($user_id, 'linkage_clock_in_time', true);
-            $current_work_seconds = get_user_meta($user_id, 'linkage_work_seconds', true) ?: 0;
-            if ($clock_in_time) {
-                $work_time_since_last = strtotime(current_time('mysql')) - strtotime($clock_in_time);
-                $total_work_seconds = $current_work_seconds + $work_time_since_last;
-                update_user_meta($user_id, 'linkage_work_seconds', $total_work_seconds);
+            // Update attendance log record with lunch start time
+            $attendance_id = linkage_update_attendance_log($user_id, 'break_start');
+            
+            // Store minimal meta for backward compatibility (but don't create new ones)
+            if (get_user_meta($user_id, 'linkage_break_start_time', true)) {
+                update_user_meta($user_id, 'linkage_break_start_time', current_time('mysql'));
             }
             break;
             
@@ -292,24 +305,19 @@ function linkage_ajax_clock_action() {
             }
             $result = linkage_update_employee_status($user_id, 'clocked_in', 'break_out', 'Ended break via toolbar');
             
-            // Calculate break time and restart work timer
-            $break_start_time = get_user_meta($user_id, 'linkage_break_start_time', true);
-            $current_break_seconds = get_user_meta($user_id, 'linkage_break_seconds', true) ?: 0;
-            if ($break_start_time) {
-                $break_duration = strtotime(current_time('mysql')) - strtotime($break_start_time);
-                $total_break_seconds = $current_break_seconds + $break_duration;
-                update_user_meta($user_id, 'linkage_break_seconds', $total_break_seconds);
-            }
+            // Update attendance log record with lunch end time
+            $attendance_id = linkage_update_attendance_log($user_id, 'break_end');
             
-            // Don't update clock_in_time - keep the original to avoid double-counting
-            // Just clear the break start time
-            delete_user_meta($user_id, 'linkage_break_start_time');
+            // Clear minimal meta for backward compatibility (but don't create new ones)
+            if (get_user_meta($user_id, 'linkage_break_start_time', true)) {
+                delete_user_meta($user_id, 'linkage_break_start_time');
+            }
             break;
     }
     
     if ($result !== false) {
-        // Get updated employee status with calculated times
-        $employee_status = linkage_get_employee_status_with_times($user_id);
+        // Get updated employee status with calculated times from database
+        $employee_status = linkage_get_employee_status_from_database($user_id);
         
         wp_send_json_success(array(
             'message' => 'Action completed successfully',
@@ -318,7 +326,8 @@ function linkage_ajax_clock_action() {
             'work_seconds' => $employee_status->work_seconds,
             'break_seconds' => $employee_status->break_seconds,
             'clock_in_time' => $employee_status->clock_in_time,
-            'break_start_time' => $employee_status->break_start_time
+            'break_start_time' => $employee_status->break_start_time,
+            'attendance_id' => $attendance_id
         ));
     } else {
         wp_send_json_error('Failed to update status');
@@ -368,7 +377,7 @@ function linkage_ajax_get_employee_updates() {
         }
         
         // Get real-time calculated work and break times
-        $employee_status = linkage_get_employee_status_with_times($user_id);
+        $employee_status = linkage_get_employee_status_from_database($user_id);
         $work_times[$user_id] = $employee_status->work_seconds;
         $break_times[$user_id] = $employee_status->break_seconds;
     }
@@ -397,7 +406,7 @@ function linkage_ajax_get_time_updates() {
     }
     
     $user_id = get_current_user_id();
-    $employee_status = linkage_get_employee_status_with_times($user_id);
+    $employee_status = linkage_get_employee_status_from_database($user_id);
     
     wp_send_json_success(array(
         'work_seconds' => $employee_status->work_seconds,
@@ -572,72 +581,35 @@ function linkage_debug_time_button() {
 }
 
 /**
- * Calculate current work time for an employee (server-side)
+ * Calculate current work time for an employee (server-side) - DEPRECATED
+ * This function is kept for backward compatibility but is no longer used
+ * The system now uses linkage_get_employee_status_from_database() instead
  */
 function linkage_calculate_current_work_time($user_id) {
-    $clock_in_time = get_user_meta($user_id, 'linkage_clock_in_time', true);
-    $break_start_time = get_user_meta($user_id, 'linkage_break_start_time', true);
-    $stored_work_seconds = get_user_meta($user_id, 'linkage_work_seconds', true) ?: 0;
-    
-    if (!$clock_in_time) {
-        return $stored_work_seconds; // Return stored time if not currently working
-    }
-    
-    $current_time = current_time('mysql');
-    $work_time_since_last = 0;
-    
-    // If on break, calculate work time up to break start
-    if ($break_start_time) {
-        $work_time_since_last = strtotime($break_start_time) - strtotime($clock_in_time);
-    } else {
-        // If actively working, calculate up to current time
-        $work_time_since_last = strtotime($current_time) - strtotime($clock_in_time);
-    }
-    
-    return $stored_work_seconds + max(0, $work_time_since_last);
+    // This function is deprecated - use linkage_get_employee_status_from_database() instead
+    $employee_status = linkage_get_employee_status_from_database($user_id);
+    return $employee_status->work_seconds;
 }
 
 /**
- * Calculate current break time for an employee (server-side)
+ * Calculate current break time for an employee (server-side) - DEPRECATED
+ * This function is kept for backward compatibility but is no longer used
+ * The system now uses linkage_get_employee_status_from_database() instead
  */
 function linkage_calculate_current_break_time($user_id) {
-    $break_start_time = get_user_meta($user_id, 'linkage_break_start_time', true);
-    $stored_break_seconds = get_user_meta($user_id, 'linkage_break_seconds', true) ?: 0;
-    
-    if (!$break_start_time) {
-        return $stored_break_seconds; // Return stored time if not on break
-    }
-    
-    $current_time = current_time('mysql');
-    $break_time_since_start = strtotime($current_time) - strtotime($break_start_time);
-    
-    return $stored_break_seconds + max(0, $break_time_since_start);
+    // This function is deprecated - use linkage_get_employee_status_from_database() instead
+    $employee_status = linkage_get_employee_status_from_database($user_id);
+    return $employee_status->break_seconds;
 }
 
 /**
- * Get real-time employee status with calculated times
+ * Get real-time employee status with calculated times - DEPRECATED
+ * This function is kept for backward compatibility but is no longer used
+ * The system now uses linkage_get_employee_status_from_database() instead
  */
 function linkage_get_employee_status_with_times($user_id) {
-    $status = get_user_meta($user_id, 'linkage_employee_status', true);
-    $last_action_time = get_user_meta($user_id, 'linkage_last_action_time', true);
-    $last_action_type = get_user_meta($user_id, 'linkage_last_action_type', true);
-    $notes = get_user_meta($user_id, 'linkage_last_notes', true);
-    
-    // Calculate current times
-    $current_work_seconds = linkage_calculate_current_work_time($user_id);
-    $current_break_seconds = linkage_calculate_current_break_time($user_id);
-    
-    return (object) array(
-        'user_id' => $user_id,
-        'status' => $status ?: 'clocked_out',
-        'last_action_time' => $last_action_time ?: 'Never',
-        'last_action_type' => $last_action_type ?: 'None',
-        'notes' => $notes,
-        'work_seconds' => $current_work_seconds,
-        'break_seconds' => $current_break_seconds,
-        'clock_in_time' => get_user_meta($user_id, 'linkage_clock_in_time', true),
-        'break_start_time' => get_user_meta($user_id, 'linkage_break_start_time', true)
-    );
+    // This function is deprecated - use linkage_get_employee_status_from_database() instead
+    return linkage_get_employee_status_from_database($user_id);
 }
 
 /**
@@ -878,3 +850,219 @@ function linkage_ajax_export_attendance() {
     }
 }
 add_action('wp_ajax_linkage_export_attendance', 'linkage_ajax_export_attendance');
+
+/**
+ * Create a new attendance log record
+ */
+function linkage_create_attendance_log($user_id, $action) {
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $current_time = current_time('mysql');
+    $work_date = current_time('Y-m-d');
+    
+    // Check if a record already exists for today
+    $existing_record = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
+        $user_id,
+        $work_date
+    ));
+    
+    if ($existing_record) {
+        // Update existing record
+        $wpdb->update(
+            $table,
+            array(
+                'time_in' => $current_time,
+                'updated_at' => $current_time
+            ),
+            array('id' => $existing_record->id),
+            array('%s', '%s'),
+            array('%d')
+        );
+        return $existing_record->id;
+    } else {
+        // Create new record
+        $wpdb->insert(
+            $table,
+            array(
+                'user_id' => $user_id,
+                'work_date' => $work_date,
+                'time_in' => $current_time,
+                'status' => 'active',
+                'created_at' => $current_time,
+                'updated_at' => $current_time
+            ),
+            array('%d', '%s', '%s', '%s', '%s', '%s')
+        );
+        
+        return $wpdb->insert_id;
+    }
+}
+
+/**
+ * Update an existing attendance log record
+ */
+function linkage_update_attendance_log($user_id, $action) {
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $current_time = current_time('mysql');
+    $work_date = current_time('Y-m-d');
+    
+    // Get the active record for today
+    $record = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
+        $user_id,
+        $work_date
+    ));
+    
+    if (!$record) {
+        return false;
+    }
+    
+    $update_data = array('updated_at' => $current_time);
+    
+    switch ($action) {
+        case 'break_start':
+            $update_data['lunch_start'] = $current_time;
+            break;
+            
+        case 'break_end':
+            $update_data['lunch_end'] = $current_time;
+            break;
+            
+        case 'clock_out':
+            $update_data['time_out'] = $current_time;
+            $update_data['status'] = 'completed';
+            
+            // Calculate total hours
+            $time_in = strtotime($record->time_in);
+            $time_out = strtotime($current_time);
+            $lunch_start = $record->lunch_start ? strtotime($record->lunch_start) : null;
+            $lunch_end = $record->lunch_end ? strtotime($record->lunch_end) : null;
+            
+            $total_seconds = $time_out - $time_in;
+            
+            // Subtract lunch time if lunch was taken
+            if ($lunch_start && $lunch_end) {
+                $lunch_seconds = $lunch_end - $lunch_start;
+                $total_seconds -= $lunch_seconds;
+            }
+            
+            $total_hours = round($total_seconds / 3600, 2);
+            $update_data['total_hours'] = $total_hours;
+            break;
+    }
+    
+    $wpdb->update(
+        $table,
+        $update_data,
+        array('id' => $record->id),
+        null,
+        array('%d')
+    );
+    
+    return $record->id;
+}
+
+/**
+ * Get employee status with calculated times from database instead of meta keys
+ */
+function linkage_get_employee_status_from_database($user_id) {
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $work_date = current_time('Y-m-d');
+    
+    // Get the active record for today
+    $record = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
+        $user_id,
+        $work_date
+    ));
+    
+    if (!$record) {
+        // Check if there's a completed record for today
+        $completed_record = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'completed' ORDER BY id DESC LIMIT 1",
+            $user_id,
+            $work_date
+        ));
+        
+        if ($completed_record) {
+            return (object) array(
+                'user_id' => $user_id,
+                'status' => 'clocked_out',
+                'last_action_time' => $completed_record->updated_at,
+                'last_action_type' => 'clock_out',
+                'notes' => '',
+                'work_seconds' => 0,
+                'break_seconds' => 0,
+                'clock_in_time' => null,
+                'break_start_time' => null
+            );
+        }
+        
+        // No record found, user is clocked out
+        return (object) array(
+            'user_id' => $user_id,
+            'status' => 'clocked_out',
+            'last_action_time' => 'Never',
+            'last_action_type' => 'None',
+            'notes' => '',
+            'work_seconds' => 0,
+            'break_seconds' => 0,
+            'clock_in_time' => null,
+            'break_start_time' => null
+        );
+    }
+    
+    // Calculate current work and break times
+    $current_time = current_time('mysql');
+    $work_seconds = 0;
+    $break_seconds = 0;
+    
+    if ($record->time_in) {
+        $time_in = strtotime($record->time_in);
+        $time_now = strtotime($current_time);
+        
+        if ($record->lunch_start && !$record->lunch_end) {
+            // On break - calculate work time up to lunch start
+            $lunch_start = strtotime($record->lunch_start);
+            $work_seconds = $lunch_start - $time_in;
+            
+            // Calculate break time from lunch start to now
+            $break_seconds = $time_now - $lunch_start;
+        } elseif ($record->lunch_start && $record->lunch_end) {
+            // Lunch ended - calculate total work time
+            $lunch_start = strtotime($record->lunch_start);
+            $lunch_end = strtotime($record->lunch_end);
+            $lunch_duration = $lunch_end - $lunch_start;
+            
+            $work_seconds = ($lunch_start - $time_in) + ($time_now - $lunch_end);
+            $break_seconds = $lunch_duration;
+        } else {
+            // No lunch - calculate work time from clock in to now
+            $work_seconds = $time_now - $time_in;
+        }
+    }
+    
+    // Determine status
+    $status = 'clocked_in';
+    if ($record->lunch_start && !$record->lunch_end) {
+        $status = 'on_break';
+    }
+    
+    return (object) array(
+        'user_id' => $user_id,
+        'status' => $status,
+        'last_action_time' => $record->updated_at,
+        'last_action_type' => $status === 'on_break' ? 'break_start' : 'clock_in',
+        'notes' => '',
+        'work_seconds' => max(0, $work_seconds),
+        'break_seconds' => max(0, $break_seconds),
+        'clock_in_time' => $record->time_in,
+        'break_start_time' => $record->lunch_start
+    );
+}
