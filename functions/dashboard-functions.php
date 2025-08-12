@@ -869,22 +869,18 @@ function linkage_update_attendance_log($user_id, $action) {
                 $update_data['time_out'] = $current_time;
                 $update_data['status'] = 'completed';
                 
-                // Calculate total hours
+                // Calculate total hours including break time
                 $time_in = strtotime($record->time_in);
                 $time_out = strtotime($current_time);
                 $lunch_start = $record->lunch_start ? strtotime($record->lunch_start) : null;
                 $lunch_end = $record->lunch_end ? strtotime($record->lunch_end) : null;
                 
+                // Total time from clock in to clock out (includes break time)
                 $total_seconds = $time_out - $time_in;
                 
-                // Subtract lunch time if lunch was taken
-                if ($lunch_start && $lunch_end) {
-                    $lunch_seconds = $lunch_end - $lunch_start;
-                    $total_seconds -= $lunch_seconds;
-                } elseif ($lunch_start && !$lunch_end) {
-                    // If lunch started but never ended, assume it ended at clock out
-                    $lunch_seconds = $time_out - $lunch_start;
-                    $total_seconds -= $lunch_seconds;
+                // Handle case where lunch started but never ended
+                if ($lunch_start && !$lunch_end) {
+                    // Auto-end lunch at clock out time
                     $update_data['lunch_end'] = $current_time;
                 }
                 
