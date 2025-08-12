@@ -308,19 +308,17 @@ function linkage_ajax_clock_action() {
     }
     
     if ($result !== false) {
-        // Get updated employee status for response
-        $employee_status = linkage_get_employee_status($user_id);
-        $work_seconds = get_user_meta($user_id, 'linkage_work_seconds', true) ?: 0;
-        $break_seconds = get_user_meta($user_id, 'linkage_break_seconds', true) ?: 0;
+        // Get updated employee status with calculated times
+        $employee_status = linkage_get_employee_status_with_times($user_id);
         
         wp_send_json_success(array(
             'message' => 'Action completed successfully',
             'status' => $employee_status->status,
             'action' => $action,
-            'work_seconds' => $work_seconds,
-            'break_seconds' => $break_seconds,
-            'clock_in_time' => get_user_meta($user_id, 'linkage_clock_in_time', true),
-            'break_start_time' => get_user_meta($user_id, 'linkage_break_start_time', true)
+            'work_seconds' => $employee_status->work_seconds,
+            'break_seconds' => $employee_status->break_seconds,
+            'clock_in_time' => $employee_status->clock_in_time,
+            'break_start_time' => $employee_status->break_start_time
         ));
     } else {
         wp_send_json_error('Failed to update status');
@@ -346,6 +344,8 @@ function linkage_ajax_get_employee_updates() {
     $statuses = array();
     $positions = array();
     $hire_dates = array();
+    $work_times = array();
+    $break_times = array();
     
     foreach ($employees as $employee) {
         $user_id = $employee->ID;
@@ -366,16 +366,49 @@ function linkage_ajax_get_employee_updates() {
         if ($hire_date) {
             $hire_dates[$user_id] = $hire_date;
         }
+        
+        // Get real-time calculated work and break times
+        $employee_status = linkage_get_employee_status_with_times($user_id);
+        $work_times[$user_id] = $employee_status->work_seconds;
+        $break_times[$user_id] = $employee_status->break_seconds;
     }
     
     wp_send_json_success(array(
         'statuses' => $statuses,
         'positions' => $positions,
         'hire_dates' => $hire_dates,
+        'work_times' => $work_times,
+        'break_times' => $break_times,
         'timestamp' => current_time('mysql')
     ));
 }
 add_action('wp_ajax_linkage_get_employee_updates', 'linkage_ajax_get_employee_updates');
+
+/**
+ * AJAX handler for getting real-time time updates
+ */
+function linkage_ajax_get_time_updates() {
+    if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
+        wp_die('Security check failed');
+    }
+    
+    if (!is_user_logged_in()) {
+        wp_send_json_error('User not logged in');
+    }
+    
+    $user_id = get_current_user_id();
+    $employee_status = linkage_get_employee_status_with_times($user_id);
+    
+    wp_send_json_success(array(
+        'work_seconds' => $employee_status->work_seconds,
+        'break_seconds' => $employee_status->break_seconds,
+        'status' => $employee_status->status,
+        'work_time_display' => linkage_format_time_display($employee_status->work_seconds),
+        'break_time_display' => linkage_format_time_display($employee_status->break_seconds),
+        'timestamp' => current_time('mysql')
+    ));
+}
+add_action('wp_ajax_linkage_get_time_updates', 'linkage_ajax_get_time_updates');
 
 /**
  * Enqueue dashboard scripts
@@ -536,6 +569,92 @@ function linkage_debug_time_button() {
     echo "<p><strong>Button Should Be Visible:</strong> " . ($button_should_be_visible ? 'Yes' : 'No') . "</p>";
     
     echo "<hr>";
+}
+
+/**
+ * Calculate current work time for an employee (server-side)
+ */
+function linkage_calculate_current_work_time($user_id) {
+    $clock_in_time = get_user_meta($user_id, 'linkage_clock_in_time', true);
+    $break_start_time = get_user_meta($user_id, 'linkage_break_start_time', true);
+    $stored_work_seconds = get_user_meta($user_id, 'linkage_work_seconds', true) ?: 0;
+    
+    if (!$clock_in_time) {
+        return $stored_work_seconds; // Return stored time if not currently working
+    }
+    
+    $current_time = current_time('mysql');
+    $work_time_since_last = 0;
+    
+    // If on break, calculate work time up to break start
+    if ($break_start_time) {
+        $work_time_since_last = strtotime($break_start_time) - strtotime($clock_in_time);
+    } else {
+        // If actively working, calculate up to current time
+        $work_time_since_last = strtotime($current_time) - strtotime($clock_in_time);
+    }
+    
+    return $stored_work_seconds + max(0, $work_time_since_last);
+}
+
+/**
+ * Calculate current break time for an employee (server-side)
+ */
+function linkage_calculate_current_break_time($user_id) {
+    $break_start_time = get_user_meta($user_id, 'linkage_break_start_time', true);
+    $stored_break_seconds = get_user_meta($user_id, 'linkage_break_seconds', true) ?: 0;
+    
+    if (!$break_start_time) {
+        return $stored_break_seconds; // Return stored time if not on break
+    }
+    
+    $current_time = current_time('mysql');
+    $break_time_since_start = strtotime($current_time) - strtotime($break_start_time);
+    
+    return $stored_break_seconds + max(0, $break_time_since_start);
+}
+
+/**
+ * Get real-time employee status with calculated times
+ */
+function linkage_get_employee_status_with_times($user_id) {
+    $status = get_user_meta($user_id, 'linkage_employee_status', true);
+    $last_action_time = get_user_meta($user_id, 'linkage_last_action_time', true);
+    $last_action_type = get_user_meta($user_id, 'linkage_last_action_type', true);
+    $notes = get_user_meta($user_id, 'linkage_last_notes', true);
+    
+    // Calculate current times
+    $current_work_seconds = linkage_calculate_current_work_time($user_id);
+    $current_break_seconds = linkage_calculate_current_break_time($user_id);
+    
+    return (object) array(
+        'user_id' => $user_id,
+        'status' => $status ?: 'clocked_out',
+        'last_action_time' => $last_action_time ?: 'Never',
+        'last_action_type' => $last_action_type ?: 'None',
+        'notes' => $notes,
+        'work_seconds' => $current_work_seconds,
+        'break_seconds' => $current_break_seconds,
+        'clock_in_time' => get_user_meta($user_id, 'linkage_clock_in_time', true),
+        'break_start_time' => get_user_meta($user_id, 'linkage_break_start_time', true)
+    );
+}
+
+/**
+ * Format time display from seconds
+ */
+function linkage_format_time_display($seconds) {
+    if ($seconds < 0) $seconds = 0;
+    
+    $hours = floor($seconds / 3600);
+    $minutes = floor(($seconds % 3600) / 60);
+    $secs = $seconds % 60;
+    
+    if ($hours > 0) {
+        return sprintf('%02d:%02d:%02d', $hours, $minutes, $secs);
+    } else {
+        return sprintf('%02d:%02d', $minutes, $secs);
+    }
 }
 
 /**
