@@ -11,7 +11,7 @@ function linkage_get_all_employees_status() {
     
     // Get all users who have employee-related roles or capabilities
     $users = get_users(array(
-        'role__in' => array('employee', 'hr_manager', 'administrator'),
+        'role__in' => array('employee', 'manager', 'accounting_payroll', 'contractor', 'administrator'),
         'orderby' => 'display_name',
         'order' => 'ASC'
     ));
@@ -95,7 +95,9 @@ function linkage_get_user_role_display($user_id) {
     
     $role_names = array(
         'employee' => 'Employee',
-        'hr_manager' => 'HR Manager',
+        'manager' => 'Manager',
+        'accounting_payroll' => 'Accounting | Payroll',
+        'contractor' => 'Contractors',
         'administrator' => 'Administrator'
     );
     
@@ -113,7 +115,7 @@ function linkage_initialize_employee_status() {
     $work_date = current_time('Y-m-d');
     
     $users = get_users(array(
-        'role__in' => array('employee', 'hr_manager', 'administrator'),
+        'role__in' => array('employee', 'manager', 'accounting_payroll', 'contractor', 'administrator'),
         'fields' => 'ID'
     ));
     
@@ -1040,7 +1042,7 @@ function linkage_debug_database_status() {
     
     // Get all users
     $users = get_users(array(
-        'role__in' => array('employee', 'hr_manager', 'administrator'),
+        'role__in' => array('employee', 'manager', 'accounting_payroll', 'contractor', 'administrator'),
         'orderby' => 'display_name',
         'order' => 'ASC'
     ));
@@ -1140,7 +1142,7 @@ function linkage_cleanup_attendance_records() {
     
     // Reset all user meta statuses to clocked_out
     $users = get_users(array(
-        'role__in' => array('employee', 'hr_manager', 'administrator'),
+        'role__in' => array('employee', 'manager', 'accounting_payroll', 'contractor', 'administrator'),
         'fields' => 'ID'
     ));
     
@@ -1375,7 +1377,7 @@ function linkage_test_concurrent_clock_actions() {
     
     $results = array();
     $test_users = get_users(array(
-        'role__in' => array('employee', 'hr_manager', 'administrator'),
+        'role__in' => array('employee', 'manager', 'accounting_payroll', 'contractor', 'administrator'),
         'number' => 5 // Test with first 5 users
     ));
     
