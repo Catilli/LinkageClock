@@ -318,7 +318,7 @@ jQuery(document).ready(function($) {
                     }
                 },
                 error: function() {
-                    console.log('Failed to refresh employee data');
+
                 }
             });
         },
