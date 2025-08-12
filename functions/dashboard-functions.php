@@ -511,6 +511,10 @@ function linkage_force_create_tables() {
  * Force initialize all users as employees
  */
 function linkage_force_initialize_all_users() {
+    // Clean up any incorrect attendance records first
+    echo "<h3>Step 1: Cleaning up attendance records...</h3>";
+    $cleanup_result = linkage_cleanup_attendance_records();
+    
     // Get all users except admin
     $users = get_users(array(
         'exclude' => array(1),
@@ -541,8 +545,8 @@ function linkage_force_initialize_all_users() {
     
     echo "<p><strong>Initialized $initialized_count users as employees!</strong></p>";
     
-    // Debug: Show actual database status
-    echo "<h3>Current Database Status:</h3>";
+    // Debug: Show current database status
+    echo "<h3>Current Database Status After Cleanup:</h3>";
     linkage_debug_database_status();
     
     return $initialized_count;
@@ -1068,16 +1072,22 @@ function linkage_get_employee_status_from_database($user_id) {
     }
     
     // Determine status
-    $status = 'clocked_in';
-    if ($record->lunch_start && !$record->lunch_end) {
-        $status = 'on_break';
+    $status = 'clocked_out'; // Default to clocked out
+    
+    if ($record->time_in && !$record->time_out) {
+        // User has clocked in but not out
+        if ($record->lunch_start && !$record->lunch_end) {
+            $status = 'on_break';
+        } else {
+            $status = 'clocked_in';
+        }
     }
     
     return (object) array(
         'user_id' => $user_id,
         'status' => $status,
         'last_action_time' => $record->updated_at,
-        'last_action_type' => $status === 'on_break' ? 'break_start' : 'clock_in',
+        'last_action_type' => $status === 'on_break' ? 'break_start' : ($status === 'clocked_in' ? 'clock_in' : 'clock_out'),
         'notes' => '',
         'work_seconds' => max(0, $work_seconds),
         'break_seconds' => max(0, $break_seconds),
@@ -1150,4 +1160,106 @@ function linkage_debug_database_status() {
         
         echo "<hr>";
     }
+}
+
+/**
+ * Clean up incorrect attendance records and reset user statuses
+ */
+function linkage_cleanup_attendance_records() {
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $work_date = current_time('Y-m-d');
+    
+    echo "<h3>Cleaning up attendance records...</h3>";
+    
+    // Get all active records for today
+    $active_records = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM $table WHERE work_date = %s AND status = 'active'",
+        $work_date
+    ));
+    
+    $cleaned_count = 0;
+    
+    foreach ($active_records as $record) {
+        // Check if user should actually be clocked in
+        $user_id = $record->user_id;
+        
+        // Get user meta status
+        $meta_status = get_user_meta($user_id, 'linkage_employee_status', true);
+        
+        // If user meta shows clocked out but has active record, mark record as completed
+        if ($meta_status !== 'clocked_in' && $meta_status !== 'on_break') {
+            $wpdb->update(
+                $table,
+                array(
+                    'status' => 'completed',
+                    'time_out' => current_time('mysql'),
+                    'updated_at' => current_time('mysql')
+                ),
+                array('id' => $record->id),
+                array('%s', '%s', '%s'),
+                array('%d')
+            );
+            
+            echo "<p>Cleaned up record for user ID $user_id (status: $meta_status)</p>";
+            $cleaned_count++;
+        }
+    }
+    
+    // Reset all user meta statuses to clocked_out
+    $users = get_users(array(
+        'role__in' => array('employee', 'hr_manager', 'administrator'),
+        'fields' => 'ID'
+    ));
+    
+    $reset_count = 0;
+    foreach ($users as $user_id) {
+        $meta_status = get_user_meta($user_id, 'linkage_employee_status', true);
+        if ($meta_status && $meta_status !== 'clocked_out') {
+            update_user_meta($user_id, 'linkage_employee_status', 'clocked_out');
+            delete_user_meta($user_id, 'linkage_clock_in_time');
+            delete_user_meta($user_id, 'linkage_break_start_time');
+            $reset_count++;
+        }
+    }
+    
+    echo "<p><strong>Cleaned up $cleaned_count attendance records</strong></p>";
+    echo "<p><strong>Reset $reset_count user statuses to clocked out</strong></p>";
+    
+    return array('cleaned' => $cleaned_count, 'reset' => $reset_count);
+}
+
+/**
+ * Reset a specific user's status to clocked out
+ */
+function linkage_reset_user_status($user_id) {
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $work_date = current_time('Y-m-d');
+    
+    // Mark any active records as completed
+    $wpdb->update(
+        $table,
+        array(
+            'status' => 'completed',
+            'time_out' => current_time('mysql'),
+            'updated_at' => current_time('mysql')
+        ),
+        array(
+            'user_id' => $user_id,
+            'work_date' => $work_date,
+            'status' => 'active'
+        ),
+        array('%s', '%s', '%s'),
+        array('%d', '%s', '%s')
+    );
+    
+    // Reset user meta
+    update_user_meta($user_id, 'linkage_employee_status', 'clocked_out');
+    delete_user_meta($user_id, 'linkage_clock_in_time');
+    delete_user_meta($user_id, 'linkage_break_start_time');
+    
+    return true;
 }
