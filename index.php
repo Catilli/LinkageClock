@@ -81,7 +81,12 @@ get_header(); ?>
                     $current_status = linkage_get_employee_status_from_database($current_user->ID);
                     ?>
                     <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                        <h4 class="font-semibold text-yellow-800">Debug: Current User Status</h4>
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-semibold text-yellow-800">Debug: Current User Status</h4>
+                            <button onclick="fixCapabilities()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                Fix Capabilities
+                            </button>
+                        </div>
                         <p class="text-sm text-yellow-700">
                             <strong>User:</strong> <?php echo esc_html($current_user->display_name); ?> 
                             <strong>Role:</strong> <?php echo implode(', ', $current_user->roles); ?>
@@ -93,7 +98,109 @@ get_header(); ?>
                         <p class="text-sm text-yellow-700">
                             <strong>Clock Button Action:</strong> <?php echo ($current_status->status === 'clocked_in' || $current_status->status === 'on_break') ? 'Time Out' : 'Time In'; ?>
                         </p>
+                        <p class="text-sm text-yellow-700">
+                            <strong>Clock Capability:</strong> <?php echo current_user_can('linkage_clock_in_out') ? '✅ Yes' : '❌ No'; ?>
+                            <strong>Break Capability:</strong> <?php echo current_user_can('linkage_take_break') ? '✅ Yes' : '❌ No'; ?>
+                        </p>
                     </div>
+                    
+                    <script>
+                    function fixCapabilities() {
+                        if (confirm('Fix missing capabilities for current user?')) {
+                            // Create a form to submit the fix action
+                            var form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = window.location.href;
+                            
+                            var input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'fix_capabilities';
+                            input.value = '1';
+                            
+                            form.appendChild(input);
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
+                    </script>
+                    
+                    <?php
+                    // Handle the fix capabilities action
+                    if (isset($_POST['fix_capabilities']) && is_user_logged_in()) {
+                        $result = linkage_fix_current_user_capabilities();
+                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
+                        echo "<p><strong>$result</strong></p>";
+                        echo '<p>Please refresh the page to see the updated capabilities.</p>';
+                        echo '</div>';
+                    }
+                    ?>
+                <?php endif; ?>
+                
+                <!-- Debug: All Users Capabilities -->
+                <?php if (current_user_can('administrator')): ?>
+                    <div class="mb-4 p-3 bg-blue-50 border border-blue-200 rounded">
+                        <div class="flex items-center justify-between mb-2">
+                            <h4 class="font-semibold text-blue-800">Debug: All Users Capabilities</h4>
+                            <button onclick="updateAllUsersCapabilities()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                                Update All Users Capabilities
+                            </button>
+                        </div>
+                        <?php
+                        $users = get_users(array(
+                            'role__in' => array('employee', 'hr_manager', 'administrator'),
+                            'orderby' => 'display_name'
+                        ));
+                        
+                        if (empty($users)) {
+                            $users = get_users(array('exclude' => array(1), 'orderby' => 'display_name'));
+                        }
+                        
+                        foreach ($users as $user) {
+                            $user_obj = get_user_by('ID', $user->ID);
+                            $has_clock = user_can($user->ID, 'linkage_clock_in_out');
+                            $has_break = user_can($user->ID, 'linkage_take_break');
+                            $roles = implode(', ', $user_obj->roles);
+                            
+                            echo '<div class="text-sm text-blue-700 mb-2">';
+                            echo '<strong>' . esc_html($user->display_name) . '</strong> (' . esc_html($roles) . '): ';
+                            echo 'Clock: ' . ($has_clock ? '✅' : '❌') . ' | ';
+                            echo 'Break: ' . ($has_break ? '✅' : '❌');
+                            echo '</div>';
+                        }
+                        ?>
+                    </div>
+                    
+                    <script>
+                    function updateAllUsersCapabilities() {
+                        if (confirm('Update capabilities for ALL users? This will ensure everyone can perform time tracking actions.')) {
+                            // Create a form to submit the update action
+                            var form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = window.location.href;
+                            
+                            var input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'update_all_capabilities';
+                            input.value = '1';
+                            
+                            form.appendChild(input);
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
+                    </script>
+                    
+                    <?php
+                    // Handle the update all capabilities action
+                    if (isset($_POST['update_all_capabilities']) && current_user_can('administrator')) {
+                        $updated_count = linkage_force_update_all_users_capabilities();
+                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
+                        echo "<p><strong>Updated capabilities for $updated_count users!</strong></p>";
+                        echo '<p>All users now have the necessary permissions for time tracking.</p>';
+                        echo '<p>Please refresh the page to see the updated capabilities.</p>';
+                        echo '</div>';
+                    }
+                    ?>
                 <?php endif; ?>
                 
                 <div class="overflow-x-auto">
@@ -195,95 +302,6 @@ get_header(); ?>
                 </div>
             </div>
             
-            <!-- Debug Database Status -->
-            <?php if (current_user_can('administrator')): ?>
-                <div class="mt-8 bg-white shadow-md rounded-lg p-6">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="text-lg font-semibold text-gray-900">Database Debug Info (Admin Only)</h3>
-                        <div class="flex space-x-2">
-                            <button onclick="location.reload()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
-                                Refresh
-                            </button>
-                            <button onclick="resetAllUsers()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
-                                Reset All Users to Clocked Out
-                            </button>
-                            <button onclick="testClockFunction()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
-                                Test Clock Function
-                            </button>
-                        </div>
-                    </div>
-                    <?php linkage_debug_database_status(); ?>
-                </div>
-                
-                <script>
-                function resetAllUsers() {
-                    if (confirm('Are you sure you want to reset all users to clocked out? This will clear any active work sessions.')) {
-                        // Create a form to submit the reset action
-                        var form = document.createElement('form');
-                        form.method = 'POST';
-                        form.action = window.location.href;
-                        
-                        var input = document.createElement('input');
-                        input.type = 'hidden';
-                        input.name = 'reset_all_users';
-                        input.value = '1';
-                        
-                        form.appendChild(input);
-                        document.body.appendChild(form);
-                        form.submit();
-                    }
-                }
-                
-                function testClockFunction() {
-                    console.log('Testing clock function...');
-                    console.log('linkage_ajax object:', linkage_ajax);
-                    console.log('Clock button found:', $('#clock-toggle-btn').length);
-                    console.log('Clock button data-action:', $('#clock-toggle-btn').data('action'));
-                    console.log('Clock button text:', $('#clock-toggle-text').text());
-                    
-                    // Test AJAX call directly
-                    if (linkage_ajax && linkage_ajax.ajax_url) {
-                        console.log('Making test AJAX call...');
-                        $.post(linkage_ajax.ajax_url, {
-                            action: 'linkage_clock_action',
-                            action_type: 'clock_in',
-                            nonce: linkage_ajax.nonce
-                        }, function(response) {
-                            console.log('Test AJAX response:', response);
-                            alert('Test AJAX call successful! Check console for details.');
-                        }).fail(function(xhr, status, error) {
-                            console.error('Test AJAX failed:', xhr, status, error);
-                            alert('Test AJAX call failed! Check console for details.');
-                        });
-                    } else {
-                        alert('linkage_ajax not available! Check console for details.');
-                    }
-                }
-                </script>
-                
-                <?php
-                // Handle the reset action
-                if (isset($_POST['reset_all_users']) && current_user_can('administrator')) {
-                    $users = get_users(array(
-                        'role__in' => array('employee', 'hr_manager', 'administrator'),
-                        'fields' => 'ID'
-                    ));
-                    
-                    $reset_count = 0;
-                    foreach ($users as $user_id) {
-                        if (linkage_reset_user_status($user_id)) {
-                            $reset_count++;
-                        }
-                    }
-                    
-                    echo '<div class="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">';
-                    echo "<p><strong>Reset $reset_count users to clocked out status!</strong></p>";
-                    echo '<p>Please refresh the page to see the updated status.</p>';
-                    echo '</div>';
-                }
-                ?>
-            <?php endif; ?>
-
             <!-- Quick Stats -->
             <div class="grid md:grid-cols-3 gap-6 mt-8">
                 <?php
