@@ -207,8 +207,9 @@ function linkage_ajax_update_employee_status() {
         wp_die('Security check failed');
     }
     
-    if (!current_user_can('linkage_manage_employees')) {
-        wp_die('Insufficient permissions');
+    // Check if user is administrator
+    if (!current_user_can('administrator')) {
+        wp_send_json_error('Access denied. Administrator privileges required.');
     }
     
     $user_id = intval($_POST['user_id']);
@@ -818,8 +819,9 @@ function linkage_ajax_export_attendance() {
         wp_die('Security check failed');
     }
     
-    if (!current_user_can('edit_posts')) {
-        wp_send_json_error('Insufficient permissions');
+    // Check if user is administrator
+    if (!current_user_can('administrator')) {
+        wp_send_json_error('Access denied. Administrator privileges required.');
     }
     
     $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : null;
