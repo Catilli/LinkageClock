@@ -198,9 +198,61 @@ get_header(); ?>
             <!-- Debug Database Status -->
             <?php if (current_user_can('administrator')): ?>
                 <div class="mt-8 bg-white shadow-md rounded-lg p-6">
-                    <h3 class="text-lg font-semibold text-gray-900 mb-4">Database Debug Info (Admin Only)</h3>
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="text-lg font-semibold text-gray-900">Database Debug Info (Admin Only)</h3>
+                        <div class="flex space-x-2">
+                            <button onclick="location.reload()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
+                                Refresh
+                            </button>
+                            <button onclick="resetAllUsers()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
+                                Reset All Users to Clocked Out
+                            </button>
+                        </div>
+                    </div>
                     <?php linkage_debug_database_status(); ?>
                 </div>
+                
+                <script>
+                function resetAllUsers() {
+                    if (confirm('Are you sure you want to reset all users to clocked out? This will clear any active work sessions.')) {
+                        // Create a form to submit the reset action
+                        var form = document.createElement('form');
+                        form.method = 'POST';
+                        form.action = window.location.href;
+                        
+                        var input = document.createElement('input');
+                        input.type = 'hidden';
+                        input.name = 'reset_all_users';
+                        input.value = '1';
+                        
+                        form.appendChild(input);
+                        document.body.appendChild(form);
+                        form.submit();
+                    }
+                }
+                </script>
+                
+                <?php
+                // Handle the reset action
+                if (isset($_POST['reset_all_users']) && current_user_can('administrator')) {
+                    $users = get_users(array(
+                        'role__in' => array('employee', 'hr_manager', 'administrator'),
+                        'fields' => 'ID'
+                    ));
+                    
+                    $reset_count = 0;
+                    foreach ($users as $user_id) {
+                        if (linkage_reset_user_status($user_id)) {
+                            $reset_count++;
+                        }
+                    }
+                    
+                    echo '<div class="mt-4 p-4 bg-green-100 border border-green-400 text-green-700 rounded">';
+                    echo "<p><strong>Reset $reset_count users to clocked out status!</strong></p>";
+                    echo '<p>Please refresh the page to see the updated status.</p>';
+                    echo '</div>';
+                }
+                ?>
             <?php endif; ?>
 
             <!-- Quick Stats -->
