@@ -12,28 +12,68 @@ function linkage_create_custom_roles() {
             'edit_posts' => false,
             'delete_posts' => false,
             'upload_files' => true,
-            'linkage_submit_timesheet' => true,
+            'linkage_view_own_profile' => true,
+            'linkage_view_own_dashboard_status' => true,
             'linkage_view_own_timesheet' => true,
             'linkage_clock_in_out' => true,
             'linkage_take_break' => true,
         )
     );
 
-    // Add HR Manager role
+    // Add Manager role (previously HR Manager)
     add_role(
-        'hr_manager',
-        'HR Manager',
+        'manager',
+        'Manager',
         array(
             'read' => true,
-            'edit_posts' => true,
-            'delete_posts' => true,
+            'edit_posts' => false,
+            'delete_posts' => false,
             'upload_files' => true,
             'manage_options' => false,
-            'linkage_submit_timesheet' => true,
+            'linkage_view_main_dashboard' => true,
+            'linkage_manage_supervised_logs' => true,
+            'linkage_run_reports' => true,
+            'linkage_request_corrections' => true,
             'linkage_view_own_timesheet' => true,
-            'linkage_view_all_timesheets' => true,
-            'linkage_approve_timesheets' => true,
-            'linkage_manage_employees' => true,
+            'linkage_clock_in_out' => true,
+            'linkage_take_break' => true,
+        )
+    );
+
+    // Add Accounting | Payroll role
+    add_role(
+        'accounting_payroll',
+        'Accounting | Payroll',
+        array(
+            'read' => true,
+            'edit_posts' => false,
+            'delete_posts' => false,
+            'upload_files' => true,
+            'manage_options' => false,
+            'linkage_view_main_dashboard' => true,
+            'linkage_export_attendance' => true,
+            'linkage_view_all_attendance' => true,
+            'linkage_filter_by_date' => true,
+            'linkage_generate_payroll_reports' => true,
+            'linkage_view_own_timesheet' => true,
+            'linkage_clock_in_out' => true,
+            'linkage_take_break' => true,
+        )
+    );
+
+    // Add Contractors role
+    add_role(
+        'contractor',
+        'Contractors',
+        array(
+            'read' => true,
+            'edit_posts' => false,
+            'delete_posts' => false,
+            'upload_files' => true,
+            'manage_options' => false,
+            'linkage_view_own_profile' => true,
+            'linkage_view_own_dashboard_status' => true,
+            'linkage_view_own_timesheet' => true,
             'linkage_clock_in_out' => true,
             'linkage_take_break' => true,
         )
@@ -42,40 +82,86 @@ function linkage_create_custom_roles() {
 add_action('after_switch_theme', 'linkage_create_custom_roles');
 
 /**
+ * Migrate hr_manager users to manager role
+ */
+function linkage_migrate_hr_manager_to_manager() {
+    $hr_managers = get_users(array('role' => 'hr_manager'));
+    
+    foreach ($hr_managers as $user) {
+        $user_obj = new WP_User($user->ID);
+        $user_obj->remove_role('hr_manager');
+        $user_obj->add_role('manager');
+    }
+    
+    // Remove the old hr_manager role
+    remove_role('hr_manager');
+    
+    return count($hr_managers);
+}
+add_action('after_switch_theme', 'linkage_migrate_hr_manager_to_manager');
+
+/**
  * Add custom capabilities
  */
 function linkage_add_custom_capabilities() {
     // Get roles
     $employee_role = get_role('employee');
-    $hr_manager_role = get_role('hr_manager');
+    $manager_role = get_role('manager');
+    $accounting_role = get_role('accounting_payroll');
+    $contractor_role = get_role('contractor');
     $administrator_role = get_role('administrator');
 
     // Add custom capabilities to employee role
     if ($employee_role) {
-        $employee_role->add_cap('linkage_submit_timesheet');
+        $employee_role->add_cap('linkage_view_own_profile');
+        $employee_role->add_cap('linkage_view_own_dashboard_status');
         $employee_role->add_cap('linkage_view_own_timesheet');
         $employee_role->add_cap('linkage_clock_in_out');
         $employee_role->add_cap('linkage_take_break');
     }
 
-    // Add custom capabilities to hr_manager role
-    if ($hr_manager_role) {
-        $hr_manager_role->add_cap('linkage_submit_timesheet');
-        $hr_manager_role->add_cap('linkage_view_own_timesheet');
-        $hr_manager_role->add_cap('linkage_view_all_timesheets');
-        $hr_manager_role->add_cap('linkage_approve_timesheets');
-        $hr_manager_role->add_cap('linkage_manage_employees');
-        $hr_manager_role->add_cap('linkage_clock_in_out');
-        $hr_manager_role->add_cap('linkage_take_break');
+    // Add custom capabilities to manager role
+    if ($manager_role) {
+        $manager_role->add_cap('linkage_view_main_dashboard');
+        $manager_role->add_cap('linkage_manage_supervised_logs');
+        $manager_role->add_cap('linkage_run_reports');
+        $manager_role->add_cap('linkage_request_corrections');
+        $manager_role->add_cap('linkage_view_own_timesheet');
+        $manager_role->add_cap('linkage_clock_in_out');
+        $manager_role->add_cap('linkage_take_break');
     }
 
-    // Add custom capabilities to administrator role
+    // Add custom capabilities to accounting/payroll role
+    if ($accounting_role) {
+        $accounting_role->add_cap('linkage_view_main_dashboard');
+        $accounting_role->add_cap('linkage_export_attendance');
+        $accounting_role->add_cap('linkage_view_all_attendance');
+        $accounting_role->add_cap('linkage_filter_by_date');
+        $accounting_role->add_cap('linkage_generate_payroll_reports');
+        $accounting_role->add_cap('linkage_view_own_timesheet');
+        $accounting_role->add_cap('linkage_clock_in_out');
+        $accounting_role->add_cap('linkage_take_break');
+    }
+
+    // Add custom capabilities to contractor role
+    if ($contractor_role) {
+        $contractor_role->add_cap('linkage_view_own_profile');
+        $contractor_role->add_cap('linkage_view_own_dashboard_status');
+        $contractor_role->add_cap('linkage_view_own_timesheet');
+        $contractor_role->add_cap('linkage_clock_in_out');
+        $contractor_role->add_cap('linkage_take_break');
+    }
+
+    // Add custom capabilities to administrator role (full access)
     if ($administrator_role) {
-        $administrator_role->add_cap('linkage_submit_timesheet');
+        $administrator_role->add_cap('linkage_full_access');
+        $administrator_role->add_cap('linkage_manage_all_users');
+        $administrator_role->add_cap('linkage_view_main_dashboard');
+        $administrator_role->add_cap('linkage_manual_corrections');
+        $administrator_role->add_cap('linkage_export_attendance');
+        $administrator_role->add_cap('linkage_view_all_attendance');
+        $administrator_role->add_cap('linkage_run_reports');
         $administrator_role->add_cap('linkage_view_own_timesheet');
-        $administrator_role->add_cap('linkage_view_all_timesheets');
-        $administrator_role->add_cap('linkage_approve_timesheets');
-        $administrator_role->add_cap('linkage_manage_employees');
         $administrator_role->add_cap('linkage_clock_in_out');
         $administrator_role->add_cap('linkage_take_break');
     }
@@ -510,11 +596,14 @@ function linkage_ensure_all_users_have_clock_capabilities() {
     // Also ensure role-based capabilities are present
     if (in_array('administrator', $current_user->roles)) {
         $admin_capabilities = array(
-            'linkage_submit_timesheet',
-            'linkage_view_own_timesheet',
-            'linkage_view_all_timesheets',
-            'linkage_approve_timesheets',
-            'linkage_manage_employees'
+            'linkage_full_access',
+            'linkage_manage_all_users',
+            'linkage_view_main_dashboard',
+            'linkage_manual_corrections',
+            'linkage_export_attendance',
+            'linkage_view_all_attendance',
+            'linkage_run_reports',
+            'linkage_view_own_timesheet'
         );
         
         foreach ($admin_capabilities as $cap) {
@@ -524,16 +613,47 @@ function linkage_ensure_all_users_have_clock_capabilities() {
         }
     }
     
-    if (in_array('hr_manager', $current_user->roles)) {
-        $hr_capabilities = array(
-            'linkage_submit_timesheet',
-            'linkage_view_own_timesheet',
-            'linkage_view_all_timesheets',
-            'linkage_approve_timesheets',
-            'linkage_manage_employees'
+    if (in_array('manager', $current_user->roles)) {
+        $manager_capabilities = array(
+            'linkage_view_main_dashboard',
+            'linkage_manage_supervised_logs',
+            'linkage_run_reports',
+            'linkage_request_corrections',
+            'linkage_view_own_timesheet'
         );
         
-        foreach ($hr_capabilities as $cap) {
+        foreach ($manager_capabilities as $cap) {
+            if (!user_can($current_user->ID, $cap)) {
+                $current_user->add_cap($cap);
+            }
+        }
+    }
+    
+    if (in_array('accounting_payroll', $current_user->roles)) {
+        $accounting_capabilities = array(
+            'linkage_view_main_dashboard',
+            'linkage_export_attendance',
+            'linkage_view_all_attendance',
+            'linkage_filter_by_date',
+            'linkage_generate_payroll_reports',
+            'linkage_view_own_timesheet'
+        );
+        
+        foreach ($accounting_capabilities as $cap) {
+            if (!user_can($current_user->ID, $cap)) {
+                $current_user->add_cap($cap);
+            }
+        }
+    }
+    
+    if (in_array('contractor', $current_user->roles)) {
+        $contractor_capabilities = array(
+            'linkage_view_own_profile',
+            'linkage_view_own_dashboard_status',
+            'linkage_view_own_timesheet'
+        );
+        
+        foreach ($contractor_capabilities as $cap) {
             if (!user_can($current_user->ID, $cap)) {
                 $current_user->add_cap($cap);
             }
@@ -542,7 +662,8 @@ function linkage_ensure_all_users_have_clock_capabilities() {
     
     if (in_array('employee', $current_user->roles)) {
         $employee_capabilities = array(
-            'linkage_submit_timesheet',
+            'linkage_view_own_profile',
+            'linkage_view_own_dashboard_status',
             'linkage_view_own_timesheet'
         );
         
@@ -598,16 +719,49 @@ function linkage_force_update_all_users_capabilities() {
             }
         }
         
-        if (in_array('hr_manager', $user->roles)) {
-            $hr_capabilities = array(
-                'linkage_submit_timesheet',
-                'linkage_view_own_timesheet',
-                'linkage_view_all_timesheets',
-                'linkage_approve_timesheets',
-                'linkage_manage_employees'
+        if (in_array('manager', $user->roles)) {
+            $manager_capabilities = array(
+                'linkage_view_main_dashboard',
+                'linkage_manage_supervised_logs',
+                'linkage_run_reports',
+                'linkage_request_corrections',
+                'linkage_view_own_timesheet'
             );
             
-            foreach ($hr_capabilities as $cap) {
+            foreach ($manager_capabilities as $cap) {
+                if (!user_can($user->ID, $cap)) {
+                    $user_obj->add_cap($cap);
+                    $user_updated = true;
+                }
+            }
+        }
+        
+        if (in_array('accounting_payroll', $user->roles)) {
+            $accounting_capabilities = array(
+                'linkage_view_main_dashboard',
+                'linkage_export_attendance',
+                'linkage_view_all_attendance',
+                'linkage_filter_by_date',
+                'linkage_generate_payroll_reports',
+                'linkage_view_own_timesheet'
+            );
+            
+            foreach ($accounting_capabilities as $cap) {
+                if (!user_can($user->ID, $cap)) {
+                    $user_obj->add_cap($cap);
+                    $user_updated = true;
+                }
+            }
+        }
+        
+        if (in_array('contractor', $user->roles)) {
+            $contractor_capabilities = array(
+                'linkage_view_own_profile',
+                'linkage_view_own_dashboard_status',
+                'linkage_view_own_timesheet'
+            );
+            
+            foreach ($contractor_capabilities as $cap) {
                 if (!user_can($user->ID, $cap)) {
                     $user_obj->add_cap($cap);
                     $user_updated = true;
@@ -617,7 +771,8 @@ function linkage_force_update_all_users_capabilities() {
         
         if (in_array('employee', $user->roles)) {
             $employee_capabilities = array(
-                'linkage_submit_timesheet',
+                'linkage_view_own_profile',
+                'linkage_view_own_dashboard_status',
                 'linkage_view_own_timesheet'
             );
             
