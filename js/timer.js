@@ -121,8 +121,8 @@ jQuery(document).ready(function($) {
             console.log('Break button found:', $('#break-toggle-btn').length);
             
             // Clock in/out button
-            $('#clock-toggle-btn').on('click', function(e) {
-                e.preventDefault();
+        $('#clock-toggle-btn').on('click', function(e) {
+            e.preventDefault();
                 console.log('Clock button clicked!');
                 console.log('Button element:', this);
                 console.log('Button ID:', this.id);
@@ -142,9 +142,9 @@ jQuery(document).ready(function($) {
                     console.error('Linkage AJAX not initialized!');
                     console.log('linkage_ajax object:', linkage_ajax);
                     alert('AJAX not initialized. Please refresh the page.');
-                    return;
-                }
-                
+                return;
+            }
+            
                 console.log('Calling performClockAction with action:', action);
                 self.performClockAction(action);
             });
@@ -164,11 +164,11 @@ jQuery(document).ready(function($) {
             var self = this;
             
             $.post(linkage_ajax.ajax_url, {
-                action: 'linkage_clock_action',
-                action_type: action,
-                nonce: linkage_ajax.nonce
+                    action: 'linkage_clock_action',
+                    action_type: action,
+                    nonce: linkage_ajax.nonce
             }, function(response) {
-                if (response.success) {
+                    if (response.success) {
                     var data = response.data;
                     
                     // Update button states
