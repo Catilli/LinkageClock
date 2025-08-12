@@ -4,28 +4,30 @@
  */
 
 /**
- * Get all employees with their current status (only those with actual attendance records)
+ * Get all employees with their current status (shows all users, even without attendance records)
  */
 function linkage_get_all_employees_status() {
     global $wpdb;
     
-    $table = $wpdb->prefix . 'linkage_attendance_logs';
-    $work_date = current_time('Y-m-d');
-    
-    // Get users who have attendance records for today
-    $users_with_records = $wpdb->get_results($wpdb->prepare(
-        "SELECT DISTINCT user_id FROM $table WHERE work_date = %s",
-        $work_date
+    // Get all users who have employee-related roles or capabilities
+    $users = get_users(array(
+        'role__in' => array('employee', 'hr_manager', 'administrator'),
+        'orderby' => 'display_name',
+        'order' => 'ASC'
     ));
+    
+    // If no users found with specific roles, get all users except admin
+    if (empty($users)) {
+        $users = get_users(array(
+            'exclude' => array(1), // Exclude the main admin user
+            'orderby' => 'display_name',
+            'order' => 'ASC'
+        ));
+    }
     
     $employees = array();
     
-    foreach ($users_with_records as $record) {
-        $user = get_userdata($record->user_id);
-        if (!$user) {
-            continue; // Skip if user doesn't exist
-        }
-        
+    foreach ($users as $user) {
         // Use database-based status instead of user meta
         $employee_status = linkage_get_employee_status_from_database($user->ID);
         
@@ -39,11 +41,6 @@ function linkage_get_all_employees_status() {
             'break_start_time' => $employee_status->break_start_time
         );
     }
-    
-    // Sort by display name
-    usort($employees, function($a, $b) {
-        return strcasecmp($a->display_name, $b->display_name);
-    });
     
     return $employees;
 }
@@ -231,9 +228,9 @@ function linkage_ajax_clock_action() {
                 break;
             default:
                 $response_status = 'clocked_out';
-                break;
-        }
-        
+            break;
+    }
+    
         // Debug: Log what's happening
         error_log("LinkageClock: Action '$action' completed. Setting status to '$response_status' for user $user_id");
         
