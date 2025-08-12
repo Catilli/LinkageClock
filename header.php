@@ -132,7 +132,7 @@
                     <?php if (is_user_logged_in()): ?>
                         <?php 
                         $current_user = wp_get_current_user();
-                        $employee_status = linkage_get_employee_status($current_user->ID);
+                        $employee_status = linkage_get_employee_status_from_database($current_user->ID);
                         $is_clocked_in = $employee_status->status === 'clocked_in';
                         $is_on_break = $employee_status->status === 'on_break';
                         $is_working = $is_clocked_in || $is_on_break;
@@ -142,10 +142,10 @@
                             <!-- Work Timer Display -->
                             <div class="timer work-timer bg-gray-100 px-4 py-2 rounded-lg" id="work-timer" 
                                  style="display: <?php echo ($is_clocked_in || $is_on_break) ? 'block' : 'none'; ?>;"
-                                 data-clock-in-time="<?php echo esc_attr(get_user_meta($current_user->ID, 'linkage_clock_in_time', true)); ?>">
+                                 data-clock-in-time="<?php echo esc_attr($employee_status->clock_in_time); ?>">
                                 <div class="flex items-center space-x-2">
                                     <div class="w-2 h-2 bg-green-500 rounded-full <?php echo $is_clocked_in ? 'animate-pulse' : ''; ?>"></div>
-                                    <span class="current text-lg font-mono text-gray-700" id="work-time">00:00:00</span>
+                                    <span class="current text-lg font-mono text-gray-700" id="work-time"><?php echo linkage_format_time_display($employee_status->work_seconds); ?></span>
                                     <span class="text-xs text-gray-500">Work</span>
                                 </div>
                             </div>
@@ -153,10 +153,10 @@
                             <!-- Break Timer Display -->
                             <div class="timer break-timer bg-orange-100 px-4 py-2 rounded-lg" id="break-timer" 
                                  style="display: <?php echo $is_on_break ? 'block' : 'none'; ?>;"
-                                 data-break-start-time="<?php echo esc_attr(get_user_meta($current_user->ID, 'linkage_break_start_time', true)); ?>">
+                                 data-break-start-time="<?php echo esc_attr($employee_status->break_start_time); ?>">
                                 <div class="flex items-center space-x-2">
                                     <div class="w-2 h-2 bg-orange-500 rounded-full animate-pulse"></div>
-                                    <span class="current text-lg font-mono text-orange-700" id="break-time">00:00:00</span>
+                                    <span class="current text-lg font-mono text-orange-700" id="break-time"><?php echo linkage_format_time_display($employee_status->break_seconds); ?></span>
                                     <span class="text-xs text-orange-600">Lunch</span>
                                 </div>
                             </div>
