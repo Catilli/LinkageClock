@@ -17,6 +17,7 @@ jQuery(document).ready(function($) {
         },
         
         loadInitialState: function() {
+            console.log('Loading initial state...');
             // Get initial state from server instead of client-side calculation
             this.getTimeFromServer();
         },
@@ -27,12 +28,15 @@ jQuery(document).ready(function($) {
                 return;
             }
 
+            console.log('Getting time from server...');
             $.post(linkage_ajax.ajax_url, {
                 action: 'linkage_get_time_updates',
                 nonce: linkage_ajax.nonce
             }, function(response) {
+                console.log('Server response:', response);
                 if (response.success) {
                     var data = response.data;
+                    console.log('Server data:', data);
                     
                     // Update work time display
                     if (data.work_time_display) {
@@ -97,15 +101,21 @@ jQuery(document).ready(function($) {
             
             // Clock in/out button
             $('#clock-toggle-btn').on('click', function() {
+                console.log('Clock button clicked!');
                 var action = $(this).data('action');
+                console.log('Action:', action);
+                console.log('Button data:', $(this).data());
                 self.performClockAction(action);
             });
             
             // Break start/end button
             $('#break-toggle-btn').on('click', function() {
+                console.log('Break button clicked!');
                 var action = $(this).data('action');
+                console.log('Action:', action);
+                console.log('Button data:', $(this).data());
                 self.performBreakAction(action);
-        });
+            });
         },
         
         performClockAction: function(action) {
@@ -321,9 +331,32 @@ jQuery(document).ready(function($) {
     function updateStatusDisplay(status) {
         var statusElement = $('.employee-status');
         if (statusElement.length) {
-            statusElement.text(status.replace('_', ' ').replace(/\b\w/g, function(l) {
+            // Update the text
+            var statusText = status.replace('_', ' ').replace(/\b\w/g, function(l) {
                 return l.toUpperCase();
-            }));
+            });
+            statusElement.text(statusText);
+            
+            // Update the CSS classes
+            statusElement.removeClass('clocked-in clocked-out break-status');
+            
+            switch (status) {
+                case 'clocked_in':
+                    statusElement.addClass('clocked-in');
+                    break;
+                case 'clocked_out':
+                    statusElement.addClass('clocked-out');
+                    break;
+                case 'on_break':
+                    statusElement.addClass('break-status');
+                    break;
+                default:
+                    statusElement.addClass('clocked-out');
+                    break;
+            }
+            
+            // Update the data-status attribute
+            statusElement.attr('data-status', status);
         }
     }
 
