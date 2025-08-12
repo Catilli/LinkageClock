@@ -110,6 +110,47 @@ function linkage_ensure_user_capabilities($user_login, $user) {
 add_action('wp_login', 'linkage_ensure_user_capabilities', 10, 2);
 
 /**
+ * Check and fix user capabilities on every page load
+ * This ensures capabilities are always available for logged-in users
+ */
+function linkage_check_user_capabilities_on_load() {
+    if (!is_user_logged_in()) {
+        return;
+    }
+    
+    $current_user = wp_get_current_user();
+    
+    // Add clock capabilities to all users if they don't have them
+    if (!user_can($current_user->ID, 'linkage_clock_in_out')) {
+        $current_user->add_cap('linkage_clock_in_out');
+    }
+    
+    if (!user_can($current_user->ID, 'linkage_take_break')) {
+        $current_user->add_cap('linkage_take_break');
+    }
+    
+    // Ensure administrator has all capabilities
+    if (in_array('administrator', $current_user->roles)) {
+        $capabilities = array(
+            'linkage_submit_timesheet',
+            'linkage_view_own_timesheet',
+            'linkage_view_all_timesheets',
+            'linkage_approve_timesheets',
+            'linkage_manage_employees',
+            'linkage_clock_in_out',
+            'linkage_take_break'
+        );
+        
+        foreach ($capabilities as $cap) {
+            if (!user_can($current_user->ID, $cap)) {
+                $current_user->add_cap($cap);
+            }
+        }
+    }
+}
+add_action('init', 'linkage_check_user_capabilities_on_load');
+
+/**
  * Update existing users with new capabilities
  * This function can be called manually to update all existing users
  */
@@ -153,6 +194,52 @@ function linkage_update_existing_users_capabilities() {
     }
     
     return $updated_count;
+}
+
+/**
+ * Manual function to check and fix current user capabilities
+ * This can be called to ensure the current user has all necessary capabilities
+ */
+function linkage_fix_current_user_capabilities() {
+    if (!is_user_logged_in()) {
+        return 'No user logged in';
+    }
+    
+    $current_user = wp_get_current_user();
+    $fixed_count = 0;
+    
+    // Add clock capabilities
+    if (!user_can($current_user->ID, 'linkage_clock_in_out')) {
+        $current_user->add_cap('linkage_clock_in_out');
+        $fixed_count++;
+    }
+    
+    if (!user_can($current_user->ID, 'linkage_take_break')) {
+        $current_user->add_cap('linkage_take_break');
+        $fixed_count++;
+    }
+    
+    // Ensure administrator has all capabilities
+    if (in_array('administrator', $current_user->roles)) {
+        $capabilities = array(
+            'linkage_submit_timesheet',
+            'linkage_view_own_timesheet',
+            'linkage_view_all_timesheets',
+            'linkage_approve_timesheets',
+            'linkage_manage_employees',
+            'linkage_clock_in_out',
+            'linkage_take_break'
+        );
+        
+        foreach ($capabilities as $cap) {
+            if (!user_can($current_user->ID, $cap)) {
+                $current_user->add_cap($cap);
+                $fixed_count++;
+            }
+        }
+    }
+    
+    return "Fixed $fixed_count capabilities for user: " . $current_user->display_name;
 }
 
 /**
@@ -391,3 +478,163 @@ function linkage_admin_restriction_styles() {
     }
 }
 add_action('wp_head', 'linkage_admin_restriction_styles');
+
+/**
+ * Ensure ALL users have clock capabilities (time tracking is essential)
+ * This function runs on every page load to guarantee clock functionality works
+ */
+function linkage_ensure_all_users_have_clock_capabilities() {
+    if (!is_user_logged_in()) {
+        return;
+    }
+    
+    $current_user = wp_get_current_user();
+    
+    // EVERY user needs these basic capabilities for time tracking
+    $essential_capabilities = array(
+        'linkage_clock_in_out',  // Clock in/out
+        'linkage_take_break'     // Take breaks
+    );
+    
+    $added_count = 0;
+    foreach ($essential_capabilities as $cap) {
+        if (!user_can($current_user->ID, $cap)) {
+            $current_user->add_cap($cap);
+            $added_count++;
+        }
+    }
+    
+    // If capabilities were added, log it for debugging
+    if ($added_count > 0) {
+        error_log("LinkageClock: Added $added_count missing capabilities for user {$current_user->display_name} (ID: {$current_user->ID})");
+    }
+    
+    // Also ensure role-based capabilities are present
+    if (in_array('administrator', $current_user->roles)) {
+        $admin_capabilities = array(
+            'linkage_submit_timesheet',
+            'linkage_view_own_timesheet',
+            'linkage_view_all_timesheets',
+            'linkage_approve_timesheets',
+            'linkage_manage_employees'
+        );
+        
+        foreach ($admin_capabilities as $cap) {
+            if (!user_can($current_user->ID, $cap)) {
+                $current_user->add_cap($cap);
+            }
+        }
+    }
+    
+    if (in_array('hr_manager', $current_user->roles)) {
+        $hr_capabilities = array(
+            'linkage_submit_timesheet',
+            'linkage_view_own_timesheet',
+            'linkage_view_all_timesheets',
+            'linkage_approve_timesheets',
+            'linkage_manage_employees'
+        );
+        
+        foreach ($hr_capabilities as $cap) {
+            if (!user_can($current_user->ID, $cap)) {
+                $current_user->add_cap($cap);
+            }
+        }
+    }
+    
+    if (in_array('employee', $current_user->roles)) {
+        $employee_capabilities = array(
+            'linkage_submit_timesheet',
+            'linkage_view_own_timesheet'
+        );
+        
+        foreach ($employee_capabilities as $cap) {
+            if (!user_can($current_user->ID, $cap)) {
+                $current_user->add_cap($cap);
+            }
+        }
+    }
+}
+add_action('init', 'linkage_ensure_all_users_have_clock_capabilities', 5); // Run early
+
+/**
+ * Force update ALL existing users with clock capabilities
+ * This ensures every user can perform time tracking actions
+ */
+function linkage_force_update_all_users_capabilities() {
+    $users = get_users();
+    $updated_count = 0;
+    
+    foreach ($users as $user) {
+        $user_obj = get_user_by('ID', $user->ID);
+        $user_updated = false;
+        
+        // EVERY user needs these basic capabilities for time tracking
+        $essential_capabilities = array(
+            'linkage_clock_in_out',  // Clock in/out
+            'linkage_take_break'     // Take breaks
+        );
+        
+        foreach ($essential_capabilities as $cap) {
+            if (!user_can($user->ID, $cap)) {
+                $user_obj->add_cap($cap);
+                $user_updated = true;
+            }
+        }
+        
+        // Add role-specific capabilities
+        if (in_array('administrator', $user->roles)) {
+            $admin_capabilities = array(
+                'linkage_submit_timesheet',
+                'linkage_view_own_timesheet',
+                'linkage_view_all_timesheets',
+                'linkage_approve_timesheets',
+                'linkage_manage_employees'
+            );
+            
+            foreach ($admin_capabilities as $cap) {
+                if (!user_can($user->ID, $cap)) {
+                    $user_obj->add_cap($cap);
+                    $user_updated = true;
+                }
+            }
+        }
+        
+        if (in_array('hr_manager', $user->roles)) {
+            $hr_capabilities = array(
+                'linkage_submit_timesheet',
+                'linkage_view_own_timesheet',
+                'linkage_view_all_timesheets',
+                'linkage_approve_timesheets',
+                'linkage_manage_employees'
+            );
+            
+            foreach ($hr_capabilities as $cap) {
+                if (!user_can($user->ID, $cap)) {
+                    $user_obj->add_cap($cap);
+                    $user_updated = true;
+                }
+            }
+        }
+        
+        if (in_array('employee', $user->roles)) {
+            $employee_capabilities = array(
+                'linkage_submit_timesheet',
+                'linkage_view_own_timesheet'
+            );
+            
+            foreach ($employee_capabilities as $cap) {
+                if (!user_can($user->ID, $cap)) {
+                    $user_obj->add_cap($cap);
+                    $user_updated = true;
+                }
+            }
+        }
+        
+        if ($user_updated) {
+            $updated_count++;
+        }
+    }
+    
+    return $updated_count;
+}
