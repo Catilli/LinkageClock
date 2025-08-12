@@ -123,6 +123,16 @@ get_header(); ?>
                                 <?php linkage_debug_user_database_state($current_user->ID); ?>
                             </div>
                         </details>
+                        
+                        <!-- Current Database State (Admin Only) -->
+                        <?php if (current_user_can('administrator')): ?>
+                        <details class="mt-3">
+                            <summary class="cursor-pointer text-sm font-medium text-yellow-800">Show All Database Records</summary>
+                            <div class="mt-2 p-2 bg-yellow-100 rounded text-xs">
+                                <?php linkage_debug_current_database_state(); ?>
+                            </div>
+                        </details>
+                        <?php endif; ?>
                     </div>
                     
                     <script>
