@@ -130,9 +130,14 @@ function linkage_get_user_role_display($user_id) {
 }
 
 /**
- * Initialize employee status for users who don't have status records
+ * Initialize employee status for users who don't have attendance records
  */
 function linkage_initialize_employee_status() {
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $work_date = current_time('Y-m-d');
+    
     $users = get_users(array(
         'role__in' => array('employee', 'hr_manager', 'administrator'),
         'fields' => 'ID'
@@ -149,11 +154,32 @@ function linkage_initialize_employee_status() {
     $initialized_count = 0;
     
     foreach ($users as $user_id) {
-        $status = get_user_meta($user_id, 'linkage_employee_status', true);
+        // Check if user already has an attendance record for today
+        $existing_record = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table WHERE user_id = %d AND work_date = %s",
+            $user_id,
+            $work_date
+        ));
         
-        // Only initialize if status is not already set
-        if (empty($status)) {
-            linkage_update_employee_status($user_id, 'clocked_out', 'initial', 'Initial status');
+        // Only initialize if no attendance record exists for today
+        if (!$existing_record) {
+            // Create a default "clocked out" record for today
+            $wpdb->insert(
+                $table,
+                array(
+                    'user_id' => $user_id,
+                    'work_date' => $work_date,
+                    'status' => 'completed',
+                    'time_in' => null,
+                    'time_out' => null,
+                    'lunch_start' => null,
+                    'lunch_end' => null,
+                    'total_hours' => 0,
+                    'created_at' => current_time('mysql'),
+                    'updated_at' => current_time('mysql')
+                ),
+                array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%s', '%s')
+            );
             $initialized_count++;
         }
     }
@@ -429,11 +455,10 @@ function linkage_debug_user_roles() {
         echo "<p><strong>User:</strong> " . $user->display_name . " (ID: " . $user->ID . ")</p>";
         echo "<p><strong>Roles:</strong> " . implode(', ', $user->roles) . "</p>";
         
-        // Check employee status meta
-        $status = get_user_meta($user->ID, 'linkage_employee_status', true);
-        $last_action = get_user_meta($user->ID, 'linkage_last_action_time', true);
-        echo "<p><strong>Employee Status:</strong> " . ($status ?: 'Not set') . "</p>";
-        echo "<p><strong>Last Action:</strong> " . ($last_action ?: 'Never') . "</p>";
+        // Check employee status from attendance logs table
+        $employee_status = linkage_get_employee_status_from_database($user->ID);
+        echo "<p><strong>Employee Status (from attendance logs):</strong> " . $employee_status->status . "</p>";
+        echo "<p><strong>Last Action:</strong> " . $employee_status->last_action_time . "</p>";
         
         echo "<hr>";
     }
@@ -484,7 +509,7 @@ function linkage_force_create_tables() {
     
     echo "<p><strong>Attendance logs table created/updated successfully!</strong></p>";
     echo "<p><strong>✓ Attendance logs table</strong></p>";
-    echo "<p><strong>Note:</strong> Employee status is stored in WordPress user meta, and detailed time tracking is in the attendance logs table.</p>";
+    echo "<p><strong>Note:</strong> Employee status is now stored in the attendance logs table, not in user meta.</p>";
 }
 
 /**
