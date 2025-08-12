@@ -298,6 +298,32 @@ require_once get_template_directory() . '/functions/dashboard-functions.php';
     </div>
 
     <div class="debug-section">
+        <h2>Server-Side Time Calculation Test</h2>
+        <p>Test the new server-side time calculation functions:</p>
+        
+        <?php
+        if (is_user_logged_in()) {
+            $current_user = wp_get_current_user();
+            $employee_status = linkage_get_employee_status_with_times($current_user->ID);
+            
+            echo '<p><strong>Current User:</strong> ' . esc_html($current_user->display_name) . '</p>';
+            echo '<p><strong>Status:</strong> ' . esc_html($employee_status->status) . '</p>';
+            echo '<p><strong>Clock In Time:</strong> ' . ($employee_status->clock_in_time ? esc_html($employee_status->clock_in_time) : 'Not set') . '</p>';
+            echo '<p><strong>Break Start Time:</strong> ' . ($employee_status->break_start_time ? esc_html($employee_status->break_start_time) : 'Not set') . '</p>';
+            echo '<p><strong>Calculated Work Time:</strong> ' . esc_html(linkage_format_time_display($employee_status->work_seconds)) . '</p>';
+            echo '<p><strong>Calculated Break Time:</strong> ' . esc_html(linkage_format_time_display($employee_status->break_seconds)) . '</p>';
+            
+            // Test the calculation functions directly
+            echo '<h3>Direct Function Tests:</h3>';
+            echo '<p><strong>Work Time Calculation:</strong> ' . esc_html(linkage_format_time_display(linkage_calculate_current_work_time($current_user->ID))) . '</p>';
+            echo '<p><strong>Break Time Calculation:</strong> ' . esc_html(linkage_format_time_display(linkage_calculate_current_break_time($current_user->ID))) . '</p>';
+        } else {
+            echo '<p>Please log in to test time calculations.</p>';
+        }
+        ?>
+    </div>
+
+    <div class="debug-section">
         <h2>WordPress Admin Links</h2>
         <p><a href="<?php echo admin_url('users.php'); ?>" target="_blank">Manage Users</a></p>
         <p><a href="<?php echo home_url(); ?>" target="_blank">Main Dashboard</a></p>
