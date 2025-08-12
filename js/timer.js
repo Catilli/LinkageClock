@@ -250,6 +250,7 @@ jQuery(document).ready(function($) {
             
             switch (status) {
                 case 'clocked_in':
+                    clockButton.show();
                     clockButton.data('action', 'clock_out');
                     $('#clock-toggle-text').text('Time Out');
                     clockButton.removeClass('bg-green-500 hover:bg-green-600').addClass('bg-red-500 hover:bg-red-600');
@@ -263,11 +264,8 @@ jQuery(document).ready(function($) {
                     break;
                     
                 case 'on_break':
-                    clockButton.data('action', 'clock_out');
-                    $('#clock-toggle-text').text('Time Out');
-                    clockButton.removeClass('bg-green-500 hover:bg-green-600').addClass('bg-red-500 hover:bg-red-600');
-                    $('.clock-in-icon').hide();
-                    $('.clock-out-icon').show();
+                    // Hide the Time Out button when user is on break
+                    clockButton.hide();
                     breakButton.show();
                     breakButton.data('action', 'break_end');
                     $('#break-toggle-text').text('Lunch End');
@@ -276,6 +274,7 @@ jQuery(document).ready(function($) {
                     break;
                     
                 case 'clocked_out':
+                    clockButton.show();
                     clockButton.data('action', 'clock_in');
                     $('#clock-toggle-text').text('Time In');
                     clockButton.removeClass('bg-red-500 hover:bg-red-600').addClass('bg-green-500 hover:bg-green-600');
