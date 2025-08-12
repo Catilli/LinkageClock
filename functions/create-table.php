@@ -22,11 +22,13 @@ function linkage_create_attendance_logs_table() {
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
         updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
         PRIMARY KEY (id),
-        UNIQUE KEY unique_shift (user_id, work_date),
+        UNIQUE KEY unique_active_shift (user_id, work_date, status),
+        UNIQUE KEY unique_user_date (user_id, work_date),
         KEY idx_user_id (user_id),
         KEY idx_work_date (work_date),
-        KEY idx_status (status)
-    ) $charset_collate;";
+        KEY idx_status (status),
+        KEY idx_user_date_status (user_id, work_date, status)
+    ) $charset_collate ENGINE=InnoDB;";
 
     require_once(ABSPATH . 'wp-admin/includes/upgrade.php');
     dbDelta($sql);
