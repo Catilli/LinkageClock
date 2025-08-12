@@ -28,29 +28,17 @@ function linkage_get_all_employees_status() {
     $employees = array();
     
     foreach ($users as $user) {
-        $status = get_user_meta($user->ID, 'linkage_employee_status', true);
-        $last_action_time = get_user_meta($user->ID, 'linkage_last_action_time', true);
-        $last_action_type = get_user_meta($user->ID, 'linkage_last_action_type', true);
-        
-        // Set default values if not set
-        if (empty($status)) {
-            $status = 'clocked_out';
-        }
-        if (empty($last_action_time)) {
-            $last_action_time = 'Never';
-        }
-        if (empty($last_action_type)) {
-            $last_action_type = 'None';
-        }
+        // Use database-based status instead of user meta
+        $employee_status = linkage_get_employee_status_from_database($user->ID);
         
         $employees[] = (object) array(
             'ID' => $user->ID,
             'display_name' => $user->display_name,
             'user_email' => $user->user_email,
-            'current_status' => $status,
-            'last_action_time' => $last_action_time,
-            'last_action_type' => $last_action_type,
-            'break_start_time' => get_user_meta($user->ID, 'linkage_break_start_time', true)
+            'current_status' => $employee_status->status,
+            'last_action_time' => $employee_status->last_action_time,
+            'last_action_type' => $employee_status->last_action_type,
+            'break_start_time' => $employee_status->break_start_time
         );
     }
     
@@ -552,6 +540,11 @@ function linkage_force_initialize_all_users() {
     }
     
     echo "<p><strong>Initialized $initialized_count users as employees!</strong></p>";
+    
+    // Debug: Show actual database status
+    echo "<h3>Current Database Status:</h3>";
+    linkage_debug_database_status();
+    
     return $initialized_count;
 }
 
@@ -1091,4 +1084,70 @@ function linkage_get_employee_status_from_database($user_id) {
         'clock_in_time' => $record->time_in,
         'break_start_time' => $record->lunch_start
     );
+}
+
+/**
+ * Debug function to check actual database status vs displayed status
+ */
+function linkage_debug_database_status() {
+    global $wpdb;
+    
+    echo "<h3>Debug: Database Status vs Displayed Status</h3>";
+    
+    // Get all users
+    $users = get_users(array(
+        'role__in' => array('employee', 'hr_manager', 'administrator'),
+        'orderby' => 'display_name',
+        'order' => 'ASC'
+    ));
+    
+    if (empty($users)) {
+        $users = get_users(array(
+            'exclude' => array(1),
+            'orderby' => 'display_name',
+            'order' => 'ASC'
+        ));
+    }
+    
+    foreach ($users as $user) {
+        echo "<h4>User: " . $user->display_name . " (ID: " . $user->ID . ")</h4>";
+        
+        // Check user meta status (old method)
+        $meta_status = get_user_meta($user->ID, 'linkage_employee_status', true);
+        $meta_last_action = get_user_meta($user->ID, 'linkage_last_action_time', true);
+        echo "<p><strong>User Meta Status:</strong> " . ($meta_status ?: 'Not set') . "</p>";
+        echo "<p><strong>User Meta Last Action:</strong> " . ($meta_last_action ?: 'Never') . "</p>";
+        
+        // Check database status (new method)
+        $db_status = linkage_get_employee_status_from_database($user->ID);
+        echo "<p><strong>Database Status:</strong> " . $db_status->status . "</p>";
+        echo "<p><strong>Database Last Action:</strong> " . $db_status->last_action_time . "</p>";
+        
+        // Check attendance logs table
+        $table = $wpdb->prefix . 'linkage_attendance_logs';
+        $work_date = current_time('Y-m-d');
+        
+        $active_record = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
+            $user->ID,
+            $work_date
+        ));
+        
+        $completed_record = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'completed' ORDER BY id DESC LIMIT 1",
+            $user->ID,
+            $work_date
+        ));
+        
+        echo "<p><strong>Active Record Today:</strong> " . ($active_record ? 'Yes (ID: ' . $active_record->id . ')' : 'No') . "</p>";
+        echo "<p><strong>Completed Record Today:</strong> " . ($completed_record ? 'Yes (ID: ' . $completed_record->id . ')' : 'No') . "</p>";
+        
+        if ($active_record) {
+            echo "<p><strong>Time In:</strong> " . $active_record->time_in . "</p>";
+            echo "<p><strong>Lunch Start:</strong> " . ($active_record->lunch_start ?: 'Not set') . "</p>";
+            echo "<p><strong>Lunch End:</strong> " . ($active_record->lunch_end ?: 'Not set') . "</p>";
+        }
+        
+        echo "<hr>";
+    }
 }
