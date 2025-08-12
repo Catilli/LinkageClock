@@ -830,6 +830,7 @@ function linkage_update_attendance_log($user_id, $action) {
         $table,
         $update_data,
         array('id' => $record->id),
+        array('%s', '%s', '%s', '%f'), // Format specifiers for updated_at, time_out, status, total_hours
         null,
         array('%d')
     );
@@ -960,8 +961,8 @@ function linkage_debug_database_status() {
     ));
     
     if (empty($users)) {
-        $users = get_users(array(
-            'exclude' => array(1),
+    $users = get_users(array(
+        'exclude' => array(1),
             'orderby' => 'display_name',
             'order' => 'ASC'
         ));
@@ -1207,4 +1208,99 @@ function linkage_clear_legacy_user_meta() {
     }
     
     return "Cleared $cleared_count legacy user meta entries. System now uses attendance logs table only.";
+}
+
+/**
+ * Delete all time logs from attendance logs table (for testing/reset purposes)
+ */
+function linkage_delete_all_time_logs() {
+    if (!current_user_can('administrator')) {
+        return 'Access denied. Administrator privileges required.';
+    }
+    
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    
+    // Check if table exists
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'") == $table;
+    if (!$table_exists) {
+        return 'Attendance logs table does not exist.';
+    }
+    
+    // Get count before deletion
+    $count_before = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+    
+    // Delete all records
+    $result = $wpdb->query("DELETE FROM $table");
+    
+    if ($result === false) {
+        return 'Error deleting time logs: ' . $wpdb->last_error;
+    }
+    
+    $deleted_count = $count_before;
+    
+    return "Successfully deleted $deleted_count time log records. The attendance logs table is now empty.";
+}
+
+/**
+ * Comprehensive reset function - deletes all time logs and clears legacy meta
+ */
+function linkage_comprehensive_reset() {
+    if (!current_user_can('administrator')) {
+        return 'Access denied. Administrator privileges required.';
+    }
+    
+    global $wpdb;
+    
+    $results = array();
+    
+    // 1. Delete all time logs
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'") == $table;
+    
+    if ($table_exists) {
+        $count_before = $wpdb->get_var("SELECT COUNT(*) FROM $table");
+        $result = $wpdb->query("DELETE FROM $table");
+        
+        if ($result === false) {
+            $results[] = 'Error deleting time logs: ' . $wpdb->last_error;
+        } else {
+            $results[] = "Deleted $count_before time log records";
+        }
+    } else {
+        $results[] = 'Attendance logs table does not exist';
+    }
+    
+    // 2. Clear legacy user meta
+    $users = get_users(array('fields' => 'ID'));
+    $cleared_count = 0;
+    
+    foreach ($users as $user_id) {
+        $meta_keys = array(
+            'linkage_employee_status',
+            'linkage_clock_in_time',
+            'linkage_break_start_time',
+            'linkage_work_seconds',
+            'linkage_break_seconds',
+            'linkage_last_action_time',
+            'linkage_last_action_type',
+            'linkage_last_notes'
+        );
+        
+        foreach ($meta_keys as $meta_key) {
+            if (get_user_meta($user_id, $meta_key, true)) {
+                delete_user_meta($user_id, $meta_key);
+                $cleared_count++;
+            }
+        }
+    }
+    
+    if ($cleared_count > 0) {
+        $results[] = "Cleared $cleared_count legacy user meta entries";
+    } else {
+        $results[] = "No legacy user meta to clear";
+    }
+    
+    return 'Comprehensive reset completed: ' . implode(', ', $results);
 }
