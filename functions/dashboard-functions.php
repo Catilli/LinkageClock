@@ -301,8 +301,8 @@ function linkage_ajax_clock_action() {
                 update_user_meta($user_id, 'linkage_break_seconds', $total_break_seconds);
             }
             
-            // Reset clock in time for work timer continuation
-            update_user_meta($user_id, 'linkage_clock_in_time', current_time('mysql'));
+            // Don't update clock_in_time - keep the original to avoid double-counting
+            // Just clear the break start time
             delete_user_meta($user_id, 'linkage_break_start_time');
             break;
     }
