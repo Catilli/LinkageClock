@@ -377,38 +377,53 @@ jQuery(document).ready(function($) {
     }
 
     /**
-     * Update status display
+     * Update status display - now only updates current user's status
      */
     function updateStatusDisplay(status) {
-        var statusElement = $('.employee-status');
-        if (statusElement.length) {
-            // Update the text
-            var statusText = status.replace('_', ' ').replace(/\b\w/g, function(l) {
-                return l.toUpperCase();
-            });
-            statusElement.text(statusText);
+        // Get current user ID from the page
+        var currentUserId = linkage_ajax.current_user_id;
+        
+        if (currentUserId) {
+            // Only update the current user's status in the live list
+            var statusElement = $(`.employee-row[data-user-id="${currentUserId}"] .employee-status`);
             
-            // Update the CSS classes
-            statusElement.removeClass('clocked-in clocked-out break-status');
-            
-            switch (status) {
-                case 'clocked_in':
-                    statusElement.addClass('clocked-in');
-                    break;
-                case 'clocked_out':
-                    statusElement.addClass('clocked-out');
-                    break;
-                case 'on_break':
-                    statusElement.addClass('break-status');
-                    break;
-                default:
-                    statusElement.addClass('clocked-out');
-                    break;
+            if (statusElement.length) {
+                // Update the text
+                var statusText = status.replace('_', ' ').replace(/\b\w/g, function(l) {
+                    return l.toUpperCase();
+                });
+                statusElement.text(statusText);
+                
+                // Update the CSS classes
+                statusElement.removeClass('clocked-in clocked-out break-status');
+                
+                switch (status) {
+                    case 'clocked_in':
+                        statusElement.addClass('clocked-in');
+                        break;
+                    case 'clocked_out':
+                        statusElement.addClass('clocked-out');
+                        break;
+                    case 'on_break':
+                        statusElement.addClass('break-status');
+                        break;
+                    default:
+                        statusElement.addClass('clocked-out');
+                        break;
+                }
+                
+                // Update the data-status attribute
+                statusElement.attr('data-status', status);
+                
+                // Update last action time to "Just now"
+                var lastActionElement = $(`.employee-row[data-user-id="${currentUserId}"] .last-action-time`);
+                if (lastActionElement.length) {
+                    lastActionElement.text('Just now');
+                }
             }
-            
-            // Update the data-status attribute
-            statusElement.attr('data-status', status);
         }
+        
+        console.log('Updated status display for user:', currentUserId, 'status:', status);
     }
 
     /**
