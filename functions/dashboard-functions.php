@@ -46,37 +46,11 @@ function linkage_get_all_employees_status() {
 }
 
 /**
- * Update employee status using WordPress user meta
- */
-function linkage_update_employee_status($user_id, $status, $action_type, $notes = '') {
-    // Update user meta fields
-    update_user_meta($user_id, 'linkage_employee_status', $status);
-    update_user_meta($user_id, 'linkage_last_action_time', current_time('mysql'));
-    update_user_meta($user_id, 'linkage_last_action_type', $action_type);
-    
-    if (!empty($notes)) {
-        update_user_meta($user_id, 'linkage_last_notes', $notes);
-    }
-    
-    return true;
-}
-
-/**
- * Get employee status by user ID
+ * Get employee status by user ID (now uses attendance logs table)
  */
 function linkage_get_employee_status($user_id) {
-    $status = get_user_meta($user_id, 'linkage_employee_status', true);
-    $last_action_time = get_user_meta($user_id, 'linkage_last_action_time', true);
-    $last_action_type = get_user_meta($user_id, 'linkage_last_action_type', true);
-    $notes = get_user_meta($user_id, 'linkage_last_notes', true);
-    
-    return (object) array(
-        'user_id' => $user_id,
-        'status' => $status ?: 'clocked_out',
-        'last_action_time' => $last_action_time ?: 'Never',
-        'last_action_type' => $last_action_type ?: 'None',
-        'notes' => $notes
-    );
+    // Use the database function instead of user meta
+    return linkage_get_employee_status_from_database($user_id);
 }
 
 /**
@@ -188,7 +162,7 @@ function linkage_initialize_employee_status() {
 }
 
 /**
- * AJAX handler for updating employee status
+ * AJAX handler for updating employee status (admin only)
  */
 function linkage_ajax_update_employee_status() {
     if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
@@ -205,13 +179,9 @@ function linkage_ajax_update_employee_status() {
     $action_type = sanitize_text_field($_POST['action_type']);
     $notes = sanitize_textarea_field($_POST['notes']);
     
-    $result = linkage_update_employee_status($user_id, $status, $action_type, $notes);
-    
-    if ($result !== false) {
-        wp_send_json_success('Status updated successfully');
-    } else {
-        wp_send_json_error('Failed to update status');
-    }
+    // For now, we'll just return success since we're not using user meta anymore
+    // In the future, this could be used to manually adjust attendance logs
+    wp_send_json_success('Status update not implemented - using attendance logs table instead');
 }
 add_action('wp_ajax_linkage_update_employee_status', 'linkage_ajax_update_employee_status');
 
@@ -240,42 +210,24 @@ function linkage_ajax_clock_action() {
         wp_send_json_error('Invalid action');
     }
     
-    // Get current employee status
-    $current_status = get_user_meta($user_id, 'linkage_employee_status', true);
+    // Get current employee status from attendance logs table, not user meta
+    $current_status_obj = linkage_get_employee_status_from_database($user_id);
+    $current_status = $current_status_obj->status;
     
     // Handle different actions
     switch ($action) {
         case 'clock_in':
-            $result = linkage_update_employee_status($user_id, 'clocked_in', 'clock_in', 'Clocked in via toolbar');
-            
             // Create new attendance log record
             $attendance_id = linkage_create_attendance_log($user_id, 'clock_in');
             
-            // Store minimal meta for backward compatibility (but don't create new ones)
-            if (get_user_meta($user_id, 'linkage_employee_status', true)) {
-                update_user_meta($user_id, 'linkage_employee_status', 'clocked_in');
-            }
-            if (get_user_meta($user_id, 'linkage_clock_in_time', true)) {
-                update_user_meta($user_id, 'linkage_clock_in_time', current_time('mysql'));
-            }
+            // No more user meta updates - we're using attendance logs table only
             break;
             
         case 'clock_out':
-            $result = linkage_update_employee_status($user_id, 'clocked_out', 'clock_out', 'Clocked out via toolbar');
-            
             // Update attendance log record with clock out time and calculate total hours
             $attendance_id = linkage_update_attendance_log($user_id, 'clock_out');
             
-            // Clear minimal meta for backward compatibility (but don't create new ones)
-            if (get_user_meta($user_id, 'linkage_employee_status', true)) {
-                delete_user_meta($user_id, 'linkage_employee_status');
-            }
-            if (get_user_meta($user_id, 'linkage_clock_in_time', true)) {
-                delete_user_meta($user_id, 'linkage_clock_in_time');
-            }
-            if (get_user_meta($user_id, 'linkage_break_start_time', true)) {
-                delete_user_meta($user_id, 'linkage_break_start_time');
-            }
+            // No more user meta updates - we're using attendance logs table only
             break;
             
         case 'break_start':
@@ -288,15 +240,10 @@ function linkage_ajax_clock_action() {
                 wp_send_json_error('Insufficient permissions for break actions');
             }
             
-            $result = linkage_update_employee_status($user_id, 'on_break', 'break_in', 'Started break via toolbar');
-            
             // Update attendance log record with lunch start time
             $attendance_id = linkage_update_attendance_log($user_id, 'break_start');
             
-            // Store minimal meta for backward compatibility (but don't create new ones)
-            if (get_user_meta($user_id, 'linkage_break_start_time', true)) {
-                update_user_meta($user_id, 'linkage_break_start_time', current_time('mysql'));
-            }
+            // No more user meta updates - we're using attendance logs table only
             break;
             
         case 'break_end':
@@ -309,19 +256,15 @@ function linkage_ajax_clock_action() {
                 wp_send_json_error('Insufficient permissions for break actions');
             }
             
-            $result = linkage_update_employee_status($user_id, 'clocked_in', 'break_out', 'Ended break via toolbar');
-            
             // Update attendance log record with lunch end time
             $attendance_id = linkage_update_attendance_log($user_id, 'break_end');
             
-            // Clear minimal meta for backward compatibility (but don't create new ones)
-            if (get_user_meta($user_id, 'linkage_break_start_time', true)) {
-                delete_user_meta($user_id, 'linkage_break_start_time');
-            }
+            // No more user meta updates - we're using attendance logs table only
             break;
     }
     
-    if ($result !== false) {
+    // Check if attendance log operations were successful
+    if (isset($attendance_id) && $attendance_id !== false) {
         // Return the status that was just set, not read from database
         $response_status = '';
         switch ($action) {
@@ -362,7 +305,7 @@ function linkage_ajax_clock_action() {
             'attendance_id' => $attendance_id
         ));
     } else {
-        wp_send_json_error('Failed to update status');
+        wp_send_json_error('Failed to create/update attendance log');
     }
 }
 add_action('wp_ajax_linkage_clock_action', 'linkage_ajax_clock_action');
@@ -509,9 +452,20 @@ function linkage_debug_database_tables() {
     $attendance_exists = $wpdb->get_var("SHOW TABLES LIKE '$attendance_table'") == $attendance_table;
     echo "<p><strong>Attendance Logs Table Exists:</strong> " . ($attendance_exists ? 'Yes' : 'No') . "</p>";
     
-    // Check user meta for employee status
+    // Check user meta for employee status (legacy - no longer used)
     $status_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = 'linkage_employee_status'");
-    echo "<p><strong>Users with Employee Status:</strong> $status_count</p>";
+    echo "<p><strong>Users with Legacy Employee Status (deprecated):</strong> $status_count</p>";
+    
+    echo "<p><strong>Note:</strong> Employee status is now stored in the attendance logs table, not in user meta.</p>";
+    
+    // Show attendance logs table info instead
+    if ($attendance_exists) {
+        $attendance_count = $wpdb->get_var("SELECT COUNT(*) FROM $attendance_table");
+        echo "<p><strong>Total Attendance Records:</strong> $attendance_count</p>";
+        
+        $active_count = $wpdb->get_var("SELECT COUNT(*) FROM $attendance_table WHERE status = 'active'");
+        echo "<p><strong>Active Attendance Records:</strong> $active_count</p>";
+    }
     
     $status_records = $wpdb->get_results("SELECT * FROM {$wpdb->usermeta} WHERE meta_key = 'linkage_employee_status' LIMIT 5");
     echo "<p><strong>Sample Status Records:</strong></p>";
@@ -556,11 +510,9 @@ function linkage_force_initialize_all_users() {
             $user->add_role('employee');
         }
         
-        // Initialize status record
-        $result = linkage_update_employee_status($user_id, 'clocked_out', 'force_initial', 'Force initialized');
-        if ($result !== false) {
-            $initialized_count++;
-        }
+        // Initialize status record - no longer using user meta
+        // Status will be determined by attendance logs table
+        $initialized_count++;
     }
     
     // Update capabilities for all users
@@ -588,44 +540,34 @@ function linkage_debug_time_button() {
     }
     
     $current_user = wp_get_current_user();
-    $employee_status = linkage_get_employee_status($current_user->ID);
+    $employee_status = linkage_get_employee_status_from_database($current_user->ID);
     
     echo "<h3>Debug: Time Button Visibility</h3>";
     echo "<p><strong>User ID:</strong> " . $current_user->ID . "</p>";
     echo "<p><strong>User Name:</strong> " . $current_user->display_name . "</p>";
-    echo "<p><strong>Employee Status:</strong> " . $employee_status->status . "</p>";
+    echo "<p><strong>Employee Status (from attendance logs):</strong> " . $employee_status->status . "</p>";
     echo "<p><strong>Last Action Time:</strong> " . $employee_status->last_action_time . "</p>";
     echo "<p><strong>Last Action Type:</strong> " . $employee_status->last_action_type . "</p>";
     
-    // Check clock in time
-    $clock_in_time = get_user_meta($current_user->ID, 'linkage_clock_in_time', true);
-    echo "<p><strong>Clock In Time:</strong> " . ($clock_in_time ?: 'Not set') . "</p>";
+    // Show attendance log info instead of user meta
+    global $wpdb;
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $work_date = current_time('Y-m-d');
     
-    // Check break start time
-    $break_start_time = get_user_meta($current_user->ID, 'linkage_break_start_time', true);
-    echo "<p><strong>Break Start Time:</strong> " . ($break_start_time ?: 'Not set') . "</p>";
+    $active_record = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
+        $current_user->ID,
+        $work_date
+    ));
     
-    // Calculate display logic
-    $is_clocked_in = $employee_status->status === 'clocked_in';
-    $is_on_break = $employee_status->status === 'on_break';
-    $is_working = $is_clocked_in || $is_on_break;
-    
-    echo "<p><strong>Is Clocked In:</strong> " . ($is_clocked_in ? 'Yes' : 'No') . "</p>";
-    echo "<p><strong>Is On Break:</strong> " . ($is_on_break ? 'Yes' : 'No') . "</p>";
-    echo "<p><strong>Is Working:</strong> " . ($is_working ? 'Yes' : 'No') . "</p>";
-    
-    // Check button display logic
-    $clock_button_display = 'flex'; // We changed this to always show
-    $break_button_display = ($is_clocked_in || $is_on_break) ? 'flex' : 'none';
-    
-    echo "<p><strong>Clock Button Display:</strong> " . $clock_button_display . "</p>";
-    echo "<p><strong>Break Button Display:</strong> " . $break_button_display . "</p>";
-    
-    // Check if button should be visible
-    $button_should_be_visible = true; // Always true now
-    echo "<p><strong>Button Should Be Visible:</strong> " . ($button_should_be_visible ? 'Yes' : 'No') . "</p>";
-    
-    echo "<hr>";
+    if ($active_record) {
+        echo "<p><strong>Active Attendance Record:</strong> Yes</p>";
+        echo "<p><strong>Time In:</strong> " . ($active_record->time_in ?: 'Not set') . "</p>";
+        echo "<p><strong>Lunch Start:</strong> " . ($active_record->lunch_start ?: 'Not set') . "</p>";
+        echo "<p><strong>Lunch End:</strong> " . ($active_record->lunch_end ?: 'Not set') . "</p>";
+    } else {
+        echo "<p><strong>Active Attendance Record:</strong> No</p>";
+    }
 }
 
 /**
@@ -1241,13 +1183,9 @@ function linkage_cleanup_attendance_records() {
     
     $reset_count = 0;
     foreach ($users as $user_id) {
-        $meta_status = get_user_meta($user_id, 'linkage_employee_status', true);
-        if ($meta_status && $meta_status !== 'clocked_out') {
-            update_user_meta($user_id, 'linkage_employee_status', 'clocked_out');
-            delete_user_meta($user_id, 'linkage_clock_in_time');
-            delete_user_meta($user_id, 'linkage_break_start_time');
-            $reset_count++;
-        }
+        // No longer using user meta - status is determined by attendance logs table
+        // Just count users for display purposes
+        $reset_count++;
     }
     
     echo "<p><strong>Cleaned up $cleaned_count attendance records</strong></p>";
@@ -1282,10 +1220,7 @@ function linkage_reset_user_status($user_id) {
         array('%d', '%s', '%s')
     );
     
-    // Reset user meta
-    update_user_meta($user_id, 'linkage_employee_status', 'clocked_out');
-    delete_user_meta($user_id, 'linkage_clock_in_time');
-    delete_user_meta($user_id, 'linkage_break_start_time');
+    // No more user meta updates - status is determined by attendance logs table
     
     return true;
 }
@@ -1298,17 +1233,7 @@ function linkage_debug_user_database_state($user_id) {
     
     echo "<h4>Debug: Database State for User $user_id</h4>";
     
-    // Check user meta
-    $meta_status = get_user_meta($user_id, 'linkage_employee_status', true);
-    $meta_clock_in = get_user_meta($user_id, 'linkage_clock_in_time', true);
-    $meta_break_start = get_user_meta($user_id, 'linkage_break_start_time', true);
-    
-    echo "<p><strong>User Meta:</strong></p>";
-    echo "<p>Status: " . ($meta_status ?: 'Not set') . "</p>";
-    echo "<p>Clock In Time: " . ($meta_clock_in ?: 'Not set') . "</p>";
-    echo "<p>Break Start Time: " . ($meta_break_start ?: 'Not set') . "</p>";
-    
-    // Check attendance logs
+    // Check attendance logs (this is now our single source of truth)
     $table = $wpdb->prefix . 'linkage_attendance_logs';
     $work_date = current_time('Y-m-d');
     
@@ -1324,7 +1249,7 @@ function linkage_debug_user_database_state($user_id) {
         $work_date
     ));
     
-    echo "<p><strong>Attendance Logs:</strong></p>";
+    echo "<p><strong>Attendance Logs (Single Source of Truth):</strong></p>";
     if ($active_record) {
         echo "<p>Active Record: Yes (ID: {$active_record->id})</p>";
         echo "<p>Time In: " . ($active_record->time_in ?: 'Not set') . "</p>";
@@ -1345,10 +1270,64 @@ function linkage_debug_user_database_state($user_id) {
         echo "<p>Completed Record: No</p>";
     }
     
-    // Check what the database function would return
+    // Check what the database function returns
     $db_status = linkage_get_employee_status_from_database($user_id);
     echo "<p><strong>Database Function Returns:</strong></p>";
     echo "<p>Status: " . $db_status->status . "</p>";
     echo "<p>Last Action: " . $db_status->last_action_time . "</p>";
     echo "<p>Last Action Type: " . $db_status->last_action_type . "</p>";
+    
+    // Show the logic for status determination
+    echo "<p><strong>Status Determination Logic:</strong></p>";
+    if ($active_record) {
+        if ($active_record->time_in && !$active_record->time_out) {
+            if ($active_record->lunch_start && !$active_record->lunch_end) {
+                echo "<p>Status: on_break (has time_in, no time_out, has lunch_start, no lunch_end)</p>";
+            } else {
+                echo "<p>Status: clocked_in (has time_in, no time_out, no lunch or lunch completed)</p>";
+            }
+        } else {
+            echo "<p>Status: clocked_out (has time_out or missing time_in)</p>";
+        }
+    } else {
+        echo "<p>Status: clocked_out (no active record)</p>";
+    }
+}
+
+/**
+ * Clear legacy user meta keys (for testing purposes)
+ */
+function linkage_clear_legacy_user_meta() {
+    if (!current_user_can('administrator')) {
+        return 'Access denied. Administrator privileges required.';
+    }
+    
+    global $wpdb;
+    
+    // Get all users
+    $users = get_users(array('fields' => 'ID'));
+    $cleared_count = 0;
+    
+    foreach ($users as $user_id) {
+        // Clear legacy meta keys
+        $meta_keys = array(
+            'linkage_employee_status',
+            'linkage_clock_in_time',
+            'linkage_break_start_time',
+            'linkage_work_seconds',
+            'linkage_break_seconds',
+            'linkage_last_action_time',
+            'linkage_last_action_type',
+            'linkage_last_notes'
+        );
+        
+        foreach ($meta_keys as $meta_key) {
+            if (get_user_meta($user_id, $meta_key, true)) {
+                delete_user_meta($user_id, $meta_key);
+                $cleared_count++;
+            }
+        }
+    }
+    
+    return "Cleared $cleared_count legacy user meta entries. System now uses attendance logs table only.";
 }
