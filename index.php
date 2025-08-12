@@ -51,7 +51,9 @@ get_header(); ?>
                         <select id="role-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="all">All Roles</option>
                             <option value="employee">Employee</option>
-                            <option value="hr manager">HR Manager</option>
+                            <option value="manager">Manager</option>
+                            <option value="accounting payroll">Accounting | Payroll</option>
+                            <option value="contractor">Contractors</option>
                             <option value="administrator">Administrator</option>
                         </select>
                     </div>
