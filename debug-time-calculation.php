@@ -48,29 +48,38 @@ echo "<p><strong>Calculated Work Time:</strong> " . esc_html(linkage_format_time
 echo "<p><strong>Calculated Break Time:</strong> " . esc_html(linkage_format_time_display($calculated_break_time)) . " ($calculated_break_time seconds)</p>";
 
 // Test the full employee status function
-$employee_status_obj = linkage_get_employee_status_with_times($user_id);
+$employee_status_obj = linkage_get_employee_status_from_database($user_id);
 echo "<p><strong>Full Status Object:</strong></p>";
 echo "<pre>" . print_r($employee_status_obj, true) . "</pre>";
+
+// Show database record information
+echo "<h3>Database Record Information:</h3>";
+global $wpdb;
+$table = $wpdb->prefix . 'linkage_attendance_logs';
+$work_date = current_time('Y-m-d');
+
+$record = $wpdb->get_row($wpdb->prepare(
+    "SELECT * FROM $table WHERE user_id = %d AND work_date = %s ORDER BY id DESC LIMIT 1",
+    $user_id,
+    $work_date
+));
+
+if ($record) {
+    echo "<p><strong>Record ID:</strong> " . esc_html($record->id) . "</p>";
+    echo "<p><strong>Work Date:</strong> " . esc_html($record->work_date) . "</p>";
+    echo "<p><strong>Time In:</strong> " . esc_html($record->time_in ?: 'Not set') . "</p>";
+    echo "<p><strong>Time Out:</strong> " . esc_html($record->time_out ?: 'Not set') . "</p>";
+    echo "<p><strong>Lunch Start:</strong> " . esc_html($record->lunch_start ?: 'Not set') . "</p>";
+    echo "<p><strong>Lunch End:</strong> " . esc_html($record->lunch_end ?: 'Not set') . "</p>";
+    echo "<p><strong>Total Hours:</strong> " . esc_html($record->total_hours ?: 'Not calculated') . "</p>";
+    echo "<p><strong>Status:</strong> " . esc_html($record->status) . "</p>";
+} else {
+    echo "<p><strong>No attendance record found for today.</strong></p>";
+}
 
 // Show current server time
 echo "<h3>Server Time:</h3>";
 echo "<p><strong>Current Server Time:</strong> " . esc_html(current_time('mysql')) . "</p>";
-
-// Manual calculation for verification
-if ($clock_in_time) {
-    $current_time = current_time('mysql');
-    $time_since_clock_in = strtotime($current_time) - strtotime($clock_in_time);
-    
-    echo "<h3>Manual Calculation Verification:</h3>";
-    echo "<p><strong>Time since clock in:</strong> " . esc_html($time_since_clock_in) . " seconds</p>";
-    echo "<p><strong>Total work time (stored + since clock in):</strong> " . esc_html($work_seconds + $time_since_clock_in) . " seconds</p>";
-    
-    if ($break_start_time) {
-        $work_time_to_break = strtotime($break_start_time) - strtotime($clock_in_time);
-        echo "<p><strong>Work time to break start:</strong> " . esc_html($work_time_to_break) . " seconds</p>";
-        echo "<p><strong>Total work time (stored + to break):</strong> " . esc_html($work_seconds + $work_time_to_break) . " seconds</p>";
-    }
-}
 
 echo "<hr>";
 echo "<p><a href='/'>Back to Dashboard</a></p>";
