@@ -32,7 +32,7 @@ require_once get_template_directory() . '/functions/dashboard-functions.php';
         <p>Click these buttons to fix common issues:</p>
         
         <form method="post">
-            <button type="submit" name="action" value="create_tables">1. Create Timesheet Table</button>
+            <button type="submit" name="action" value="create_tables">1. Create Attendance Logs Table</button>
             <button type="submit" name="action" value="initialize_users">2. Initialize All Users as Employees</button>
             <button type="submit" name="action" value="debug_all">3. Run Full Debug</button>
         </form>
@@ -126,15 +126,15 @@ require_once get_template_directory() . '/functions/dashboard-functions.php';
     <div class="debug-section">
         <h2>Current Status</h2>
         <?php
-        // Check if timesheet table exists
+        // Check if attendance logs table exists
         global $wpdb;
-        $timesheet_table = $wpdb->prefix . 'linkage_timesheets';
-        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$timesheet_table'") == $timesheet_table;
+        $attendance_table = $wpdb->prefix . 'linkage_attendance_logs';
+        $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$attendance_table'") == $attendance_table;
         
         if ($table_exists) {
-            echo '<p class="success">✓ Timesheet table exists</p>';
+            echo '<p class="success">✓ Attendance logs table exists</p>';
         } else {
-            echo '<p class="error">✗ Timesheet table does not exist</p>';
+            echo '<p class="error">✗ Attendance logs table does not exist</p>';
         }
         
         // Check user count
@@ -245,11 +245,56 @@ require_once get_template_directory() . '/functions/dashboard-functions.php';
     <div class="debug-section">
         <h2>Manual Fix Instructions</h2>
         <ol>
-            <li><strong>Create Timesheet Table:</strong> Click "Create Timesheet Table" above (only needed for time tracking)</li>
+            <li><strong>Create Attendance Logs Table:</strong> Click "Create Attendance Logs Table" above (needed for time tracking and payroll exports)</li>
             <li><strong>Assign Roles:</strong> Go to WordPress Admin → Users and assign the "Employee" role to your users</li>
             <li><strong>Initialize Status:</strong> Click "Initialize All Users as Employees" above</li>
             <li><strong>Refresh:</strong> Go back to your main dashboard and refresh the page</li>
         </ol>
+    </div>
+
+    <div class="debug-section">
+        <h2>Export Testing</h2>
+        <p>Test the export functionality (requires attendance logs table to exist):</p>
+        
+        <form method="post" action="<?php echo admin_url('admin-ajax.php'); ?>">
+            <input type="hidden" name="action" value="linkage_export_attendance">
+            <input type="hidden" name="nonce" value="<?php echo wp_create_nonce('linkage_export_nonce'); ?>">
+            
+            <div style="margin: 10px 0;">
+                <label>Employee (optional):</label>
+                <select name="user_id">
+                    <option value="">All Employees</option>
+                    <?php
+                    $users = get_users(array('role__in' => array('employee', 'administrator')));
+                    foreach ($users as $user) {
+                        echo '<option value="' . $user->ID . '">' . esc_html($user->display_name) . '</option>';
+                    }
+                    ?>
+                </select>
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <label>Start Date:</label>
+                <input type="date" name="start_date" value="<?php echo date('Y-m-d', strtotime('-30 days')); ?>">
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <label>End Date:</label>
+                <input type="date" name="end_date" value="<?php echo date('Y-m-d'); ?>">
+            </div>
+            
+            <div style="margin: 10px 0;">
+                <label>Format:</label>
+                <select name="format">
+                    <option value="csv">CSV</option>
+                    <option value="xlsx">XLSX (requires PhpSpreadsheet)</option>
+                </select>
+            </div>
+            
+            <button type="submit" class="button button-primary">Export Attendance Data</button>
+        </form>
+        
+        <p><strong>Note:</strong> XLSX export requires the PhpSpreadsheet library to be installed.</p>
     </div>
 
     <div class="debug-section">
