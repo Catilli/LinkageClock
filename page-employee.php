@@ -143,13 +143,9 @@ if (!empty($attendance_logs)) {
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h1 class="text-3xl font-bold text-gray-900">Employee Profile</h1>
+                    <h2 class="text-3xl font-bold text-gray-900"><?php echo esc_html($viewing_user->display_name); ?></h2>
                     <p class="text-gray-600 mt-2">
-                        <?php if ($viewing_user_id === $current_user_id): ?>
-                            Your profile and attendance information
-                        <?php else: ?>
-                            Profile for <?php echo esc_html($viewing_user->display_name); ?>
-                        <?php endif; ?>
+                    Your profile and attendance information.
                     </p>
                 </div>
                 
@@ -193,12 +189,9 @@ if (!empty($attendance_logs)) {
                             )
                         );
                         ?>
-                        <h3 class="text-xl font-semibold text-gray-900">
-                            <?php echo esc_html($viewing_user->display_name); ?>
-                        </h3>
-                        <p class="text-sm text-gray-600 employee-position" data-user-id="<?php echo esc_attr($viewing_user_id); ?>">
+                        <h3 class="text-xl font-semibold text-gray-900" data-user-id="<?php echo esc_attr($viewing_user_id); ?>">
                             <?php echo esc_html($position); ?>
-                        </p>
+                        </h3>
                         <p class="text-xs text-gray-500 mt-1">
                             Company ID: <?php echo esc_html($company_id ?: 'Not set'); ?>
                         </p>
