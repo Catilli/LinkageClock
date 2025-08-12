@@ -28,8 +28,12 @@ function linkage_get_all_employees_status() {
     $employees = array();
     
     foreach ($users as $user) {
+        error_log("LinkageClock: Processing user {$user->ID} ({$user->display_name}) for employee status");
+        
         // Use database-based status instead of user meta
         $employee_status = linkage_get_employee_status_from_database($user->ID);
+        
+        error_log("LinkageClock: User {$user->ID} status: {$employee_status->status}");
         
         $employees[] = (object) array(
             'ID' => $user->ID,
@@ -42,6 +46,7 @@ function linkage_get_all_employees_status() {
         );
     }
     
+    error_log("LinkageClock: Built employee list with " . count($employees) . " users");
     return $employees;
 }
 
@@ -190,11 +195,15 @@ function linkage_ajax_clock_action() {
     $current_status_obj = linkage_get_employee_status_from_database($user_id);
     $current_status = $current_status_obj->status;
     
+    // Debug: Log the action being performed
+    error_log("LinkageClock: User $user_id performing action '$action'. Current status: '$current_status'");
+    
     // Handle different actions
     switch ($action) {
         case 'clock_in':
             // Create new attendance log record
             $attendance_id = linkage_create_attendance_log($user_id, 'clock_in');
+            error_log("LinkageClock: Created attendance log for user $user_id, ID: $attendance_id");
             
             // No more user meta updates - we're using attendance logs table only
             break;
@@ -732,6 +741,8 @@ function linkage_create_attendance_log($user_id, $action) {
     $current_time = current_time('mysql');
     $work_date = current_time('Y-m-d');
     
+    error_log("LinkageClock: Creating attendance log for user $user_id, action: $action, date: $work_date");
+    
     // Check if a record already exists for today
     $existing_record = $wpdb->get_row($wpdb->prepare(
         "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
@@ -740,6 +751,7 @@ function linkage_create_attendance_log($user_id, $action) {
     ));
     
     if ($existing_record) {
+        error_log("LinkageClock: Updating existing record ID {$existing_record->id} for user $user_id");
         // Update existing record
         $wpdb->update(
             $table,
@@ -753,6 +765,7 @@ function linkage_create_attendance_log($user_id, $action) {
         );
         return $existing_record->id;
     } else {
+        error_log("LinkageClock: Creating new record for user $user_id");
         // Create new record
         $wpdb->insert(
             $table,
@@ -767,7 +780,9 @@ function linkage_create_attendance_log($user_id, $action) {
             array('%d', '%s', '%s', '%s', '%s', '%s')
         );
         
-        return $wpdb->insert_id;
+        $new_id = $wpdb->insert_id;
+        error_log("LinkageClock: Created new record ID $new_id for user $user_id");
+        return $new_id;
     }
 }
 
@@ -781,6 +796,8 @@ function linkage_update_attendance_log($user_id, $action) {
     $current_time = current_time('mysql');
     $work_date = current_time('Y-m-d');
     
+    error_log("LinkageClock: Updating attendance log for user $user_id, action: $action, date: $work_date");
+    
     // Get the active record for today
     $record = $wpdb->get_row($wpdb->prepare(
         "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
@@ -789,8 +806,11 @@ function linkage_update_attendance_log($user_id, $action) {
     ));
     
     if (!$record) {
+        error_log("LinkageClock: No active record found for user $user_id on $work_date");
         return false;
     }
+    
+    error_log("LinkageClock: Found active record ID {$record->id} for user $user_id");
     
     $update_data = array('updated_at' => $current_time);
     
@@ -847,6 +867,8 @@ function linkage_get_employee_status_from_database($user_id) {
     $table = $wpdb->prefix . 'linkage_attendance_logs';
     $work_date = current_time('Y-m-d');
     
+    error_log("LinkageClock: Getting status for user $user_id on date $work_date");
+    
     // Get the active record for today
     $record = $wpdb->get_row($wpdb->prepare(
         "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
@@ -855,6 +877,7 @@ function linkage_get_employee_status_from_database($user_id) {
     ));
     
     if (!$record) {
+        error_log("LinkageClock: No active record for user $user_id, checking completed records");
         // Check if there's a completed record for today
         $completed_record = $wpdb->get_row($wpdb->prepare(
             "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'completed' ORDER BY id DESC LIMIT 1",
@@ -863,6 +886,7 @@ function linkage_get_employee_status_from_database($user_id) {
         ));
         
         if ($completed_record) {
+            error_log("LinkageClock: User $user_id has completed record, status: clocked_out");
             return (object) array(
                 'user_id' => $user_id,
                 'status' => 'clocked_out',
@@ -876,6 +900,7 @@ function linkage_get_employee_status_from_database($user_id) {
             );
         }
         
+        error_log("LinkageClock: User $user_id has no records, status: clocked_out");
         // No record found, user is clocked out
         return (object) array(
             'user_id' => $user_id,
@@ -889,6 +914,8 @@ function linkage_get_employee_status_from_database($user_id) {
             'break_start_time' => null
         );
     }
+    
+    error_log("LinkageClock: User $user_id has active record ID {$record->id}");
     
     // Calculate current work and break times
     $current_time = current_time('mysql');
@@ -927,10 +954,16 @@ function linkage_get_employee_status_from_database($user_id) {
         // User has clocked in but not out
         if ($record->lunch_start && !$record->lunch_end) {
             $status = 'on_break';
+            error_log("LinkageClock: User $user_id status determined: on_break (has time_in, lunch_start, no lunch_end)");
         } else {
             $status = 'clocked_in';
+            error_log("LinkageClock: User $user_id status determined: clocked_in (has time_in, no time_out, no lunch or lunch completed)");
         }
+    } else {
+        error_log("LinkageClock: User $user_id status determined: clocked_out (missing time_in or has time_out)");
     }
+    
+    error_log("LinkageClock: Final status for user $user_id: $status");
     
     return (object) array(
         'user_id' => $user_id,
@@ -1303,4 +1336,57 @@ function linkage_comprehensive_reset() {
     }
     
     return 'Comprehensive reset completed: ' . implode(', ', $results);
+}
+
+/**
+ * Debug function to show current database state
+ */
+function linkage_debug_current_database_state() {
+    if (!current_user_can('administrator')) {
+        return 'Access denied. Administrator privileges required.';
+    }
+    
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $work_date = current_time('Y-m-d');
+    
+    echo "<h4>Debug: Current Database State for $work_date</h4>";
+    
+    // Check if table exists
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'") == $table;
+    if (!$table_exists) {
+        echo "<p><strong>Error:</strong> Attendance logs table does not exist!</p>";
+        return;
+    }
+    
+    // Get all records for today
+    $all_records = $wpdb->get_results($wpdb->prepare(
+        "SELECT * FROM $table WHERE work_date = %s ORDER BY user_id, status",
+        $work_date
+    ));
+    
+    if (empty($all_records)) {
+        echo "<p><strong>No records found for today.</strong></p>";
+        return;
+    }
+    
+    echo "<p><strong>Total records for today:</strong> " . count($all_records) . "</p>";
+    
+    foreach ($all_records as $record) {
+        $user = get_userdata($record->user_id);
+        $user_name = $user ? $user->display_name : "Unknown User ({$record->user_id})";
+        
+        echo "<div style='border: 1px solid #ccc; margin: 5px; padding: 10px; background: #f9f9f9;'>";
+        echo "<p><strong>Record ID:</strong> {$record->id}</p>";
+        echo "<p><strong>User:</strong> {$user_name} (ID: {$record->user_id})</p>";
+        echo "<p><strong>Status:</strong> {$record->status}</p>";
+        echo "<p><strong>Time In:</strong> " . ($record->time_in ?: 'Not set') . "</p>";
+        echo "<p><strong>Time Out:</strong> " . ($record->time_out ?: 'Not set') . "</p>";
+        echo "<p><strong>Lunch Start:</strong> " . ($record->lunch_start ?: 'Not set') . "</p>";
+        echo "<p><strong>Lunch End:</strong> " . ($record->lunch_end ?: 'Not set') . "</p>";
+        echo "<p><strong>Created:</strong> {$record->created_at}</p>";
+        echo "<p><strong>Updated:</strong> {$record->updated_at}</p>";
+        echo "</div>";
+    }
 }
