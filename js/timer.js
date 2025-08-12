@@ -1,6 +1,17 @@
 jQuery(document).ready(function($) {
     'use strict';
     
+    console.log('Document ready, jQuery version:', $.fn.jquery);
+    console.log('jQuery object:', $);
+    console.log('jQuery.fn.jquery:', $.fn.jquery);
+    
+    // Check if jQuery is properly loaded
+    if (typeof $ === 'undefined') {
+        console.error('jQuery is not loaded!');
+        alert('jQuery is not loaded. Please check your theme setup.');
+        return;
+    }
+    
     /**
      * Timer functionality for LinkageClock
      */
@@ -12,8 +23,14 @@ jQuery(document).ready(function($) {
         breakInterval: null,
         
         init: function() {
+            console.log('Timer.init() called');
+            console.log('jQuery version:', $.fn.jquery);
+            console.log('linkage_ajax object:', linkage_ajax);
+            
             this.loadInitialState();
             this.bindEvents();
+            
+            console.log('Timer initialization complete');
         },
         
         loadInitialState: function() {
@@ -99,17 +116,42 @@ jQuery(document).ready(function($) {
         bindEvents: function() {
             var self = this;
             
+            console.log('Binding events...');
+            console.log('Clock button found:', $('#clock-toggle-btn').length);
+            console.log('Break button found:', $('#break-toggle-btn').length);
+            
             // Clock in/out button
-            $('#clock-toggle-btn').on('click', function() {
+            $('#clock-toggle-btn').on('click', function(e) {
+                e.preventDefault();
                 console.log('Clock button clicked!');
+                console.log('Button element:', this);
+                console.log('Button ID:', this.id);
+                console.log('Button classes:', this.className);
+                
                 var action = $(this).data('action');
-                console.log('Action:', action);
-                console.log('Button data:', $(this).data());
+                console.log('Action from data:', action);
+                console.log('Button data attributes:', $(this).data());
+                
+                if (!action) {
+                    console.error('No action found in button data!');
+                    alert('Button action not found. Please refresh the page.');
+                    return;
+                }
+                
+                if (!linkage_ajax || !linkage_ajax.ajax_url) {
+                    console.error('Linkage AJAX not initialized!');
+                    console.log('linkage_ajax object:', linkage_ajax);
+                    alert('AJAX not initialized. Please refresh the page.');
+                    return;
+                }
+                
+                console.log('Calling performClockAction with action:', action);
                 self.performClockAction(action);
             });
             
             // Break start/end button
-            $('#break-toggle-btn').on('click', function() {
+            $('#break-toggle-btn').on('click', function(e) {
+                e.preventDefault();
                 console.log('Break button clicked!');
                 var action = $(this).data('action');
                 console.log('Action:', action);
@@ -246,7 +288,16 @@ jQuery(document).ready(function($) {
     };
 
     // Initialize timer
-    Timer.init();
+    console.log('About to initialize Timer...');
+    console.log('Timer object:', Timer);
+    
+    try {
+        Timer.init();
+        console.log('Timer initialization successful');
+    } catch (error) {
+        console.error('Timer initialization failed:', error);
+        alert('Timer initialization failed: ' + error.message);
+    }
 
     // Server-side time tracking (more accurate than local timers)
     var serverTimeUpdateInterval;
