@@ -1,9 +1,7 @@
 jQuery(document).ready(function($) {
     'use strict';
     
-    console.log('Document ready, jQuery version:', $.fn.jquery);
-    console.log('jQuery object:', $);
-    console.log('jQuery.fn.jquery:', $.fn.jquery);
+
     
     // Check if jQuery is properly loaded
     if (typeof $ === 'undefined') {
@@ -23,18 +21,16 @@ jQuery(document).ready(function($) {
         breakInterval: null,
         
         init: function() {
-            console.log('Timer.init() called');
-            console.log('jQuery version:', $.fn.jquery);
-            console.log('linkage_ajax object:', linkage_ajax);
+
             
             this.loadInitialState();
             this.bindEvents();
             
-            console.log('Timer initialization complete');
+
         },
         
         loadInitialState: function() {
-            console.log('Loading initial state...');
+
             // Get initial state from server instead of client-side calculation
             this.getTimeFromServer();
         },
@@ -45,15 +41,13 @@ jQuery(document).ready(function($) {
                 return;
             }
 
-            console.log('Getting time from server...');
+
             $.post(linkage_ajax.ajax_url, {
                 action: 'linkage_get_time_updates',
                 nonce: linkage_ajax.nonce
             }, function(response) {
-                console.log('Server response:', response);
                 if (response.success) {
                     var data = response.data;
-                    console.log('Server data:', data);
                     
                     // Update work time display
                     if (data.work_time_display) {
@@ -116,21 +110,15 @@ jQuery(document).ready(function($) {
         bindEvents: function() {
             var self = this;
             
-            console.log('Binding events...');
-            console.log('Clock button found:', $('#clock-toggle-btn').length);
-            console.log('Break button found:', $('#break-toggle-btn').length);
+
             
             // Clock in/out button
         $('#clock-toggle-btn').on('click', function(e) {
             e.preventDefault();
-                console.log('Clock button clicked!');
-                console.log('Button element:', this);
-                console.log('Button ID:', this.id);
-                console.log('Button classes:', this.className);
+
                 
                 var action = $(this).data('action');
-                console.log('Action from data:', action);
-                console.log('Button data attributes:', $(this).data());
+
                 
                 if (!action) {
                     console.error('No action found in button data!');
@@ -140,22 +128,19 @@ jQuery(document).ready(function($) {
                 
                 if (!linkage_ajax || !linkage_ajax.ajax_url) {
                     console.error('Linkage AJAX not initialized!');
-                    console.log('linkage_ajax object:', linkage_ajax);
+
                     alert('AJAX not initialized. Please refresh the page.');
                 return;
             }
             
-                console.log('Calling performClockAction with action:', action);
+
                 self.performClockAction(action);
             });
             
             // Break start/end button
             $('#break-toggle-btn').on('click', function(e) {
                 e.preventDefault();
-                console.log('Break button clicked!');
                 var action = $(this).data('action');
-                console.log('Action:', action);
-                console.log('Button data:', $(this).data());
                 self.performBreakAction(action);
             });
         },
@@ -191,7 +176,7 @@ jQuery(document).ready(function($) {
                     // Trigger custom event for other components
                     $(document).trigger('clockActionCompleted', data);
                     
-                    console.log('Clock action completed:', data);
+
                     } else {
                     console.error('Clock action failed:', response.data);
                     alert('Action failed: ' + (response.data || 'Unknown error'));
@@ -233,7 +218,7 @@ jQuery(document).ready(function($) {
                     // Trigger custom event for other components
                     $(document).trigger('clockActionCompleted', data);
                     
-                    console.log('Break action completed:', data);
+
                     } else {
                     console.error('Break action failed:', response.data);
                     alert('Action failed: ' + (response.data || 'Unknown error'));
@@ -287,12 +272,11 @@ jQuery(document).ready(function($) {
     };
 
     // Initialize timer
-    console.log('About to initialize Timer...');
-    console.log('Timer object:', Timer);
+
     
     try {
         Timer.init();
-        console.log('Timer initialization successful');
+
     } catch (error) {
         console.error('Timer initialization failed:', error);
         alert('Timer initialization failed: ' + error.message);
@@ -313,7 +297,7 @@ jQuery(document).ready(function($) {
         // Update every 1 second for real-time accuracy
         serverTimeUpdateInterval = setInterval(function() {
             updateTimeFromServer();
-        }, 1000);
+            }, 1000);
         
         // Initial update
         updateTimeFromServer();
@@ -371,7 +355,7 @@ jQuery(document).ready(function($) {
                 lastServerUpdate = Date.now();
             }
         }).fail(function() {
-            console.log('Failed to get time update from server');
+
         });
     }
 
@@ -428,7 +412,7 @@ jQuery(document).ready(function($) {
             }
         }
         
-        console.log('Updated status display for user:', currentUserId, 'status:', status);
+
     }
 
     /**
