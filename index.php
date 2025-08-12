@@ -91,6 +91,12 @@ get_header(); ?>
                                     <button onclick="clearLegacyMeta()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
                                         Clear Legacy Meta
                                     </button>
+                                    <button onclick="deleteAllTimeLogs()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                        Delete All Time Logs
+                                    </button>
+                                    <button onclick="comprehensiveReset()" class="bg-purple-600 hover:bg-purple-700 text-white px-3 py-1 rounded text-sm">
+                                        Comprehensive Reset
+                                    </button>
                                 <?php endif; ?>
                             </div>
                         </div>
@@ -154,6 +160,40 @@ get_header(); ?>
                             form.submit();
                         }
                     }
+                    
+                    function deleteAllTimeLogs() {
+                        if (confirm('⚠️ WARNING: This will DELETE ALL time logs from the attendance logs table!\n\nThis action cannot be undone and will reset all employee statuses to "clocked out".\n\nAre you sure you want to continue?')) {
+                            var form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = window.location.href;
+                            
+                            var input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'delete_all_time_logs';
+                            input.value = '1';
+                            
+                            form.appendChild(input);
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
+                    
+                    function comprehensiveReset() {
+                        if (confirm('⚠️ WARNING: This will perform a COMPREHENSIVE RESET!\n\nThis will:\n• Delete ALL time logs from the attendance logs table\n• Clear ALL legacy user meta keys\n• Reset the entire system to a clean state\n\nThis action cannot be undone!\n\nAre you sure you want to continue?')) {
+                            var form = document.createElement('form');
+                            form.method = 'POST';
+                            form.action = window.location.href;
+                            
+                            var input = document.createElement('input');
+                            input.type = 'hidden';
+                            input.name = 'comprehensive_reset';
+                            input.value = '1';
+                            
+                            form.appendChild(input);
+                            document.body.appendChild(form);
+                            form.submit();
+                        }
+                    }
                     </script>
                     
                     <?php
@@ -173,6 +213,26 @@ get_header(); ?>
                         echo "<p><strong>$result</strong></p>";
                         echo '<p>Legacy user meta has been cleared. The system now uses only the attendance logs table.</p>';
                         echo '<p>Please refresh the page to see the updated status.</p>';
+                        echo '</div>';
+                    }
+                    
+                    // Handle the delete all time logs action
+                    if (isset($_POST['delete_all_time_logs']) && current_user_can('administrator')) {
+                        $result = linkage_delete_all_time_logs();
+                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
+                        echo "<p><strong>$result</strong></p>";
+                        echo '<p>All time logs have been deleted. The attendance logs table is now empty.</p>';
+                        echo '<p>All employees will now show as "clocked out". Please refresh the page to see the updated status.</p>';
+                        echo '</div>';
+                    }
+                    
+                    // Handle the comprehensive reset action
+                    if (isset($_POST['comprehensive_reset']) && current_user_can('administrator')) {
+                        $result = linkage_comprehensive_reset();
+                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
+                        echo "<p><strong>$result</strong></p>";
+                        echo '<p>The system has been completely reset to a clean state.</p>';
+                        echo '<p>All employees will now show as "clocked out". Please refresh the page to see the updated status.</p>';
                         echo '</div>';
                     }
                     ?>
