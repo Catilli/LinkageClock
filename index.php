@@ -198,7 +198,7 @@ get_header(); ?>
                                     $role_display = linkage_get_user_role_display($employee->ID);
                                     $actual_time = linkage_format_actual_time($employee->last_action_time);
                             ?>
-                                <tr class="employee-row hover:bg-gray-50">
+                                <tr class="employee-row hover:bg-gray-50" data-user-id="<?php echo esc_attr($employee->ID); ?>">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
@@ -227,7 +227,7 @@ get_header(); ?>
                                             </span>
                                         </div>
                                     </td>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 last-action-time">
                                         <?php echo esc_html($actual_time); ?>
                                     </td>
                                 </tr>
