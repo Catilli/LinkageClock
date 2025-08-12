@@ -207,6 +207,9 @@ get_header(); ?>
                             <button onclick="resetAllUsers()" class="bg-red-500 hover:bg-red-600 text-white px-3 py-1 rounded text-sm">
                                 Reset All Users to Clocked Out
                             </button>
+                            <button onclick="testClockFunction()" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-sm">
+                                Test Clock Function
+                            </button>
                         </div>
                     </div>
                     <?php linkage_debug_database_status(); ?>
@@ -228,6 +231,32 @@ get_header(); ?>
                         form.appendChild(input);
                         document.body.appendChild(form);
                         form.submit();
+                    }
+                }
+                
+                function testClockFunction() {
+                    console.log('Testing clock function...');
+                    console.log('linkage_ajax object:', linkage_ajax);
+                    console.log('Clock button found:', $('#clock-toggle-btn').length);
+                    console.log('Clock button data-action:', $('#clock-toggle-btn').data('action'));
+                    console.log('Clock button text:', $('#clock-toggle-text').text());
+                    
+                    // Test AJAX call directly
+                    if (linkage_ajax && linkage_ajax.ajax_url) {
+                        console.log('Making test AJAX call...');
+                        $.post(linkage_ajax.ajax_url, {
+                            action: 'linkage_clock_action',
+                            action_type: 'clock_in',
+                            nonce: linkage_ajax.nonce
+                        }, function(response) {
+                            console.log('Test AJAX response:', response);
+                            alert('Test AJAX call successful! Check console for details.');
+                        }).fail(function(xhr, status, error) {
+                            console.error('Test AJAX failed:', xhr, status, error);
+                            alert('Test AJAX call failed! Check console for details.');
+                        });
+                    } else {
+                        alert('linkage_ajax not available! Check console for details.');
                     }
                 }
                 </script>
