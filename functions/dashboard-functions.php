@@ -429,10 +429,10 @@ function linkage_debug_database_tables() {
     
     echo "<h3>Debug: Database Tables</h3>";
     
-    // Check if timesheet table exists
-    $timesheet_table = $wpdb->prefix . 'linkage_timesheets';
-    $timesheet_exists = $wpdb->get_var("SHOW TABLES LIKE '$timesheet_table'") == $timesheet_table;
-    echo "<p><strong>Timesheet Table Exists:</strong> " . ($timesheet_exists ? 'Yes' : 'No') . "</p>";
+    // Check if attendance logs table exists
+    $attendance_table = $wpdb->prefix . 'linkage_attendance_logs';
+    $attendance_exists = $wpdb->get_var("SHOW TABLES LIKE '$attendance_table'") == $attendance_table;
+    echo "<p><strong>Attendance Logs Table Exists:</strong> " . ($attendance_exists ? 'Yes' : 'No') . "</p>";
     
     // Check user meta for employee status
     $status_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = 'linkage_employee_status'");
@@ -444,17 +444,18 @@ function linkage_debug_database_tables() {
 }
 
 /**
- * Force create database tables (only for timesheets)
+ * Force create database tables (attendance logs only)
  */
 function linkage_force_create_tables() {
     // Include the create-table.php file to ensure tables are created
     require_once get_template_directory() . '/functions/create-table.php';
     
-    // Only create timesheet table, not employee status table
-    linkage_create_timesheet_table();
+    // Create attendance logs table
+    linkage_create_attendance_logs_table();
     
-    echo "<p><strong>Timesheet table created/updated successfully!</strong></p>";
-    echo "<p><strong>Note:</strong> Employee status is now stored in WordPress user meta, not a separate table.</p>";
+    echo "<p><strong>Attendance logs table created/updated successfully!</strong></p>";
+    echo "<p><strong>✓ Attendance logs table</strong></p>";
+    echo "<p><strong>Note:</strong> Employee status is stored in WordPress user meta, and detailed time tracking is in the attendance logs table.</p>";
 }
 
 /**
@@ -536,3 +537,225 @@ function linkage_debug_time_button() {
     
     echo "<hr>";
 }
+
+/**
+ * Get attendance logs for export with all required fields
+ */
+function linkage_get_attendance_logs_for_export($user_id = null, $start_date = null, $end_date = null) {
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $users_table = $wpdb->users;
+    $usermeta_table = $wpdb->usermeta;
+    
+    $where_conditions = array();
+    $where_values = array();
+    
+    // Filter by user if specified
+    if ($user_id) {
+        $where_conditions[] = "al.user_id = %d";
+        $where_values[] = $user_id;
+    }
+    
+    // Filter by date range if specified
+    if ($start_date) {
+        $where_conditions[] = "al.work_date >= %s";
+        $where_values[] = $start_date;
+    }
+    
+    if ($end_date) {
+        $where_conditions[] = "al.work_date <= %s";
+        $where_values[] = $end_date;
+    }
+    
+    $where_clause = '';
+    if (!empty($where_conditions)) {
+        $where_clause = 'WHERE ' . implode(' AND ', $where_conditions);
+    }
+    
+    $query = "
+        SELECT 
+            u.display_name as employee_name,
+            COALESCE(um_company.meta_value, u.ID) as employee_id,
+            al.work_date,
+            al.time_in,
+            al.lunch_start,
+            al.lunch_end,
+            al.time_out,
+            al.total_hours,
+            al.status
+        FROM {$table} al
+        LEFT JOIN {$users_table} u ON al.user_id = u.ID
+        LEFT JOIN {$usermeta_table} um_company ON u.ID = um_company.user_id AND um_company.meta_key = 'linkage_company_id'
+        {$where_clause}
+        ORDER BY al.work_date DESC, u.display_name ASC
+    ";
+    
+    if (!empty($where_values)) {
+        $query = $wpdb->prepare($query, $where_values);
+    }
+    
+    return $wpdb->get_results($query, ARRAY_A);
+}
+
+/**
+ * Export attendance data to CSV
+ */
+function linkage_export_attendance_csv($user_id = null, $start_date = null, $end_date = null) {
+    $logs = linkage_get_attendance_logs_for_export($user_id, $start_date, $end_date);
+    
+    if (empty($logs)) {
+        return false;
+    }
+    
+    // Set headers for CSV download
+    header('Content-Type: text/csv');
+    header('Content-Disposition: attachment; filename="attendance_export_' . date('Y-m-d_H-i-s') . '.csv"');
+    
+    // Create output stream
+    $output = fopen('php://output', 'w');
+    
+    // Add CSV headers
+    fputcsv($output, array(
+        'Employee Name',
+        'Employee ID', 
+        'Date',
+        'Time In',
+        'Lunch Start',
+        'Lunch End',
+        'Time Out',
+        'Total Hours',
+        'Status'
+    ));
+    
+    // Add data rows
+    foreach ($logs as $log) {
+        fputcsv($output, array(
+            $log['employee_name'],
+            $log['employee_id'] ?: 'N/A',
+            $log['work_date'],
+            $log['time_in'] ? date('H:i:s', strtotime($log['time_in'])) : '',
+            $log['lunch_start'] ? date('H:i:s', strtotime($log['lunch_start'])) : '',
+            $log['lunch_end'] ? date('H:i:s', strtotime($log['lunch_end'])) : '',
+            $log['time_out'] ? date('H:i:s', strtotime($log['time_out'])) : '',
+            $log['total_hours'],
+            $log['status']
+        ));
+    }
+    
+    fclose($output);
+    return true;
+}
+
+/**
+ * Export attendance data to XLSX (requires PhpSpreadsheet library)
+ */
+function linkage_export_attendance_xlsx($user_id = null, $start_date = null, $end_date = null) {
+    // Check if PhpSpreadsheet is available
+    if (!class_exists('PhpOffice\PhpSpreadsheet\Spreadsheet')) {
+        return false;
+    }
+    
+    $logs = linkage_get_attendance_logs_for_export($user_id, $start_date, $end_date);
+    
+    if (empty($logs)) {
+        return false;
+    }
+    
+    try {
+        $spreadsheet = new \PhpOffice\PhpSpreadsheet\Spreadsheet();
+        $sheet = $spreadsheet->getActiveSheet();
+        
+        // Set headers
+        $headers = array(
+            'Employee Name',
+            'Employee ID',
+            'Date', 
+            'Time In',
+            'Lunch Start',
+            'Lunch End',
+            'Time Out',
+            'Total Hours',
+            'Status'
+        );
+        
+        foreach ($headers as $col => $header) {
+            $sheet->setCellValueByColumnAndRow($col + 1, 1, $header);
+        }
+        
+        // Add data rows
+        $row = 2;
+        foreach ($logs as $log) {
+            $sheet->setCellValueByColumnAndRow(1, $row, $log['employee_name']);
+            $sheet->setCellValueByColumnAndRow(2, $row, $log['employee_id'] ?: 'N/A');
+            $sheet->setCellValueByColumnAndRow(3, $row, $log['work_date']);
+            $sheet->setCellValueByColumnAndRow(4, $row, $log['time_in'] ? date('H:i:s', strtotime($log['time_in'])) : '');
+            $sheet->setCellValueByColumnAndRow(5, $row, $log['lunch_start'] ? date('H:i:s', strtotime($log['lunch_start'])) : '');
+            $sheet->setCellValueByColumnAndRow(6, $row, $log['lunch_end'] ? date('H:i:s', strtotime($log['lunch_end'])) : '');
+            $sheet->setCellValueByColumnAndRow(7, $row, $log['time_out'] ? date('H:i:s', strtotime($log['time_out'])) : '');
+            $sheet->setCellValueByColumnAndRow(8, $row, $log['total_hours']);
+            $sheet->setCellValueByColumnAndRow(9, $row, $log['status']);
+            $row++;
+        }
+        
+        // Auto-size columns
+        foreach (range(1, count($headers)) as $col) {
+            $sheet->getColumnDimensionByColumn($col)->setAutoSize(true);
+        }
+        
+        // Set headers for XLSX download
+        header('Content-Type: application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+        header('Content-Disposition: attachment; filename="attendance_export_' . date('Y-m-d_H-i-s') . '.xlsx"');
+        header('Cache-Control: max-age=0');
+        
+        // Create writer and output
+        $writer = new \PhpOffice\PhpSpreadsheet\Writer\Xlsx($spreadsheet);
+        $writer->save('php://output');
+        
+        return true;
+        
+    } catch (Exception $e) {
+        return false;
+    }
+}
+
+/**
+ * AJAX handler for export requests
+ */
+function linkage_ajax_export_attendance() {
+    if (!wp_verify_nonce($_POST['nonce'], 'linkage_export_nonce')) {
+        wp_die('Security check failed');
+    }
+    
+    if (!current_user_can('edit_posts')) {
+        wp_send_json_error('Insufficient permissions');
+    }
+    
+    $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : null;
+    $start_date = isset($_POST['start_date']) ? sanitize_text_field($_POST['start_date']) : null;
+    $end_date = isset($_POST['end_date']) ? sanitize_text_field($_POST['end_date']) : null;
+    $format = isset($_POST['format']) ? sanitize_text_field($_POST['format']) : 'csv';
+    
+    // Validate date format
+    if ($start_date && !strtotime($start_date)) {
+        wp_send_json_error('Invalid start date');
+    }
+    if ($end_date && !strtotime($end_date)) {
+        wp_send_json_error('Invalid end date');
+    }
+    
+    // Perform export
+    $result = false;
+    if ($format === 'xlsx') {
+        $result = linkage_export_attendance_xlsx($user_id, $start_date, $end_date);
+    } else {
+        $result = linkage_export_attendance_csv($user_id, $start_date, $end_date);
+    }
+    
+    if ($result) {
+        wp_die(); // Exit to prevent additional output
+    } else {
+        wp_send_json_error('Export failed');
+    }
+}
+add_action('wp_ajax_linkage_export_attendance', 'linkage_ajax_export_attendance');
