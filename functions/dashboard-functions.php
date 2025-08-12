@@ -4,30 +4,28 @@
  */
 
 /**
- * Get all employees with their current status
+ * Get all employees with their current status (only those with actual attendance records)
  */
 function linkage_get_all_employees_status() {
     global $wpdb;
     
-    // Get all users who have employee-related roles or capabilities
-    $users = get_users(array(
-        'role__in' => array('employee', 'hr_manager', 'administrator'),
-        'orderby' => 'display_name',
-        'order' => 'ASC'
-    ));
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $work_date = current_time('Y-m-d');
     
-    // If no users found with specific roles, get all users except admin
-    if (empty($users)) {
-        $users = get_users(array(
-            'exclude' => array(1), // Exclude the main admin user
-            'orderby' => 'display_name',
-            'order' => 'ASC'
-        ));
-    }
+    // Get users who have attendance records for today
+    $users_with_records = $wpdb->get_results($wpdb->prepare(
+        "SELECT DISTINCT user_id FROM $table WHERE work_date = %s",
+        $work_date
+    ));
     
     $employees = array();
     
-    foreach ($users as $user) {
+    foreach ($users_with_records as $record) {
+        $user = get_userdata($record->user_id);
+        if (!$user) {
+            continue; // Skip if user doesn't exist
+        }
+        
         // Use database-based status instead of user meta
         $employee_status = linkage_get_employee_status_from_database($user->ID);
         
@@ -41,6 +39,11 @@ function linkage_get_all_employees_status() {
             'break_start_time' => $employee_status->break_start_time
         );
     }
+    
+    // Sort by display name
+    usort($employees, function($a, $b) {
+        return strcasecmp($a->display_name, $b->display_name);
+    });
     
     return $employees;
 }
@@ -127,36 +130,9 @@ function linkage_initialize_employee_status() {
     
     $initialized_count = 0;
     
-    foreach ($users as $user_id) {
-        // Check if user already has an attendance record for today
-        $existing_record = $wpdb->get_row($wpdb->prepare(
-            "SELECT * FROM $table WHERE user_id = %d AND work_date = %s",
-            $user_id,
-            $work_date
-        ));
-        
-        // Only initialize if no attendance record exists for today
-        if (!$existing_record) {
-            // Create a default "clocked out" record for today
-            $wpdb->insert(
-                $table,
-                array(
-                    'user_id' => $user_id,
-                    'work_date' => $work_date,
-                    'status' => 'completed',
-                    'time_in' => null,
-                    'time_out' => null,
-                    'lunch_start' => null,
-                    'lunch_end' => null,
-                    'total_hours' => 0,
-                    'created_at' => current_time('mysql'),
-                    'updated_at' => current_time('mysql')
-                ),
-                array('%d', '%s', '%s', '%s', '%s', '%s', '%s', '%f', '%s', '%s')
-            );
-            $initialized_count++;
-        }
-    }
+    // DISABLED: This function was creating NULL records automatically
+    // Records should only be created when users actually clock in
+    // Keeping function for compatibility but disabling the record creation
     
     return $initialized_count;
 }
@@ -173,10 +149,7 @@ function linkage_ajax_clock_action() {
         wp_send_json_error('User not logged in');
     }
     
-    // Check if user has clock capabilities
-    if (!current_user_can('linkage_clock_in_out') && !current_user_can('administrator')) {
-        wp_send_json_error('Insufficient permissions for clock actions');
-    }
+
     
     $user_id = get_current_user_id();
     $action = sanitize_text_field($_POST['action_type']);
@@ -215,10 +188,7 @@ function linkage_ajax_clock_action() {
                 wp_send_json_error('Must be clocked in to start break');
             }
             
-            // Check break capability
-            if (!current_user_can('linkage_take_break') && !current_user_can('administrator')) {
-                wp_send_json_error('Insufficient permissions for break actions');
-            }
+
             
             // Update attendance log record with lunch start time
             $attendance_id = linkage_update_attendance_log($user_id, 'break_start');
@@ -233,10 +203,7 @@ function linkage_ajax_clock_action() {
                 wp_send_json_error('Must be on break to end break');
             }
             
-            // Check break capability
-            if (!current_user_can('linkage_take_break') && !current_user_can('administrator')) {
-                wp_send_json_error('Insufficient permissions for break actions');
-            }
+
             
             // Update attendance log record with lunch end time
             $attendance_id = linkage_update_attendance_log($user_id, 'break_end');
@@ -1364,6 +1331,41 @@ function linkage_delete_all_time_logs() {
     $deleted_count = $count_before;
     
     return "Successfully deleted $deleted_count time log records. The attendance logs table is now empty.";
+}
+
+/**
+ * Delete only the NULL attendance records (empty records with no actual clock-in data)
+ */
+function linkage_delete_null_time_logs() {
+    if (!current_user_can('administrator')) {
+        return 'Access denied. Administrator privileges required.';
+    }
+    
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    
+    // Check if table exists
+    $table_exists = $wpdb->get_var("SHOW TABLES LIKE '$table'") == $table;
+    if (!$table_exists) {
+        return 'Attendance logs table does not exist.';
+    }
+    
+    // Count existing NULL records before deletion
+    $count_before = $wpdb->get_var(
+        "SELECT COUNT(*) FROM $table WHERE time_in IS NULL AND time_out IS NULL AND lunch_start IS NULL AND lunch_end IS NULL"
+    );
+    
+    // Delete only records with all NULL time values
+    $result = $wpdb->query(
+        "DELETE FROM $table WHERE time_in IS NULL AND time_out IS NULL AND lunch_start IS NULL AND lunch_end IS NULL"
+    );
+    
+    if ($result === false) {
+        return 'Error deleting NULL time logs: ' . $wpdb->last_error;
+    }
+    
+    return "Successfully deleted $count_before empty/NULL time log records. Real attendance data was preserved.";
 }
 
 /**
