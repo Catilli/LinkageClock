@@ -322,12 +322,38 @@ function linkage_ajax_clock_action() {
     }
     
     if ($result !== false) {
-        // Get updated employee status with calculated times from database
+        // Return the status that was just set, not read from database
+        $response_status = '';
+        switch ($action) {
+            case 'clock_in':
+                $response_status = 'clocked_in';
+                break;
+            case 'clock_out':
+                $response_status = 'clocked_out';
+                break;
+            case 'break_start':
+                $response_status = 'on_break';
+                break;
+            case 'break_end':
+                $response_status = 'clocked_in';
+                break;
+            default:
+                $response_status = 'clocked_out';
+                break;
+        }
+        
+        // Debug: Log what's happening
+        error_log("LinkageClock: Action '$action' completed. Setting status to '$response_status' for user $user_id");
+        
+        // Get updated employee status with calculated times from database for time calculations
         $employee_status = linkage_get_employee_status_from_database($user_id);
+        
+        // Debug: Log what the database function returned
+        error_log("LinkageClock: Database function returned status: " . $employee_status->status);
         
         wp_send_json_success(array(
             'message' => 'Action completed successfully',
-            'status' => $employee_status->status,
+            'status' => $response_status, // Use the status we just set
             'action' => $action,
             'work_seconds' => $employee_status->work_seconds,
             'break_seconds' => $employee_status->break_seconds,
@@ -1262,4 +1288,67 @@ function linkage_reset_user_status($user_id) {
     delete_user_meta($user_id, 'linkage_break_start_time');
     
     return true;
+}
+
+/**
+ * Debug function to check current database state for a user
+ */
+function linkage_debug_user_database_state($user_id) {
+    global $wpdb;
+    
+    echo "<h4>Debug: Database State for User $user_id</h4>";
+    
+    // Check user meta
+    $meta_status = get_user_meta($user_id, 'linkage_employee_status', true);
+    $meta_clock_in = get_user_meta($user_id, 'linkage_clock_in_time', true);
+    $meta_break_start = get_user_meta($user_id, 'linkage_break_start_time', true);
+    
+    echo "<p><strong>User Meta:</strong></p>";
+    echo "<p>Status: " . ($meta_status ?: 'Not set') . "</p>";
+    echo "<p>Clock In Time: " . ($meta_clock_in ?: 'Not set') . "</p>";
+    echo "<p>Break Start Time: " . ($meta_break_start ?: 'Not set') . "</p>";
+    
+    // Check attendance logs
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    $work_date = current_time('Y-m-d');
+    
+    $active_record = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
+        $user_id,
+        $work_date
+    ));
+    
+    $completed_record = $wpdb->get_row($wpdb->prepare(
+        "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'completed' ORDER BY id DESC LIMIT 1",
+        $user_id,
+        $work_date
+    ));
+    
+    echo "<p><strong>Attendance Logs:</strong></p>";
+    if ($active_record) {
+        echo "<p>Active Record: Yes (ID: {$active_record->id})</p>";
+        echo "<p>Time In: " . ($active_record->time_in ?: 'Not set') . "</p>";
+        echo "<p>Time Out: " . ($active_record->time_out ?: 'Not set') . "</p>";
+        echo "<p>Lunch Start: " . ($active_record->lunch_start ?: 'Not set') . "</p>";
+        echo "<p>Lunch End: " . ($active_record->lunch_end ?: 'Not set') . "</p>";
+        echo "<p>Status: " . $active_record->status . "</p>";
+    } else {
+        echo "<p>Active Record: No</p>";
+    }
+    
+    if ($completed_record) {
+        echo "<p>Completed Record: Yes (ID: {$completed_record->id})</p>";
+        echo "<p>Time In: " . ($completed_record->time_in ?: 'Not set') . "</p>";
+        echo "<p>Time Out: " . ($completed_record->time_out ?: 'Not set') . "</p>";
+        echo "<p>Status: " . $completed_record->status . "</p>";
+    } else {
+        echo "<p>Completed Record: No</p>";
+    }
+    
+    // Check what the database function would return
+    $db_status = linkage_get_employee_status_from_database($user_id);
+    echo "<p><strong>Database Function Returns:</strong></p>";
+    echo "<p>Status: " . $db_status->status . "</p>";
+    echo "<p>Last Action: " . $db_status->last_action_time . "</p>";
+    echo "<p>Last Action Type: " . $db_status->last_action_type . "</p>";
 }
