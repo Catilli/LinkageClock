@@ -84,32 +84,6 @@ function linkage_format_actual_time($datetime) {
 }
 
 /**
- * Format time difference for display (kept for backward compatibility)
- */
-function linkage_format_time_ago($datetime) {
-    if ($datetime === 'Never' || empty($datetime)) {
-        return 'Never';
-    }
-    
-    $time = strtotime($datetime);
-    $now = current_time('timestamp');
-    $diff = $now - $time;
-    
-    if ($diff < 60) {
-        return 'Just now';
-    } elseif ($diff < 3600) {
-        $minutes = floor($diff / 60);
-        return $minutes . ' min' . ($minutes > 1 ? 's' : '') . ' ago';
-    } elseif ($diff < 86400) {
-        $hours = floor($diff / 3600);
-        return $hours . ' hour' . ($hours > 1 ? 's' : '') . ' ago';
-    } else {
-        $days = floor($diff / 86400);
-        return $days . ' day' . ($days > 1 ? 's' : '') . ' ago';
-    }
-}
-
-/**
  * Get user role display name
  */
 function linkage_get_user_role_display($user_id) {
@@ -186,30 +160,6 @@ function linkage_initialize_employee_status() {
     
     return $initialized_count;
 }
-
-/**
- * AJAX handler for updating employee status (admin only)
- */
-function linkage_ajax_update_employee_status() {
-    if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
-        wp_die('Security check failed');
-    }
-    
-    // Check if user is administrator
-    if (!current_user_can('administrator')) {
-        wp_send_json_error('Access denied. Administrator privileges required.');
-    }
-    
-    $user_id = intval($_POST['user_id']);
-    $status = sanitize_text_field($_POST['status']);
-    $action_type = sanitize_text_field($_POST['action_type']);
-    $notes = sanitize_textarea_field($_POST['notes']);
-    
-    // For now, we'll just return success since we're not using user meta anymore
-    // In the future, this could be used to manually adjust attendance logs
-    wp_send_json_success('Status update not implemented - using attendance logs table instead');
-}
-add_action('wp_ajax_linkage_update_employee_status', 'linkage_ajax_update_employee_status');
 
 /**
  * AJAX handler for clock actions (clock in/out, break start/end)
@@ -443,61 +393,6 @@ function linkage_enqueue_dashboard_scripts() {
 add_action('wp_enqueue_scripts', 'linkage_enqueue_dashboard_scripts');
 
 /**
- * Debug function to check user roles and capabilities
- */
-function linkage_debug_user_roles() {
-    echo "<h3>Debug: User Roles and Capabilities</h3>";
-    
-    // Get all users
-    $users = get_users();
-    
-    foreach ($users as $user) {
-        echo "<p><strong>User:</strong> " . $user->display_name . " (ID: " . $user->ID . ")</p>";
-        echo "<p><strong>Roles:</strong> " . implode(', ', $user->roles) . "</p>";
-        
-        // Check employee status from attendance logs table
-        $employee_status = linkage_get_employee_status_from_database($user->ID);
-        echo "<p><strong>Employee Status (from attendance logs):</strong> " . $employee_status->status . "</p>";
-        echo "<p><strong>Last Action:</strong> " . $employee_status->last_action_time . "</p>";
-        
-        echo "<hr>";
-    }
-}
-
-/**
- * Debug function to check database tables
- */
-function linkage_debug_database_tables() {
-    global $wpdb;
-    
-    echo "<h3>Debug: Database Tables</h3>";
-    
-    // Check if attendance logs table exists
-    $attendance_table = $wpdb->prefix . 'linkage_attendance_logs';
-    $attendance_exists = $wpdb->get_var("SHOW TABLES LIKE '$attendance_table'") == $attendance_table;
-    echo "<p><strong>Attendance Logs Table Exists:</strong> " . ($attendance_exists ? 'Yes' : 'No') . "</p>";
-    
-    // Check user meta for employee status (legacy - no longer used)
-    $status_count = $wpdb->get_var("SELECT COUNT(*) FROM {$wpdb->usermeta} WHERE meta_key = 'linkage_employee_status'");
-    echo "<p><strong>Users with Legacy Employee Status (deprecated):</strong> $status_count</p>";
-    
-    echo "<p><strong>Note:</strong> Employee status is now stored in the attendance logs table, not in user meta.</p>";
-    
-    // Show attendance logs table info instead
-    if ($attendance_exists) {
-        $attendance_count = $wpdb->get_var("SELECT COUNT(*) FROM $attendance_table");
-        echo "<p><strong>Total Attendance Records:</strong> $attendance_count</p>";
-        
-        $active_count = $wpdb->get_var("SELECT COUNT(*) FROM $attendance_table WHERE status = 'active'");
-        echo "<p><strong>Active Attendance Records:</strong> $active_count</p>";
-    }
-    
-    $status_records = $wpdb->get_results("SELECT * FROM {$wpdb->usermeta} WHERE meta_key = 'linkage_employee_status' LIMIT 5");
-    echo "<p><strong>Sample Status Records:</strong></p>";
-    echo "<pre>" . print_r($status_records, true) . "</pre>";
-}
-
-/**
  * Force create database tables (attendance logs only)
  */
 function linkage_force_create_tables() {
@@ -553,46 +448,6 @@ function linkage_force_initialize_all_users() {
     linkage_debug_database_status();
     
     return $initialized_count;
-}
-
-/**
- * Debug function to check time button visibility
- */
-function linkage_debug_time_button() {
-    if (!is_user_logged_in()) {
-        echo "<p><strong>Debug:</strong> User not logged in</p>";
-        return;
-    }
-    
-    $current_user = wp_get_current_user();
-    $employee_status = linkage_get_employee_status_from_database($current_user->ID);
-    
-    echo "<h3>Debug: Time Button Visibility</h3>";
-    echo "<p><strong>User ID:</strong> " . $current_user->ID . "</p>";
-    echo "<p><strong>User Name:</strong> " . $current_user->display_name . "</p>";
-    echo "<p><strong>Employee Status (from attendance logs):</strong> " . $employee_status->status . "</p>";
-    echo "<p><strong>Last Action Time:</strong> " . $employee_status->last_action_time . "</p>";
-    echo "<p><strong>Last Action Type:</strong> " . $employee_status->last_action_type . "</p>";
-    
-    // Show attendance log info instead of user meta
-    global $wpdb;
-    $table = $wpdb->prefix . 'linkage_attendance_logs';
-    $work_date = current_time('Y-m-d');
-    
-    $active_record = $wpdb->get_row($wpdb->prepare(
-        "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
-        $current_user->ID,
-        $work_date
-    ));
-    
-    if ($active_record) {
-        echo "<p><strong>Active Attendance Record:</strong> Yes</p>";
-        echo "<p><strong>Time In:</strong> " . ($active_record->time_in ?: 'Not set') . "</p>";
-        echo "<p><strong>Lunch Start:</strong> " . ($active_record->lunch_start ?: 'Not set') . "</p>";
-        echo "<p><strong>Lunch End:</strong> " . ($active_record->lunch_end ?: 'Not set') . "</p>";
-    } else {
-        echo "<p><strong>Active Attendance Record:</strong> No</p>";
-    }
 }
 
 /**
@@ -1115,13 +970,7 @@ function linkage_debug_database_status() {
     foreach ($users as $user) {
         echo "<h4>User: " . $user->display_name . " (ID: " . $user->ID . ")</h4>";
         
-        // Check user meta status (old method)
-        $meta_status = get_user_meta($user->ID, 'linkage_employee_status', true);
-        $meta_last_action = get_user_meta($user->ID, 'linkage_last_action_time', true);
-        echo "<p><strong>User Meta Status:</strong> " . ($meta_status ?: 'Not set') . "</p>";
-        echo "<p><strong>User Meta Last Action:</strong> " . ($meta_last_action ?: 'Never') . "</p>";
-        
-        // Check database status (new method)
+        // Check database status (current method)
         $db_status = linkage_get_employee_status_from_database($user->ID);
         echo "<p><strong>Database Status:</strong> " . $db_status->status . "</p>";
         echo "<p><strong>Database Last Action:</strong> " . $db_status->last_action_time . "</p>";
@@ -1178,11 +1027,14 @@ function linkage_cleanup_attendance_records() {
         // Check if user should actually be clocked in
         $user_id = $record->user_id;
         
-        // Get user meta status
-        $meta_status = get_user_meta($user_id, 'linkage_employee_status', true);
+        // Since we're no longer using user meta, we'll just check if the record is actually active
+        // and if it's been more than 24 hours, mark it as completed
+        $record_time = strtotime($record->updated_at);
+        $current_time = current_time('timestamp');
+        $hours_since_update = ($current_time - $record_time) / 3600;
         
-        // If user meta shows clocked out but has active record, mark record as completed
-        if ($meta_status !== 'clocked_in' && $meta_status !== 'on_break') {
+        // If record hasn't been updated in more than 24 hours, mark it as completed
+        if ($hours_since_update > 24) {
             $wpdb->update(
                 $table,
                 array(
@@ -1195,7 +1047,7 @@ function linkage_cleanup_attendance_records() {
                 array('%d')
             );
             
-            echo "<p>Cleaned up record for user ID $user_id (status: $meta_status)</p>";
+            echo "<p>Cleaned up old record for user ID $user_id (inactive for " . round($hours_since_update, 1) . " hours)</p>";
             $cleaned_count++;
         }
     }
