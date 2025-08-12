@@ -396,7 +396,6 @@ function linkage_restrict_admin_ajax_access() {
         // List of admin-only AJAX actions
         $admin_only_actions = array(
             'linkage_export_attendance', // Export functionality
-            'linkage_update_employee_status', // Employee management
             'linkage_force_create_tables', // Database management
             'linkage_force_initialize_all_users' // User initialization
         );
@@ -408,7 +407,6 @@ function linkage_restrict_admin_ajax_access() {
     }
 }
 add_action('wp_ajax_linkage_export_attendance', 'linkage_restrict_admin_ajax_access', 1);
-add_action('wp_ajax_linkage_update_employee_status', 'linkage_restrict_admin_ajax_access', 1);
 add_action('wp_ajax_linkage_force_create_tables', 'linkage_restrict_admin_ajax_access', 1);
 add_action('wp_ajax_linkage_force_initialize_all_users', 'linkage_restrict_admin_ajax_access', 1);
 
