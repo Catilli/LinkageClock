@@ -330,30 +330,33 @@ if (!empty($attendance_logs)) {
                     <form method="post" class="p-6 space-y-6">
                         <?php wp_nonce_field('update_profile', 'profile_nonce'); ?>
 
-                        <!-- First Name -->
-                        <div>
-                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
-                                First Name
-                            </label>
-                            <input type="text" 
-                                   id="first_name"
-                                   name="first_name" 
-                                   value="<?php echo esc_attr(get_user_meta($viewing_user_id, 'first_name', true)); ?>"
-                                   required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
-                        </div>
+                        <!-- First Name and Last Name - Two Columns -->
+                        <div class="grid grid-cols-2 gap-4">
+                            <!-- First Name -->
+                            <div>
+                                <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                    First Name
+                                </label>
+                                <input type="text" 
+                                       id="first_name"
+                                       name="first_name" 
+                                       value="<?php echo esc_attr(get_user_meta($viewing_user_id, 'first_name', true)); ?>"
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
 
-                        <!-- Last Name -->
-                        <div>
-                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
-                                Last Name
-                            </label>
-                            <input type="text" 
-                                   id="last_name"
-                                   name="last_name" 
-                                   value="<?php echo esc_attr(get_user_meta($viewing_user_id, 'last_name', true)); ?>"
-                                   required
-                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            <!-- Last Name -->
+                            <div>
+                                <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                    Last Name
+                                </label>
+                                <input type="text" 
+                                       id="last_name"
+                                       name="last_name" 
+                                       value="<?php echo esc_attr(get_user_meta($viewing_user_id, 'last_name', true)); ?>"
+                                       required
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                            </div>
                         </div>
 
                         <!-- Email -->
