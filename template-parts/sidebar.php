@@ -57,30 +57,6 @@
 
     </div>
 
-    <!-- User Dropdown Menu (positioned outside sidebar) -->
-    <div id="user-dropdown-menu" class="fixed left-64 bottom-6 w-64 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible transform translate-x-4 transition-all duration-200 ease-out z-50">
-        <div class="py-2">
-            <a href="<?php echo esc_url(home_url('/account')); ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
-                <div class="flex items-center space-x-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    <span>Your account settings</span>
-                </div>
-            </a>
-            <div class="border-t border-gray-100 my-1"></div>
-            <a href="<?php echo esc_url(wp_logout_url(home_url())); ?>" 
-               class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
-                <div class="flex items-center space-x-2">
-                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-                    </svg>
-                    <span>Sign out</span>
-                </div>
-            </a>
-        </div>
-    </div>
-
     </div>
 
     <!-- Collapse Toggle -->
@@ -93,3 +69,27 @@
         </button>
     </div>
 </header>
+
+<!-- User Dropdown Menu (positioned outside sidebar) -->
+<div id="user-dropdown-menu" class="fixed left-64 bottom-6 w-64 bg-white border border-gray-200 rounded-lg shadow-lg opacity-0 invisible transform translate-x-4 transition-all duration-200 ease-out z-50">
+    <div class="py-2">
+        <a href="<?php echo esc_url(home_url('/account')); ?>" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors duration-200">
+            <div class="flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                </svg>
+                <span>Your account settings</span>
+            </div>
+        </a>
+        <div class="border-t border-gray-100 my-1"></div>
+        <a href="<?php echo esc_url(wp_logout_url(home_url())); ?>" 
+           class="block px-4 py-2 text-sm text-red-600 hover:bg-red-50 transition-colors duration-200">
+            <div class="flex items-center space-x-2">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
+                </svg>
+                <span>Sign out</span>
+            </div>
+        </a>
+    </div>
+</div>
