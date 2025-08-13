@@ -114,7 +114,7 @@ jQuery(document).ready(function($) {
             $('.time-ago').each(function() {
                 const datetime = $(this).data('datetime');
                 if (datetime) {
-                    $(this).text(dashboard.formatTimeAgo(datetime));
+                    $(this).text(dashboard.formatExactTime(datetime));
                 }
             });
         },
@@ -145,26 +145,38 @@ jQuery(document).ready(function($) {
             }, 3000);
         },
         
-        formatTimeAgo: function(datetime) {
+        formatExactTime: function(datetime) {
             if (!datetime || datetime === 'Never') {
                 return 'Never';
             }
             
-            const now = new Date();
             const time = new Date(datetime);
-            const diff = now - time;
+            const now = new Date();
             
-            if (diff < 60000) {
-                return 'Just now';
-            } else if (diff < 3600000) {
-                const minutes = Math.floor(diff / 60000);
-                return `${minutes} min${minutes > 1 ? 's' : ''} ago`;
-            } else if (diff < 86400000) {
-                const hours = Math.floor(diff / 3600000);
-                return `${hours} hour${hours > 1 ? 's' : ''} ago`;
+            // Format time as H:MM AM/PM
+            const timeString = time.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            // Check if it's today, yesterday, or another date
+            const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+            const timeDate = new Date(time.getFullYear(), time.getMonth(), time.getDate());
+            const timeDiff = today.getTime() - timeDate.getTime();
+            
+            if (timeDiff === 0) {
+                return `${timeString}, Today`;
+            } else if (timeDiff === 86400000) { // 1 day in milliseconds
+                return `${timeString}, Yesterday`;
             } else {
-                const days = Math.floor(diff / 86400000);
-                return `${days} day${days > 1 ? 's' : ''} ago`;
+                // Format as MM/DD/YYYY
+                const dateString = time.toLocaleDateString('en-US', {
+                    month: '2-digit',
+                    day: '2-digit',
+                    year: 'numeric'
+                });
+                return `${timeString}, ${dateString}`;
             }
         },
         
@@ -363,7 +375,7 @@ jQuery(document).ready(function($) {
                     // Update last action time with database value
                     if (status.last_action_time) {
                         const $lastActionElement = $employeeRow.find('.last-action-time');
-                        $lastActionElement.text(dashboard.formatTimeAgo(status.last_action_time));
+                        $lastActionElement.text(dashboard.formatExactTime(status.last_action_time));
                     }
                 }
             });
@@ -390,7 +402,7 @@ jQuery(document).ready(function($) {
                 const $hireDateElement = $(`.employee-hire-date[data-user-id="${userId}"]`);
                 
                 if ($hireDateElement.length) {
-                    $hireDateElement.text(dashboard.formatTimeAgo(hireDate));
+                    $hireDateElement.text(dashboard.formatExactTime(hireDate));
                 }
             });
         },
