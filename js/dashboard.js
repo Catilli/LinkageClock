@@ -67,14 +67,14 @@ jQuery(document).ready(function($) {
             $('.employee-row').each(function() {
                 const $row = $(this);
                 const name = $row.find('.employee-name').text().toLowerCase();
-                const email = $row.find('.employee-email').text().toLowerCase();
+                const position = $row.find('.employee-position').text().toLowerCase();
                 const status = $row.find('.employee-status').data('status');
                 const role = $row.find('.employee-role').text().toLowerCase();
                 
                 let show = true;
                 
                 // Search filter
-                if (searchTerm && !name.includes(searchTerm) && !email.includes(searchTerm)) {
+                if (searchTerm && !name.includes(searchTerm) && !position.includes(searchTerm)) {
                     show = false;
                 }
                 
