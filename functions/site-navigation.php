@@ -29,8 +29,21 @@ function linkage_add_custom_menu_items($items, $args) {
         </a>
     </li>';
     
-    // Return dashboard item + existing items
-    return $dashboard_item . $items;
+    // Payroll menu item (only for admin and payroll staff)
+    $payroll_item = '';
+    if (current_user_can('manage_options') || current_user_can('linkage_export_attendance')) {
+        $payroll_item = '<li class="menu-item menu-item-payroll">
+            <a href="' . esc_url(home_url('/payroll')) . '" class="nav-link flex items-center px-4 py-2 text-gray-700 hover:text-blue-700 rounded-lg transition-colors duration-200">
+                <svg class="nav-icon w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+                <span class="nav-text">Payroll</span>
+            </a>
+        </li>';
+    }
+    
+    // Return dashboard item + payroll item + existing items
+    return $dashboard_item . $payroll_item . $items;
 }
 add_filter('wp_nav_menu_items', 'linkage_add_custom_menu_items', 10, 2);
 
@@ -58,6 +71,18 @@ function linkage_get_custom_navigation_items($include_wrapper = true) {
             <span class="nav-text">Dashboard</span>
         </a>
     </li>';
+    
+    // Payroll menu item (only for admin and payroll staff)
+    if (current_user_can('manage_options') || current_user_can('linkage_export_attendance')) {
+        $items .= '<li class="menu-item menu-item-payroll">
+            <a href="' . esc_url(home_url('/payroll')) . '" class="nav-link flex items-center px-4 py-2 text-gray-700 hover:text-blue-700 rounded-lg transition-colors duration-200">
+                <svg class="nav-icon w-5 h-5 mr-3 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"></path>
+                </svg>
+                <span class="nav-text">Payroll</span>
+            </a>
+        </li>';
+    }
     
     if ($include_wrapper) {
         return '<ul id="primary-menu" class="space-y-2">' . $items . '</ul>';
