@@ -148,12 +148,7 @@ if (!empty($attendance_logs)) {
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-3xl font-bold text-gray-900"><?php 
-                        $first_name = get_user_meta($viewing_user_id, 'first_name', true);
-                        $last_name = get_user_meta($viewing_user_id, 'last_name', true);
-                        $full_name = trim($first_name . ' ' . $last_name);
-                        echo esc_html($full_name ?: $viewing_user->display_name); 
-                    ?></h2>
+                    <h2 class="text-3xl font-bold text-gray-900"><?php echo esc_html(linkage_get_user_display_name($viewing_user_id)); ?></h2>
                     <p class="text-gray-600 mt-2">
                     Your profile and attendance information.
                     </p>
