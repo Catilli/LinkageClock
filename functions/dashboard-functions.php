@@ -261,69 +261,6 @@ function linkage_format_actual_time($datetime) {
 }
 
 /**
- * Format last action time with action type for employee status display
- */
-function linkage_format_last_action_with_type($datetime, $action_type, $status) {
-    if ($datetime === 'Never' || empty($datetime)) {
-        return 'Never';
-    }
-    
-    $time = strtotime($datetime);
-    $now = current_time('timestamp');
-    
-    // Format time as H:MM AM/PM
-    $time_string = date('g:i A', $time);
-    
-    // Check if it's today, yesterday, or another date
-    $today_date = date('Y-m-d', $now);
-    $time_date = date('Y-m-d', $time);
-    
-    // Determine action description based on action type and status
-    $action_description = '';
-    switch ($action_type) {
-        case 'clock_in':
-            $action_description = '';
-            break;
-        case 'break_start':
-            $action_description = 'break';
-            break;
-        case 'break_end':
-            $action_description = 'break end';
-            break;
-        case 'clock_out':
-            $action_description = ''; // No description for clock out
-            break;
-        default:
-            // Fallback based on current status
-            if ($status === 'clocked_in') {
-                $action_description = 'work';
-            } elseif ($status === 'on_break') {
-                $action_description = 'break';
-            } else {
-                $action_description = '';
-            }
-            break;
-    }
-    
-    // Build the display string
-    if ($time_date === $today_date) {
-        $date_part = 'today';
-    } elseif ($time_date === date('Y-m-d', $now - 86400)) {
-        $date_part = 'yesterday';
-    } else {
-        // Format as MM DD for older dates
-        $date_part = date('M j', $time);
-    }
-    
-    // Combine time, date, and action description
-    if (!empty($action_description)) {
-        return $time_string . ', ' . $date_part . ' ' . $action_description;
-    } else {
-        return $time_string . ', ' . $date_part;
-    }
-}
-
-/**
  * Get user role display name
  */
 function linkage_get_user_role_display($user_id) {
