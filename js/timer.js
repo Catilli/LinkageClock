@@ -398,17 +398,8 @@ jQuery(document).ready(function($) {
                 // Update the data-status attribute
                 statusElement.attr('data-status', status);
                 
-                // Update last action time to current time format
-                var lastActionElement = $(`.employee-row[data-user-id="${currentUserId}"] .last-action-time`);
-                if (lastActionElement.length) {
-                    var now = new Date();
-                    var timeString = now.toLocaleTimeString('en-US', {
-                        hour: 'numeric',
-                        minute: '2-digit',
-                        hour12: true
-                    }) + ', Today';
-                    lastActionElement.text(timeString);
-                }
+                // Update last action time using the actual database value
+                // Don't override with current time - let the AJAX refresh handle this
             }
         }
         
