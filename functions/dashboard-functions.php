@@ -241,23 +241,22 @@ function linkage_format_actual_time($datetime) {
     
     $time = strtotime($datetime);
     $now = current_time('timestamp');
-    $diff = $now - $time;
     
-    // If it's today, show time with "Today"
-    if ($diff < 86400 && date('Y-m-d', $time) === date('Y-m-d', $now)) {
-        return date('g:i A', $time) . ', Today'; // e.g., "2:30 PM, Today"
-    }
-    // If it's yesterday
-    elseif ($diff < 172800 && date('Y-m-d', $time) === date('Y-m-d', $now - 86400)) {
-        return 'Yesterday ' . date('g:i A', $time); // e.g., "Yesterday 2:30 PM"
-    }
-    // If it's within the last week
-    elseif ($diff < 604800) {
-        return date('D g:i A', $time); // e.g., "Mon 2:30 PM"
-    }
-    // If it's older
-    else {
-        return date('M j, g:i A', $time); // e.g., "Jan 15, 2:30 PM"
+    // Format time as H:MM AM/PM
+    $time_string = date('g:i A', $time);
+    
+    // Check if it's today, yesterday, or another date
+    $today_date = date('Y-m-d', $now);
+    $time_date = date('Y-m-d', $time);
+    
+    if ($time_date === $today_date) {
+        return $time_string . ', Today';
+    } elseif ($time_date === date('Y-m-d', $now - 86400)) {
+        return $time_string . ', Yesterday';
+    } else {
+        // Format as MM/DD/YYYY
+        $date_string = date('m/d/Y', $time);
+        return $time_string . ', ' . $date_string;
     }
 }
 
