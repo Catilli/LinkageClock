@@ -110,7 +110,7 @@ add_action('wp_head', 'linkage_pingback_header');
 function linkage_create_default_pages() {
     // Check if pages already exist to avoid duplicates
     $account_page = get_page_by_title('Your Account');
-    $payroll_page = get_page_by_title('Payroll');
+    $payroll_page = get_page_by_title('Payroll Dashboard');
     $desktop_only_page = get_page_by_title('Desktop Access Notice');
 
     // Create Account page if it doesn't exist
@@ -132,8 +132,8 @@ function linkage_create_default_pages() {
     // Create Payroll page if it doesn't exist
     if (!$payroll_page) {
         $payroll_page = wp_insert_post(array(
-            'post_title'    => 'Payroll',
-            'post_content'  => 'This page allows managers to generate payroll reports.',
+            'post_title'    => 'Payroll Dashboard',
+            'post_content'  => 'This page allows managers to generate payroll reports and manage payroll records.',
             'post_status'   => 'publish',
             'post_type'     => 'page',
             'post_name'     => 'payroll',
