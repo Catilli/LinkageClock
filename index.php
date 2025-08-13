@@ -133,9 +133,6 @@ get_header(); ?>
                         }
                     }
                     
-
-                    
-
                     </script>
                     
                     <?php
@@ -322,16 +319,6 @@ get_header(); ?>
                 </div>
             </div>
 
-        <?php else: ?>
-            <!-- Not Logged In Message -->
-            <div class="text-center py-12">
-                <div class="bg-yellow-100 border border-yellow-400 text-yellow-700 px-4 py-3 rounded mb-6">
-                    <p class="text-lg">Please log in to view the employee dashboard.</p>
-                    <a href="<?php echo esc_url(wp_login_url()); ?>" class="inline-block mt-2 bg-yellow-500 hover:bg-yellow-700 text-white font-bold py-2 px-4 rounded">
-                        Log In
-                    </a>
-                </div>
-            </div>
         <?php endif; ?>
         
     </div>
