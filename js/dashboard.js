@@ -62,7 +62,7 @@ jQuery(document).ready(function($) {
         filterEmployees: function() {
             const searchTerm = $('#employee-search').val().toLowerCase();
             const statusFilter = $('#status-filter').val();
-            const roleFilter = $('#role-filter').val();
+            const roleFilter = $('#role-filter').val().toLowerCase();
 
             console.log(roleFilter);
             
