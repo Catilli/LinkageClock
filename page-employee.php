@@ -244,7 +244,7 @@ if (!empty($attendance_logs)) {
                         <div class="flex justify-between items-center">
                             <span class="text-sm text-gray-600">Last Action:</span>
                             <span class="text-sm text-gray-900 last-action-time time-ago" data-datetime="<?php echo esc_attr($employee_status->last_action_time); ?>">
-                                <?php echo linkage_format_actual_time($employee_status->last_action_time); ?>
+                                <?php echo linkage_format_last_action_with_type($employee_status->last_action_time, $employee_status->last_action_type, $employee_status->status); ?>
                             </span>
                         </div>
                     </div>
