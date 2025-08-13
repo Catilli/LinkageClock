@@ -30,14 +30,19 @@ if (!$viewing_user) {
 // Get employee data
 $employee_status = linkage_get_employee_status($viewing_user_id);
 $company_id = get_user_meta($viewing_user_id, 'linkage_company_id', true) ?: '';
-$position = get_user_meta($viewing_user_id, 'linkage_position', true) ?: 'Employee';
+$position = get_user_meta($viewing_user_id, 'linkage_position', true);
+if (empty($position)) {
+    $user = get_userdata($viewing_user_id);
+    $position = ucfirst($user->roles[0]);
+}
 $hire_date = get_user_meta($viewing_user_id, 'linkage_hire_date', true) ?: $viewing_user->user_registered;
 
 // Handle form submission for profile updates
 if ( isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'], 'update_profile') && $viewing_user_id === $current_user_id ) {
     $userdata = array(
         'ID'           => $current_user_id,
-        'display_name' => sanitize_text_field($_POST['display_name']),
+        'first_name'   => sanitize_text_field($_POST['first_name']),
+        'last_name'    => sanitize_text_field($_POST['last_name']),
         'user_email'   => sanitize_email($_POST['user_email']),
     );
     wp_update_user($userdata);
@@ -65,7 +70,7 @@ if ( isset($_POST['update_profile']) && wp_verify_nonce($_POST['profile_nonce'],
 }
 
 // Get attendance data for the selected period
-$period = isset($_GET['period']) ? sanitize_text_field($_GET['period']) : 'current_month';
+$period = isset($_GET['period']) ? sanitize_text_field($_GET['period']) : 'current_week';
 $start_date = '';
 $end_date = '';
 
@@ -143,7 +148,12 @@ if (!empty($attendance_logs)) {
         <div class="mb-8">
             <div class="flex items-center justify-between">
                 <div>
-                    <h2 class="text-3xl font-bold text-gray-900"><?php echo esc_html($viewing_user->display_name); ?></h2>
+                    <h2 class="text-3xl font-bold text-gray-900"><?php 
+                        $first_name = get_user_meta($viewing_user_id, 'first_name', true);
+                        $last_name = get_user_meta($viewing_user_id, 'last_name', true);
+                        $full_name = trim($first_name . ' ' . $last_name);
+                        echo esc_html($full_name ?: $viewing_user->display_name); 
+                    ?></h2>
                     <p class="text-gray-600 mt-2">
                     Your profile and attendance information.
                     </p>
@@ -216,12 +226,9 @@ if (!empty($attendance_logs)) {
                     
                     switch ($employee_status->status) {
                         case 'clocked_in':
+                        case 'on_break':
                             $status_class = 'bg-green-100 text-green-800';
                             $status_text = 'Clocked In';
-                            break;
-                        case 'on_break':
-                            $status_class = 'bg-orange-100 text-orange-800';
-                            $status_text = 'On Break';
                             break;
                         case 'clocked_out':
                         default:
@@ -323,15 +330,28 @@ if (!empty($attendance_logs)) {
                     <form method="post" class="p-6 space-y-6">
                         <?php wp_nonce_field('update_profile', 'profile_nonce'); ?>
 
-                        <!-- Display Name -->
+                        <!-- First Name -->
                         <div>
-                            <label for="display_name" class="block text-sm font-medium text-gray-700 mb-2">
-                                Display Name
+                            <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                First Name
                             </label>
                             <input type="text" 
-                                   id="display_name"
-                                   name="display_name" 
-                                   value="<?php echo esc_attr($viewing_user->display_name); ?>"
+                                   id="first_name"
+                                   name="first_name" 
+                                   value="<?php echo esc_attr(get_user_meta($viewing_user_id, 'first_name', true)); ?>"
+                                   required
+                                   class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+
+                        <!-- Last Name -->
+                        <div>
+                            <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">
+                                Last Name
+                            </label>
+                            <input type="text" 
+                                   id="last_name"
+                                   name="last_name" 
+                                   value="<?php echo esc_attr(get_user_meta($viewing_user_id, 'last_name', true)); ?>"
                                    required
                                    class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
                         </div>
