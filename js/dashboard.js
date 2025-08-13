@@ -267,7 +267,7 @@ jQuery(document).ready(function($) {
             const $userDropdown = $('#user-dropdown-menu');
             const $userArrow = $('.user-menu-arrow');
             
-            $userDropdown.removeClass('opacity-0 invisible translate-y-2').addClass('opacity-100 visible translate-y-0');
+            $userDropdown.removeClass('opacity-0 invisible translate-x-4').addClass('opacity-100 visible translate-x-0');
             $userArrow.addClass('rotate-180');
         },
         
@@ -275,7 +275,7 @@ jQuery(document).ready(function($) {
             const $userDropdown = $('#user-dropdown-menu');
             const $userArrow = $('.user-menu-arrow');
             
-            $userDropdown.removeClass('opacity-100 visible translate-y-0').addClass('opacity-0 invisible translate-y-2');
+            $userDropdown.removeClass('opacity-100 visible translate-x-0').addClass('opacity-0 invisible translate-x-4');
             $userArrow.removeClass('rotate-180');
         },
         
