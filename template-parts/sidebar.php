@@ -40,11 +40,11 @@
                     <button id="user-menu-toggle" class="w-full p-6 flex items-center space-x-3 hover:bg-gray-50 transition-colors duration-200">
                         <?php 
                         $current_user = wp_get_current_user();
-                        echo linkage_get_small_avatar($current_user->user_email, $current_user->display_name, array('border' => false));
+                        echo linkage_get_small_avatar($current_user->user_email, linkage_get_user_display_name($current_user->ID), array('border' => false));
                         ?>
                         <div class="flex-1 text-left">
                             <p class="text-sm font-medium text-gray-900">
-                                <?php echo esc_html(wp_get_current_user()->display_name); ?>
+                                <?php echo esc_html(linkage_get_user_display_name(wp_get_current_user()->ID)); ?>
                             </p>
                             <p class="text-xs text-gray-500">
                                 <?php echo esc_html(linkage_get_user_role_display(wp_get_current_user()->ID)); ?>
