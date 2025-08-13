@@ -50,11 +50,11 @@ get_header(); ?>
                         <label for="role-filter" class="block text-sm font-medium text-gray-700 mb-2">Role</label>
                         <select id="role-filter" class="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <option value="all">All Roles</option>
-                            <option value="employee">Employee</option>
-                            <option value="manager">Manager</option>
-                            <option value="accounting | payroll">Accounting | Payroll</option>
-                            <option value="contractors">Contractors</option>
-                            <option value="administrator">Administrator</option>
+                            <option value="Employee">Employee</option>
+                            <option value="Manager">Manager</option>
+                            <option value="Accounting | Payroll">Accounting | Payroll</option>
+                            <option value="Contractors">Contractors</option>
+                            <option value="Administrator">Administrator</option>
                         </select>
                     </div>
                 </div>
