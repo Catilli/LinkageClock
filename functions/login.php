@@ -209,10 +209,10 @@ function linkage_custom_login_styles() {
 add_action('login_head', 'linkage_custom_login_styles');
 
 /**
- * Change login logo URL to homepage
+ * Change login logo URL to external link
  */
 function linkage_custom_login_logo_url() {
-    return home_url();
+    return 'https://linkage.ph';
 }
 add_filter('login_headerurl', 'linkage_custom_login_logo_url');
 
