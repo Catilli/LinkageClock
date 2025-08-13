@@ -5,87 +5,6 @@
  */
 
 /**
- * AJAX handler for exporting attendance records
- */
-function linkage_ajax_export_attendance() {
-    if (!wp_verify_nonce($_GET['nonce'] ?? $_POST['nonce'] ?? '', 'linkage_dashboard_nonce')) {
-        wp_die('Security check failed');
-    }
-    
-    if (!current_user_can('manage_options')) {
-        wp_die('Unauthorized access');
-    }
-    
-    $start_date = sanitize_text_field($_GET['start_date'] ?? '');
-    $end_date = sanitize_text_field($_GET['end_date'] ?? '');
-    $employee_id = intval($_GET['employee_id'] ?? 0);
-    
-    if (empty($start_date) || empty($end_date)) {
-        wp_die('Start date and end date are required');
-    }
-    
-    global $wpdb;
-    $table = $wpdb->prefix . 'linkage_attendance_logs';
-    
-    // Build query
-    $where_conditions = ["work_date BETWEEN %s AND %s"];
-    $query_params = [$start_date, $end_date];
-    
-    if ($employee_id > 0) {
-        $where_conditions[] = "user_id = %d";
-        $query_params[] = $employee_id;
-    }
-    
-    $where_clause = implode(' AND ', $where_conditions);
-    
-    $query = "SELECT * FROM $table WHERE $where_clause ORDER BY work_date DESC, user_id ASC";
-    $results = $wpdb->get_results($wpdb->prepare($query, ...$query_params));
-    
-    // Generate CSV
-    $filename = 'attendance_export_' . $start_date . '_to_' . $end_date . '.csv';
-    
-    header('Content-Type: text/csv');
-    header('Content-Disposition: attachment; filename="' . $filename . '"');
-    
-    $output = fopen('php://output', 'w');
-    
-    // CSV Headers
-    fputcsv($output, [
-        'Employee Name',
-        'Work Date',
-        'Time In',
-        'Time Out',
-        'Lunch Start',
-        'Lunch End',
-        'Total Hours',
-        'Status',
-        'Notes'
-    ]);
-    
-    // CSV Data
-    foreach ($results as $record) {
-        $user = get_userdata($record->user_id);
-        $employee_name = $user ? linkage_get_user_display_name($record->user_id) : 'Unknown User';
-        
-        fputcsv($output, [
-            $employee_name,
-            $record->work_date,
-            $record->time_in ?: '',
-            $record->time_out ?: '',
-            $record->lunch_start ?: '',
-            $record->lunch_end ?: '',
-            $record->total_hours ?: '0.00',
-            $record->status,
-            $record->notes ?: ''
-        ]);
-    }
-    
-    fclose($output);
-    exit;
-}
-add_action('wp_ajax_linkage_export_attendance', 'linkage_ajax_export_attendance');
-
-/**
  * AJAX handler for generating payroll
  */
 function linkage_ajax_generate_payroll() {
@@ -93,7 +12,7 @@ function linkage_ajax_generate_payroll() {
         wp_send_json_error('Security check failed');
     }
     
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('manage_options') && !current_user_can('linkage_generate_payroll_reports')) {
         wp_send_json_error('Unauthorized access');
     }
     
@@ -199,7 +118,7 @@ function linkage_ajax_get_payroll_records() {
         wp_send_json_error('Security check failed');
     }
     
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('manage_options') && !current_user_can('linkage_view_all_attendance')) {
         wp_send_json_error('Unauthorized access');
     }
     
@@ -266,7 +185,7 @@ function linkage_ajax_approve_payroll() {
         wp_send_json_error('Security check failed');
     }
     
-    if (!current_user_can('manage_options')) {
+    if (!current_user_can('manage_options') && !current_user_can('linkage_generate_payroll_reports')) {
         wp_send_json_error('Unauthorized access');
     }
     
