@@ -94,6 +94,12 @@ function linkage_custom_login_styles() {
             margin-bottom: 6px !important;
             display: block !important;
         }
+
+        /* Checkbox */
+        .login .forgetmenot {
+            display:flex;
+            align-items: center;
+        }
         
         /* Submit button */
         .login .button-primary {
