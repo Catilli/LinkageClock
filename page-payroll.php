@@ -301,6 +301,37 @@ jQuery(document).ready(function($) {
     // Load initial records
     loadPayrollRecords();
 });
+
+// Global functions for payroll record actions
+function viewPayroll(payrollId) {
+    // TODO: Implement payroll details view
+    alert('Payroll ID: ' + payrollId + '\nDetailed view not yet implemented.');
+}
+
+function approvePayroll(payrollId) {
+    if (confirm('Are you sure you want to approve this payroll record?')) {
+        $.ajax({
+            url: linkage_ajax.ajax_url,
+            type: 'POST',
+            data: {
+                action: 'linkage_approve_payroll',
+                payroll_id: payrollId,
+                nonce: linkage_ajax.nonce
+            },
+            success: function(response) {
+                if (response.success) {
+                    alert('Payroll approved successfully!');
+                    loadPayrollRecords(); // Reload the records
+                } else {
+                    alert('Error: ' + response.data);
+                }
+            },
+            error: function() {
+                alert('An error occurred while approving payroll.');
+            }
+        });
+    }
+}
 </script>
 
 <?php get_footer(); ?>
