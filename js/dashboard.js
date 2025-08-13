@@ -535,7 +535,6 @@ jQuery(document).ready(function($) {
             /* Active menu item */
             .menu-item a.active,
             .menu-item-dashboard a[href*="/"]:not([href*="/time-tracking"]):not([href*="/approve-timesheets"]):not([href*="/account"]) {
-                background-color: #dbeafe;
                 color: #1d4ed8;
             }
         </style>
