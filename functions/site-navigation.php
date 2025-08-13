@@ -67,20 +67,6 @@ function linkage_get_custom_navigation_items($include_wrapper = true) {
 }
 
 /**
- * Get navigation for logged out users
- * 
- * @return string HTML for logged out navigation
- */
-function linkage_get_logged_out_navigation() {
-    return '<div class="text-center text-gray-500">
-        <p class="text-sm mb-4">Please log in to access navigation</p>
-        <a href="' . esc_url(wp_login_url()) . '" class="inline-block bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-lg text-sm transition-colors duration-200">
-            Log In
-        </a>
-    </div>';
-}
-
-/**
  * Display the complete navigation
  * Handles both WordPress assigned menus and fallback custom navigation
  */
