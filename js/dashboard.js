@@ -64,16 +64,12 @@ jQuery(document).ready(function($) {
             const statusFilter = $('#status-filter').val();
             const roleFilter = $('#role-filter').val();
             
-            console.log('Filter values:', { searchTerm, statusFilter, roleFilter });
-            
             $('.employee-row').each(function() {
                 const $row = $(this);
                 const name = $row.find('.employee-name').text().toLowerCase();
                 const position = $row.find('.employee-position').text().toLowerCase();
                 const status = $row.find('.employee-status').data('status');
                 const role = $row.find('.employee-role').text().trim();
-                
-                console.log('Row data:', { name, position, status, role, roleFilter });
                 
                 let show = true;
                 
@@ -90,13 +86,11 @@ jQuery(document).ready(function($) {
                 // Role filter - exact case-insensitive comparison
                 if (roleFilter && roleFilter !== 'all') {
                     const roleMatch = role.toLowerCase() === roleFilter.toLowerCase();
-                    console.log('Role comparison:', { role: role.toLowerCase(), filter: roleFilter.toLowerCase(), match: roleMatch });
                     if (!roleMatch) {
                         show = false;
                     }
                 }
                 
-                console.log('Show row:', show);
                 $row.toggle(show);
             });
             
