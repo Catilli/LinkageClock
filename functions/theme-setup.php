@@ -110,9 +110,8 @@ add_action('wp_head', 'linkage_pingback_header');
 function linkage_create_default_pages() {
     // Check if pages already exist to avoid duplicates
     $account_page = get_page_by_title('Your Account');
-    $clocking_portal_page = get_page_by_title('Clocking Portal');
-    $time_tracking_page = get_page_by_title('Time Tracking');
-    $approve_timesheets_page = get_page_by_title('Approve Timesheets');
+    $payroll_page = get_page_by_title('Payroll');
+    $desktop_only_page = get_page_by_title('Desktop Access Notice');
 
     // Create Account page if it doesn't exist
     if (!$account_page) {
@@ -129,53 +128,33 @@ function linkage_create_default_pages() {
             error_log('LinkageClock: Account page created with ID: ' . $account_page_id);
         }
     }
-
-    // Create Clocking Portal page if it doesn't exist
-    if (!$clocking_portal_page) {
-        $clocking_portal_page_id = wp_insert_post(array(
-            'post_title'    => 'Clocking Portal',
-            'post_content'  => 'This is the clocking portal page for employees to clock in and out.',
+    
+    // Create Payroll page if it doesn't exist
+    if (!$payroll_page) {
+        $payroll_page = wp_insert_post(array(
+            'post_title'    => 'Payroll',
+            'post_content'  => 'This page allows managers to generate payroll reports.',
             'post_status'   => 'publish',
             'post_type'     => 'page',
-            'post_name'     => 'clocking-portal',
-            'page_template' => 'page-clocking-portal.php'
+            'post_name'     => 'payroll',
+            'page_template' => 'page-payroll.php'
         ));
         
-        if ($clocking_portal_page_id) {
-            error_log('LinkageClock: Account page created with ID: ' . $clocking_portal_page_id);
+        if ($payroll_page_id) {
+            error_log('LinkageClock: Payroll page created with ID: ' . $payroll_page_id);
         }
     }
     
-    // Create Time Tracking page if it doesn't exist
-    if (!$time_tracking_page) {
-        $time_tracking_page_id = wp_insert_post(array(
-            'post_title'    => 'Time Tracking',
-            'post_content'  => 'This is the time tracking page for employees to log their hours.',
+    // Create Desktop Access Notice page if it doesn't exist
+    if (!$desktop_only_page) {
+        $desktop_only_page = wp_insert_post(array(
+            'post_title'    => 'Desktop Access Notice',
+            'post_content'  => 'This page is only accessible on desktop devices.',
             'post_status'   => 'publish',
             'post_type'     => 'page',
-            'post_name'     => 'time-tracking',
-            'page_template' => 'page-time-tracking.php'
+            'post_name'     => 'desktop-only',
+            'page_template' => 'page-desktop-only.php'
         ));
-        
-        if ($time_tracking_page_id) {
-            error_log('LinkageClock: Time Tracking page created with ID: ' . $time_tracking_page_id);
-        }
     }
-    
-    // Create Approve Timesheets page if it doesn't exist
-    if (!$approve_timesheets_page) {
-        $approve_timesheets_page_id = wp_insert_post(array(
-            'post_title'    => 'Approve Timesheets',
-            'post_content'  => 'This page allows managers to approve employee timesheets.',
-            'post_status'   => 'publish',
-            'post_type'     => 'page',
-            'post_name'     => 'approve-timesheets',
-            'page_template' => 'page-approve-timesheets.php'
-        ));
-        
-        if ($approve_timesheets_page_id) {
-            error_log('LinkageClock: Approve Timesheets page created with ID: ' . $approve_timesheets_page_id);
-        }
-    } 
 }
 add_action('after_switch_theme', 'linkage_create_default_pages');
