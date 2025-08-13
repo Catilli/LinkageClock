@@ -115,7 +115,7 @@ function linkage_nav_menu_link_attributes($atts, $item, $args) {
         
         // Add active state for current page
         if (in_array('current-menu-item', $item->classes)) {
-            $atts['class'] .= ' bg-blue-50 text-blue-700';
+            $atts['class'] .= ' text-blue-700';
         }
     }
     
@@ -168,6 +168,16 @@ function linkage_add_navigation_collapse_styles() {
             #masthead.drawer-collapsed .employee-role {
                 opacity: 0;
                 visibility: hidden;
+            }
+            
+            /* User dropdown menu positioning */
+            #user-dropdown-menu {
+                transition: all 0.3s ease-in-out;
+            }
+            
+            /* When drawer is collapsed, position dropdown next to collapsed sidebar */
+            #masthead.drawer-collapsed ~ #user-dropdown-menu {
+                left: 4rem; /* 64px collapsed width */
             }
         </style>
         <?php
