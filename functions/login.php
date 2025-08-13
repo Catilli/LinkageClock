@@ -30,7 +30,7 @@ function linkage_custom_login_styles() {
             background: white;
             border-radius: 12px;
             box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-            padding: 3rem;
+            padding: 3rem 2rem;
             margin: 0 auto;
             position: relative;
         }
@@ -39,6 +39,7 @@ function linkage_custom_login_styles() {
         .login h1 {
             text-align: center;
             margin-bottom: 2rem;
+            padding: 0 1rem;
         }
         
         .login h1 a {
@@ -55,8 +56,8 @@ function linkage_custom_login_styles() {
         
         /* Form styling */
         .login form {
-            margin-top: 0 !important;
-            padding: 0 !important;
+            margin-top: 0;
+            padding: 0 1rem !important;
             background: transparent !important;
             border: none !important;
             box-shadow: none !important;
