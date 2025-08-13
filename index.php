@@ -70,87 +70,17 @@ get_header(); ?>
                 <div class="flex items-center justify-between mb-4">
                     <h2 class="text-xl font-semibold text-gray-900">Employee Status</h2>
                     <div class="flex space-x-2">
+                        <?php if (current_user_can('administrator')): ?>
+                            <button onclick="deleteAllTimeLogs()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
+                                Delete All Time Logs
+                            </button>
+                        <?php endif; ?>
                         <button onclick="location.reload()" class="bg-blue-500 hover:bg-blue-600 text-white px-3 py-1 rounded text-sm">
                             Refresh
                         </button>
                     </div>
                 </div>
-                
-                <!-- Debug Info for Current User -->
-                <?php if (is_user_logged_in()): ?>
-                    <?php 
-                    $current_user = wp_get_current_user();
-                    $current_status = linkage_get_employee_status_from_database($current_user->ID);
-                    ?>
-                    <div class="mb-4 p-3 bg-yellow-50 border border-yellow-200 rounded">
-                        <div class="flex items-center justify-between mb-2">
-                            <h4 class="font-semibold text-yellow-800">Debug: Current User Status</h4>
-                            <div class="flex space-x-2">
-                                <?php if (current_user_can('administrator')): ?>
-                                    <button onclick="deleteAllTimeLogs()" class="bg-red-600 hover:bg-red-700 text-white px-3 py-1 rounded text-sm">
-                                        Delete All Time Logs
-                                    </button>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-                        <p class="text-sm text-yellow-700">
-                            <strong>User:</strong> <?php echo esc_html(linkage_get_user_display_name($current_user->ID)); ?> 
-                            <strong>Role:</strong> <?php echo implode(', ', $current_user->roles); ?>
-                        </p>
-                        <p class="text-sm text-yellow-700">
-                            <strong>Database Status:</strong> <?php echo esc_html($current_status->status); ?>
-                            <strong>Last Action:</strong> <?php echo esc_html($current_status->last_action_time); ?>
-                        </p>
-                        <p class="text-sm text-yellow-700">
-                            <strong>Clock Button Action:</strong> <?php echo ($current_status->status === 'clocked_in' || $current_status->status === 'on_break') ? 'Time Out' : 'Time In'; ?>
-                        </p>
 
-                        
-                        <!-- Database Debug Info -->
-                        <details class="mt-3">
-                            <summary class="cursor-pointer text-sm font-medium text-yellow-800">Show Database Debug Info</summary>
-                            <div class="mt-2 p-2 bg-yellow-100 rounded text-xs">
-                                <?php linkage_debug_user_database_state($current_user->ID); ?>
-                            </div>
-                        </details>
-                    </div>
-                    
-                    <script>
-                    function deleteAllTimeLogs() {
-                        if (confirm('⚠️ WARNING: This will DELETE ALL time logs from the attendance logs table!\n\nThis action cannot be undone and will reset all employee statuses to "clocked out".\n\nAre you sure you want to continue?')) {
-                            var form = document.createElement('form');
-                            form.method = 'POST';
-                            form.action = window.location.href;
-                            
-                            var input = document.createElement('input');
-                            input.type = 'hidden';
-                            input.name = 'delete_all_time_logs';
-                            input.value = '1';
-                            
-                            form.appendChild(input);
-                            document.body.appendChild(form);
-                            form.submit();
-                        }
-                    }
-                    
-                    </script>
-                    
-                    <?php
-                    // Handle the delete all time logs action
-                    if (isset($_POST['delete_all_time_logs']) && current_user_can('administrator')) {
-                        $result = linkage_delete_all_time_logs();
-                        echo '<div class="mb-4 p-3 bg-green-100 border border-green-400 text-green-700 rounded">';
-                        echo "<p><strong>$result</strong></p>";
-                        echo '<p>All time logs have been deleted. The attendance logs table is now empty.</p>';
-                        echo '<p>All employees will now show as "clocked out". Please refresh the page to see the updated status.</p>';
-                        echo '</div>';
-                    }
-                    
-
-                    
-
-                    ?>
-                <?php endif; ?>
 
                 
                 <div class="overflow-x-auto">
@@ -333,6 +263,36 @@ jQuery(document).ready(function($) {
         $('#employee-count').text(`${visibleCount} of ${totalCount} employees`);
     }, 100);
 });
+
+// Delete all time logs function
+function deleteAllTimeLogs() {
+    if (confirm('⚠️ WARNING: This will DELETE ALL time logs from the attendance logs table!\n\nThis action cannot be undone and will reset all employee statuses to "clocked out".\n\nAre you sure you want to continue?')) {
+        var form = document.createElement('form');
+        form.method = 'POST';
+        form.action = window.location.href;
+        
+        var input = document.createElement('input');
+        input.type = 'hidden';
+        input.name = 'delete_all_time_logs';
+        input.value = '1';
+        
+        form.appendChild(input);
+        document.body.appendChild(form);
+        form.submit();
+    }
+}
 </script>
 
-<?php get_footer(); ?>
+<?php 
+// Handle the delete all time logs action
+if (isset($_POST['delete_all_time_logs']) && current_user_can('administrator')) {
+    $result = linkage_delete_all_time_logs();
+    echo '<div class="fixed top-4 right-4 z-50 p-4 bg-green-100 border border-green-400 text-green-700 rounded-lg shadow-lg" id="delete-success-message">';
+    echo "<p><strong>$result</strong></p>";
+    echo '<p>All time logs have been deleted. The attendance logs table is now empty.</p>';
+    echo '<p>All employees will now show as "clocked out". Please refresh the page to see the updated status.</p>';
+    echo '</div>';
+    echo '<script>setTimeout(function() { document.getElementById("delete-success-message").style.display = "none"; }, 5000);</script>';
+}
+
+get_footer(); ?>
