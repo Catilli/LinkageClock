@@ -203,7 +203,7 @@ if (!empty($attendance_logs)) {
                             <?php echo esc_html($position); ?>
                         </h3>
                         <p class="text-xs text-gray-500 mt-1">
-                            Company ID: <?php echo esc_html($company_id ?: 'Not set'); ?>
+                            ID: <?php echo esc_html($company_id ?: $viewing_user_id); ?>
                         </p>
                         <p class="text-xs text-gray-500 employee-hire-date" data-user-id="<?php echo esc_attr($viewing_user_id); ?>">
                             Hired: <?php echo $hire_date ? date('M Y', strtotime($hire_date)) : 'Not set'; ?>
