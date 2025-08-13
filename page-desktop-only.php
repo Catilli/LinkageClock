@@ -7,48 +7,8 @@
  * No header, sidebar, or footer - just centered content.
  */
 
-// Check if user is on mobile device
-function linkage_is_mobile_device() {
-    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
-    
-    $mobile_agents = array(
-        'Mobile', 'Android', 'iPhone', 'iPad', 'iPod', 'BlackBerry', 
-        'IEMobile', 'Opera Mini', 'Opera Mobi', 'webOS', 'Windows Phone'
-    );
-    
-    foreach ($mobile_agents as $agent) {
-        if (stripos($user_agent, $agent) !== false) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
-// Check if user has custom role (employee, manager, etc.) - not administrator
-function linkage_user_has_custom_role() {
-    if (!is_user_logged_in()) {
-        return false;
-    }
-    
-    $user = wp_get_current_user();
-    $custom_roles = array('employee', 'manager', 'accounting_payroll', 'contractor');
-    
-    foreach ($custom_roles as $role) {
-        if (in_array($role, $user->roles)) {
-            return true;
-        }
-    }
-    
-    return false;
-}
-
-// Redirect mobile users with custom roles
-if (linkage_is_mobile_device() && linkage_user_has_custom_role()) {
-    // Redirect to a mobile restriction page or home
-    wp_redirect(home_url('/'));
-    exit;
-}
+// Mobile/tablet users with custom roles are already redirected here by the main redirect function
+// No additional redirect logic needed in this template
 
 ?>
 <!DOCTYPE html>
