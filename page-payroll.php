@@ -6,7 +6,7 @@
  */
 
 // Security check - Only allow access to payroll staff and administrators
-if (!is_user_logged_in() || !current_user_can('manage_options')) {
+if (!is_user_logged_in() || (!current_user_can('manage_options') && !current_user_can('linkage_export_attendance'))) {
     wp_redirect(home_url());
     exit;
 }
@@ -226,11 +226,31 @@ jQuery(document).ready(function($) {
         
         const formData = new FormData(this);
         formData.append('action', 'linkage_export_attendance');
-        formData.append('nonce', linkage_ajax.nonce);
+        formData.append('nonce', '<?php echo wp_create_nonce('linkage_export_nonce'); ?>');
+        formData.append('format', 'csv');
         
-        // Create download link
-        const params = new URLSearchParams(formData);
-        window.open(linkage_ajax.ajax_url + '?' + params.toString(), '_blank');
+        // Rename form fields to match the existing function
+        if (formData.get('employee_id')) {
+            formData.append('user_id', formData.get('employee_id'));
+        }
+        
+        // Submit as POST request
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = linkage_ajax.ajax_url;
+        form.target = '_blank';
+        
+        for (let [key, value] of formData.entries()) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = value;
+            form.appendChild(input);
+        }
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
     });
     
     // Payroll form handler
