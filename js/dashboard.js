@@ -331,10 +331,11 @@ jQuery(document).ready(function($) {
             
             Object.keys(statuses).forEach(function(userId) {
                 const status = statuses[userId];
-                const $statusElement = $(`.employee-status[data-user-id="${userId}"]`);
+                const $employeeRow = $(`.employee-row[data-user-id="${userId}"]`);
                 
-                if ($statusElement.length) {
+                if ($employeeRow.length) {
                     // Update status badge
+                    const $statusElement = $employeeRow.find('.employee-status');
                     $statusElement.attr('data-status', status.status);
                     
                     let statusClass = '';
@@ -342,26 +343,27 @@ jQuery(document).ready(function($) {
                     
                     switch (status.status) {
                         case 'clocked_in':
-                            statusClass = 'bg-green-100 text-green-800';
+                            statusClass = 'clocked-in';
                             statusText = 'Clocked In';
                             break;
                         case 'on_break':
-                            statusClass = 'bg-orange-100 text-orange-800';
+                            statusClass = 'break-status';
                             statusText = 'On Break';
                             break;
                         case 'clocked_out':
                         default:
-                            statusClass = 'bg-red-100 text-red-800';
+                            statusClass = 'clocked-out';
                             statusText = 'Clocked Out';
                             break;
                     }
                     
-                    $statusElement.find('.status-badge').removeClass().addClass(`status-badge ${statusClass}`);
-                    $statusElement.find('.status-badge').text(statusText);
+                    $statusElement.removeClass('clocked-in clocked-out break-status').addClass(statusClass);
+                    $statusElement.text(statusText);
                     
-                    // Update last action time
+                    // Update last action time with database value
                     if (status.last_action_time) {
-                        $statusElement.find('.last-action-time').text(dashboard.formatTimeAgo(status.last_action_time));
+                        const $lastActionElement = $employeeRow.find('.last-action-time');
+                        $lastActionElement.text(dashboard.formatTimeAgo(status.last_action_time));
                     }
                 }
             });
