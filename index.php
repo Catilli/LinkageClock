@@ -52,8 +52,8 @@ get_header(); ?>
                             <option value="all">All Roles</option>
                             <option value="employee">Employee</option>
                             <option value="manager">Manager</option>
-                            <option value="accounting payroll">Accounting | Payroll</option>
-                            <option value="contractor">Contractors</option>
+                            <option value="accounting | payroll">Accounting | Payroll</option>
+                            <option value="contractors">Contractors</option>
                             <option value="administrator">Administrator</option>
                         </select>
                     </div>
