@@ -1525,5 +1525,3 @@ function linkage_analyze_and_fix_database_state() {
     
     return 'Database analysis completed: ' . implode(', ', $results);
 }
-
-
