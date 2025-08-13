@@ -38,7 +38,11 @@
                                         <div class="w-2 h-2 bg-gray-400 rounded-full"></div>
                                         <span class="current text-lg font-mono text-gray-700" id="last-action-time">
                                             <?php 
-                                            if ($employee_status->last_action_time) {
+                                            if ($employee_status->last_action_time && 
+                                                $employee_status->last_action_time !== 'Never' && 
+                                                $employee_status->last_action_time !== '' &&
+                                                strtotime($employee_status->last_action_time) !== false) {
+                                                
                                                 $last_time = new DateTime($employee_status->last_action_time);
                                                 $now = new DateTime();
                                                 $today = $now->format('Y-m-d');
@@ -53,7 +57,21 @@
                                                     echo $last_time->format('g:i A, M j');
                                                 }
                                             } else {
-                                                echo 'No activity';
+                                                // Use user registration date as fallback
+                                                $user_registered = $current_user->user_registered;
+                                                $registration_time = new DateTime($user_registered);
+                                                $now = new DateTime();
+                                                $today = $now->format('Y-m-d');
+                                                $yesterday = $now->modify('-1 day')->format('Y-m-d');
+                                                $reg_date = $registration_time->format('Y-m-d');
+                                                
+                                                if ($reg_date === $today) {
+                                                    echo $registration_time->format('g:i A') . ', Today';
+                                                } elseif ($reg_date === $yesterday) {
+                                                    echo $registration_time->format('g:i A') . ', Yesterday';
+                                                } else {
+                                                    echo $registration_time->format('g:i A, M j');
+                                                }
                                             }
                                             ?>
                                         </span>
