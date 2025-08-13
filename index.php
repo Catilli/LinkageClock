@@ -24,7 +24,7 @@ get_header(); ?>
                     <div class="md:col-span-2">
                         <label for="employee-search" class="block text-sm font-medium text-gray-700 mb-2">Search Employees</label>
                         <div class="relative">
-                            <input type="text" id="employee-search" placeholder="Search by name or email..." 
+                            <input type="text" id="employee-search" placeholder="Search by name or position..." 
                                    class="w-full px-3 py-2 pl-10 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500">
                             <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                                 <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -206,6 +206,9 @@ get_header(); ?>
                                     
                                     // Get display name using reusable function
                                     $display_name = linkage_get_user_display_name($employee->ID);
+                                    
+                                    // Get employee position
+                                    $employee_position = get_user_meta($employee->ID, 'linkage_position', true);
                             ?>
                                 <tr class="employee-row hover:bg-gray-50" data-user-id="<?php echo esc_attr($employee->ID); ?>">
                                     <td class="px-6 py-4 whitespace-nowrap">
@@ -217,8 +220,8 @@ get_header(); ?>
                                                 <div class="text-sm font-medium text-gray-900 employee-name">
                                                     <?php echo esc_html($display_name); ?>
                                                 </div>
-                                                <div class="text-sm text-gray-500 employee-email">
-                                                    <?php echo esc_html($employee->user_email); ?>
+                                                <div class="text-sm text-gray-500 employee-position">
+                                                    <?php echo !empty($employee_position) ? esc_html($employee_position) : ''; ?>
                                                 </div>
                                             </div>
                                         </div>
