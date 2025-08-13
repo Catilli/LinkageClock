@@ -839,9 +839,9 @@ function linkage_ajax_export_attendance() {
         wp_die('Security check failed');
     }
     
-    // Check if user is administrator
-    if (!current_user_can('administrator')) {
-        wp_send_json_error('Access denied. Administrator privileges required.');
+    // Check if user has payroll export access (administrators and payroll staff)
+    if (!current_user_can('manage_options') && !current_user_can('linkage_export_attendance')) {
+        wp_send_json_error('Access denied. Payroll export access required.');
     }
     
     $user_id = isset($_POST['user_id']) ? intval($_POST['user_id']) : null;
