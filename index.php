@@ -94,7 +94,7 @@ get_header(); ?>
                             </div>
                         </div>
                         <p class="text-sm text-yellow-700">
-                            <strong>User:</strong> <?php echo esc_html($current_user->display_name); ?> 
+                            <strong>User:</strong> <?php echo esc_html(linkage_get_user_display_name($current_user->ID)); ?> 
                             <strong>Role:</strong> <?php echo implode(', ', $current_user->roles); ?>
                         </p>
                         <p class="text-sm text-yellow-700">
@@ -203,16 +203,19 @@ get_header(); ?>
                                     
                                     $role_display = linkage_get_user_role_display($employee->ID);
                                     $actual_time = linkage_format_actual_time($employee->last_action_time);
+                                    
+                                    // Get display name using reusable function
+                                    $display_name = linkage_get_user_display_name($employee->ID);
                             ?>
                                 <tr class="employee-row hover:bg-gray-50" data-user-id="<?php echo esc_attr($employee->ID); ?>">
                                     <td class="px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
                                             <div class="flex-shrink-0 h-10 w-10">
-                                                <?php echo linkage_get_medium_avatar($employee->user_email, $employee->display_name); ?>
+                                                <?php echo linkage_get_medium_avatar($employee->user_email, $display_name); ?>
                                             </div>
                                             <div class="ml-4">
                                                 <div class="text-sm font-medium text-gray-900 employee-name">
-                                                    <?php echo esc_html($employee->display_name); ?>
+                                                    <?php echo esc_html($display_name); ?>
                                                 </div>
                                                 <div class="text-sm text-gray-500 employee-email">
                                                     <?php echo esc_html($employee->user_email); ?>
