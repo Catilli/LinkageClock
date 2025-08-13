@@ -4,6 +4,28 @@
  */
 
 /**
+ * Redirect non-logged-in users to login page when accessing site URL
+ */
+function linkage_redirect_to_login() {
+    // Only run on front-end, not in admin
+    if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
+        return;
+    }
+    
+    // Only redirect on homepage/front page
+    if (!is_front_page() && !is_home()) {
+        return;
+    }
+    
+    // If user is not logged in, redirect to login
+    if (!is_user_logged_in()) {
+        wp_redirect(wp_login_url(home_url()));
+        exit;
+    }
+}
+add_action('template_redirect', 'linkage_redirect_to_login');
+
+/**
  * Add Page Template column to Pages admin
  */
 function linkage_add_page_template_column($columns) {
