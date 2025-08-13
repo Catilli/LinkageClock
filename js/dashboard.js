@@ -83,8 +83,8 @@ jQuery(document).ready(function($) {
                     show = false;
                 }
                 
-                // Role filter
-                if (roleFilter && roleFilter !== 'all' && role !== roleFilter) {
+                // Role filter - case insensitive comparison
+                if (roleFilter && roleFilter !== 'all' && role !== roleFilter.toLowerCase()) {
                     show = false;
                 }
                 
