@@ -16,3 +16,6 @@ require_once get_template_directory() . '/functions/user.php';
 
 // Include site-navigation.php for navigation functionality
 require_once get_template_directory() . '/functions/site-navigation.php';
+
+// Include login.php for custom login page styling
+require_once get_template_directory() . '/functions/login.php';
