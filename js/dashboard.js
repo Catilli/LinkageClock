@@ -63,6 +63,8 @@ jQuery(document).ready(function($) {
             const searchTerm = $('#employee-search').val().toLowerCase();
             const statusFilter = $('#status-filter').val();
             const roleFilter = $('#role-filter').val();
+
+            console.log(roleFilter);
             
             $('.employee-row').each(function() {
                 const $row = $(this);
@@ -70,8 +72,6 @@ jQuery(document).ready(function($) {
                 const position = $row.find('.employee-position').text().toLowerCase();
                 const status = $row.find('.employee-status').data('status');
                 const role = $row.find('.employee-role').text().toLowerCase();
-
-                console.log(role);
                 
                 let show = true;
                 
