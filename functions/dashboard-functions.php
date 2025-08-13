@@ -282,7 +282,7 @@ function linkage_format_last_action_with_type($datetime, $action_type, $status) 
     $action_description = '';
     switch ($action_type) {
         case 'clock_in':
-            $action_description = 'work';
+            $action_description = '';
             break;
         case 'break_start':
             $action_description = 'break';
