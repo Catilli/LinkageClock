@@ -4,11 +4,58 @@
  */
 
 /**
+ * Check if user is on mobile or tablet device
+ */
+function linkage_is_mobile_or_tablet() {
+    $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
+    
+    $mobile_agents = array(
+        'Mobile', 'Android', 'iPhone', 'iPad', 'iPod', 'BlackBerry', 
+        'IEMobile', 'Opera Mini', 'Opera Mobi', 'webOS', 'Windows Phone',
+        'Tablet', 'PlayBook', 'Kindle', 'Silk', 'Mobile Safari'
+    );
+    
+    foreach ($mobile_agents as $agent) {
+        if (stripos($user_agent, $agent) !== false) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Check if user has custom role (employee, manager, etc.) - not administrator
+ */
+function linkage_user_has_custom_role() {
+    if (!is_user_logged_in()) {
+        return false;
+    }
+    
+    $user = wp_get_current_user();
+    $custom_roles = array('employee', 'manager', 'accounting_payroll', 'contractor');
+    
+    foreach ($custom_roles as $role) {
+        if (in_array($role, $user->roles)) {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
  * Redirect non-logged-in users to login page when accessing site URL
+ * Redirect mobile/tablet users with custom roles to desktop-only page
  */
 function linkage_redirect_to_login() {
     // Only run on front-end, not in admin
     if (is_admin() || wp_doing_ajax() || wp_doing_cron()) {
+        return;
+    }
+    
+    // Skip redirect if already on desktop-only page
+    if (is_page_template('page-desktop-only.php')) {
         return;
     }
     
@@ -21,6 +68,21 @@ function linkage_redirect_to_login() {
     if (!is_user_logged_in()) {
         wp_redirect(wp_login_url(home_url()));
         exit;
+    }
+    
+    // If user is logged in but on mobile/tablet with custom role, redirect to desktop-only page
+    if (linkage_is_mobile_or_tablet() && linkage_user_has_custom_role()) {
+        // Find a page that uses the desktop-only template
+        $desktop_only_pages = get_pages(array(
+            'meta_key' => '_wp_page_template',
+            'meta_value' => 'page-desktop-only.php',
+            'posts_per_page' => 1
+        ));
+        
+        if (!empty($desktop_only_pages)) {
+            wp_redirect(get_permalink($desktop_only_pages[0]->ID));
+            exit;
+        }
     }
 }
 add_action('template_redirect', 'linkage_redirect_to_login');
