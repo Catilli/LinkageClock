@@ -119,22 +119,6 @@ function linkage_custom_login_styles() {
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3) !important;
         }
         
-        /* Checkbox styling */
-        .login .forgetmenot {
-            margin: 1rem 0 !important;
-        }
-        
-        .login .forgetmenot input[type="checkbox"] {
-            width: auto !important;
-            margin-right: 8px !important;
-        }
-        
-        .login .forgetmenot label {
-            font-size: 14px !important;
-            display: inline !important;
-            margin-bottom: 0 !important;
-        }
-        
         /* Links */
         .login #nav,
         .login #backtoblog {
