@@ -19,3 +19,6 @@ require_once get_template_directory() . '/functions/site-navigation.php';
 
 // Include login.php for custom login page styling
 require_once get_template_directory() . '/functions/login.php';
+
+// Include payroll-functions.php for payroll processing
+require_once get_template_directory() . '/functions/payroll-functions.php';
