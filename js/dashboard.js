@@ -72,6 +72,8 @@ jQuery(document).ready(function($) {
                 const position = $row.find('.employee-position').text().toLowerCase();
                 const status = $row.find('.employee-status').data('status');
                 const role = $row.find('.employee-role').text().toLowerCase();
+
+                console.log(role);
                 
                 let show = true;
                 
