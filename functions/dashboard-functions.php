@@ -833,6 +833,24 @@ function linkage_create_attendance_log($user_id, $action) {
             $work_date
         ));
         
+        // Also check for active records from yesterday (cross-midnight sessions)
+        if (!$existing_record) {
+            $yesterday = date('Y-m-d', strtotime('-1 day', current_time('timestamp')));
+            $yesterday_record = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active' FOR UPDATE",
+                $user_id,
+                $yesterday
+            ));
+            
+            // If there's an active record from yesterday, we should not create a new one
+            // The user should clock out first or the system should handle the transition
+            if ($yesterday_record) {
+                $wpdb->query('ROLLBACK');
+                error_log('LinkageClock: User ' . $user_id . ' has active session from yesterday, cannot create new session');
+                return false;
+            }
+        }
+        
         if ($existing_record) {
             // Update existing record with row lock held
             $result = $wpdb->update(
@@ -927,6 +945,7 @@ function linkage_update_attendance_log($user_id, $action) {
     $table = $wpdb->prefix . 'linkage_attendance_logs';
     $current_time = current_time('mysql');
     $work_date = current_time('Y-m-d');
+    $yesterday = date('Y-m-d', strtotime('-1 day', current_time('timestamp')));
     
     // Start transaction for atomic operations
     $wpdb->query('START TRANSACTION');
@@ -939,9 +958,18 @@ function linkage_update_attendance_log($user_id, $action) {
             $work_date
         ));
         
+        // If no active record for today, check yesterday for cross-midnight sessions
+        if (!$record) {
+            $record = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active' FOR UPDATE",
+                $user_id,
+                $yesterday
+            ));
+        }
+        
         if (!$record) {
             $wpdb->query('ROLLBACK');
-            error_log('LinkageClock: No active record found for user ' . $user_id . ' on ' . $work_date);
+            error_log('LinkageClock: No active record found for user ' . $user_id . ' on ' . $work_date . ' or ' . $yesterday);
             return false;
         }
         
@@ -1039,6 +1067,7 @@ function linkage_get_employee_status_from_database($user_id) {
     
     $table = $wpdb->prefix . 'linkage_attendance_logs';
     $work_date = current_time('Y-m-d');
+    $yesterday = date('Y-m-d', strtotime('-1 day', current_time('timestamp')));
     
     // Debug logging
     error_log("LinkageClock: Getting status for user_id: $user_id, work_date: $work_date");
@@ -1049,6 +1078,19 @@ function linkage_get_employee_status_from_database($user_id) {
         $user_id,
         $work_date
     ));
+    
+    // If no active record for today, check yesterday for cross-midnight sessions
+    if (!$record) {
+        $record = $wpdb->get_row($wpdb->prepare(
+            "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'active'",
+            $user_id,
+            $yesterday
+        ));
+        
+        if ($record) {
+            error_log("LinkageClock: Found active record from yesterday for user $user_id: ID=" . $record->id);
+        }
+    }
     
     // Debug logging
     if ($record) {
@@ -1064,6 +1106,15 @@ function linkage_get_employee_status_from_database($user_id) {
             $user_id,
             $work_date
         ));
+        
+        // If no completed record for today, check yesterday
+        if (!$completed_record) {
+            $completed_record = $wpdb->get_row($wpdb->prepare(
+                "SELECT * FROM $table WHERE user_id = %d AND work_date = %s AND status = 'completed' ORDER BY id DESC LIMIT 1",
+                $user_id,
+                $yesterday
+            ));
+        }
         
         if ($completed_record) {
             return (object) array(
