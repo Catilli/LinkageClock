@@ -496,6 +496,21 @@ jQuery(document).ready(function($) {
             #masthead.drawer-collapsed .site-branding {
                 display: none;
             }
+            #masthead.drawer-collapsed .site-icon {
+                display: block !important;
+            }
+            .site-icon {
+                transition: opacity 0.3s ease-in-out;
+            }
+            #masthead.drawer-collapsed .user-info-text,
+            #masthead.drawer-collapsed .user-menu-arrow {
+                display: none;
+            }
+            #masthead.drawer-collapsed #user-menu-toggle {
+                justify-content: center;
+                padding-left: 0.75rem;
+                padding-right: 0.75rem;
+            }
             #masthead.drawer-collapsed nav a {
                 justify-content: center;
                 padding-left: 0.75rem;
