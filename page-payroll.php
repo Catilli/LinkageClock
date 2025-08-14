@@ -15,11 +15,6 @@ get_header(); ?>
 
 <div class="container mx-auto px-4 py-8">
     <div class="max-w-7xl mx-auto">
-        
-        <div class="mb-6">
-            <h1 class="text-3xl font-bold text-gray-900">Payroll Dashboard</h1>
-            <p class="text-gray-600 mt-2">Search employees and view detailed attendance logs for payroll processing</p>
-        </div>
 
         <!-- Employee Search and Filter Section -->
         <div class="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -27,7 +22,7 @@ get_header(); ?>
                 <svg class="w-5 h-5 mr-2 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
-                Employee Search & Filters
+                Search employees and view detailed attendance logs for payroll processing
             </h2>
             
             <div class="grid md:grid-cols-12 gap-4 mb-6">
