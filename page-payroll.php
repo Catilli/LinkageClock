@@ -123,12 +123,12 @@ get_header(); ?>
             </div>
             
             <!-- Empty State -->
-            <div id="empty-state" class="p-8 text-center">
+            <div id="empty-state" class="p-8 text-center hidden">
                 <svg class="mx-auto h-12 w-12 text-gray-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                 </svg>
-                <h3 class="text-lg font-medium text-gray-900 mb-2">Search for Employees</h3>
-                <p class="text-gray-600">Use the search box above to find employees and view their attendance records.</p>
+                <h3 class="text-lg font-medium text-gray-900 mb-2">No Results Found</h3>
+                <p class="text-gray-600">No employees found matching your search criteria.</p>
             </div>
         </div>
 
@@ -207,6 +207,9 @@ jQuery(document).ready(function($) {
     let searchTimeout;
     let currentEmployeeId = null;
     let currentDateRange = null;
+    
+    // Load all employees on page load
+    performEmployeeSearch();
     
     // Employee search with autocomplete
     $('#employee-search').on('input', function() {
