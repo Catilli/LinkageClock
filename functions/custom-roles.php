@@ -42,10 +42,15 @@ function linkage_create_custom_roles() {
         'Accounting | Payroll',
         array(
             'read' => true,
-            'edit_posts' => false,
-            'delete_posts' => false,
+            'edit_posts' => true,
+            'delete_posts' => true,
+            'publish_posts' => true,
             'upload_files' => true,
             'manage_options' => false,
+            'list_users' => true,
+            'edit_users' => true,
+            'create_users' => true,
+            'delete_users' => true,
             'linkage_view_main_dashboard' => true,
             'linkage_export_attendance' => true,
             'linkage_view_all_attendance' => true,
@@ -117,6 +122,14 @@ function linkage_add_custom_capabilities() {
         $accounting_role->add_cap('linkage_filter_by_date');
         $accounting_role->add_cap('linkage_generate_payroll_reports');
         $accounting_role->add_cap('linkage_view_own_timesheet');
+        // WordPress core capabilities for Posts and Users access
+        $accounting_role->add_cap('edit_posts');
+        $accounting_role->add_cap('delete_posts');
+        $accounting_role->add_cap('publish_posts');
+        $accounting_role->add_cap('list_users');
+        $accounting_role->add_cap('edit_users');
+        $accounting_role->add_cap('create_users');
+        $accounting_role->add_cap('delete_users');
     }
 
     // Add custom capabilities to contractor role
@@ -178,6 +191,25 @@ function linkage_check_user_capabilities_on_load() {
         );
         
         foreach ($capabilities as $cap) {
+            if (!user_can($current_user->ID, $cap)) {
+                $current_user->add_cap($cap);
+            }
+        }
+    }
+    
+    // Ensure payroll users have Posts and Users access
+    if (in_array('accounting_payroll', $current_user->roles)) {
+        $payroll_capabilities = array(
+            'edit_posts',
+            'delete_posts',
+            'publish_posts',
+            'list_users',
+            'edit_users',
+            'create_users',
+            'delete_users'
+        );
+        
+        foreach ($payroll_capabilities as $cap) {
             if (!user_can($current_user->ID, $cap)) {
                 $current_user->add_cap($cap);
             }
