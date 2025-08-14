@@ -99,11 +99,6 @@ get_header(); ?>
                                 <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                     Last Action Time
                                 </th>
-                                <?php if (current_user_can('manage_options') || current_user_can('linkage_export_attendance')): ?>
-                                <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                    Actions
-                                </th>
-                                <?php endif; ?>
                             </tr>
                         </thead>
                         <tbody class="bg-white divide-y divide-gray-200">
@@ -174,22 +169,13 @@ get_header(); ?>
                                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900 last-action-time">
                                         <?php echo esc_html($actual_time); ?>
                                     </td>
-                                    <?php if (current_user_can('manage_options') || current_user_can('linkage_export_attendance')): ?>
-                                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                                        <button class="text-blue-600 hover:text-blue-900 view-employee-profile-btn" 
-                                                data-employee-id="<?php echo esc_attr($employee->ID); ?>"
-                                                data-employee-name="<?php echo esc_attr($display_name); ?>">
-                                            View Profile
-                                        </button>
-                                    </td>
-                                    <?php endif; ?>
                                 </tr>
                             <?php 
                                 endforeach;
                             else:
                             ?>
                                 <tr>
-                                    <td colspan="<?php echo (current_user_can('manage_options') || current_user_can('linkage_export_attendance')) ? '5' : '4'; ?>" class="px-6 py-4 text-center text-gray-500">
+                                    <td colspan="4" class="px-6 py-4 text-center text-gray-500">
                                         No employees found. Please add employees to see their status.
                                     </td>
                                 </tr>
@@ -268,98 +254,7 @@ get_header(); ?>
     </div>
 </div>
 
-<!-- Employee Profile Modal -->
-<div id="employee-profile-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
-    <div class="bg-white rounded-lg shadow-xl max-w-4xl w-full mx-4 max-h-[90vh] overflow-hidden">
-        <div class="flex items-center justify-between p-6 border-b border-gray-200">
-            <h3 id="profile-modal-employee-name" class="text-xl font-semibold text-gray-900">Employee Profile</h3>
-            <button id="close-profile-modal" class="text-gray-400 hover:text-gray-600">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-                </svg>
-            </button>
-        </div>
-        
-        <!-- Modal Content -->
-        <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-            <!-- Loading State -->
-            <div id="profile-loading" class="text-center py-8">
-                <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500 mx-auto mb-4"></div>
-                <p class="text-gray-600">Loading employee profile...</p>
-            </div>
-            
-            <!-- Profile Content -->
-            <div id="profile-content" class="hidden">
-                <!-- Employee Information -->
-                <div class="bg-gray-50 rounded-lg p-6 mb-6">
-                    <h4 class="text-lg font-medium text-gray-900 mb-4">Employee Information</h4>
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Full Name</label>
-                            <div id="profile-name" class="mt-1 text-sm text-gray-900"></div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Email</label>
-                            <div id="profile-email" class="mt-1 text-sm text-gray-900"></div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Position</label>
-                            <div id="profile-position" class="mt-1 text-sm text-gray-900"></div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Role</label>
-                            <div id="profile-role" class="mt-1 text-sm text-gray-900"></div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Hire Date</label>
-                            <div id="profile-hire-date" class="mt-1 text-sm text-gray-900"></div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Employee ID</label>
-                            <div id="profile-employee-id" class="mt-1 text-sm text-gray-900"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Current Status -->
-                <div class="bg-white border rounded-lg p-6 mb-6">
-                    <h4 class="text-lg font-medium text-gray-900 mb-4">Current Status</h4>
-                    <div class="grid md:grid-cols-2 gap-4">
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Current Status</label>
-                            <div id="profile-current-status" class="mt-1"></div>
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-gray-700">Last Action</label>
-                            <div id="profile-last-action" class="mt-1 text-sm text-gray-900"></div>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Recent Attendance -->
-                <div class="bg-white border rounded-lg p-6">
-                    <h4 class="text-lg font-medium text-gray-900 mb-4">Recent Attendance (Last 7 Days)</h4>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-50">
-                                <tr>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time In</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Time Out</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Hours</th>
-                                    <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody id="profile-attendance" class="bg-white divide-y divide-gray-200">
-                                <!-- Attendance records will be populated here -->
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
+
 
 <script>
 // Initialize employee count on page load
@@ -369,119 +264,6 @@ jQuery(document).ready(function($) {
         const totalCount = $('.employee-row').length;
         $('#employee-count').text(`${visibleCount} of ${totalCount} employees`);
     }, 100);
-    
-    // Employee profile modal functionality
-    $('.view-employee-profile-btn').on('click', function() {
-        const employeeId = $(this).data('employee-id');
-        const employeeName = $(this).data('employee-name');
-        viewEmployeeProfile(employeeId, employeeName);
-    });
-    
-    $('#close-profile-modal').on('click', function() {
-        $('#employee-profile-modal').addClass('hidden');
-    });
-    
-    // Close modal when clicking outside
-    $('#employee-profile-modal').on('click', function(e) {
-        if (e.target === this) {
-            $('#employee-profile-modal').removeClass('hidden').addClass('hidden');
-        }
-    });
-    
-    // Close modal with Escape key
-    $(document).on('keydown', function(e) {
-        if (e.keyCode === 27 && !$('#employee-profile-modal').hasClass('hidden')) {
-            $('#employee-profile-modal').addClass('hidden');
-        }
-    });
-});
-
-// Function to view employee profile
-function viewEmployeeProfile(employeeId, employeeName) {
-    $('#profile-modal-employee-name').text(employeeName + ' - Employee Profile');
-    $('#profile-loading').show();
-    $('#profile-content').hide();
-    $('#employee-profile-modal').removeClass('hidden');
-    
-    // Load employee profile data
-    $.ajax({
-        url: linkage_ajax.ajax_url,
-        type: 'POST',
-        data: {
-            action: 'linkage_get_employee_profile',
-            employee_id: employeeId,
-            nonce: linkage_ajax.nonce
-        },
-        success: function(response) {
-            $('#profile-loading').hide();
-            if (response.success) {
-                populateEmployeeProfile(response.data);
-                $('#profile-content').show();
-            } else {
-                alert('Error loading employee profile: ' + (response.data || 'Unknown error'));
-                $('#employee-profile-modal').addClass('hidden');
-            }
-        },
-        error: function() {
-            $('#profile-loading').hide();
-            alert('Network error occurred while loading employee profile.');
-            $('#employee-profile-modal').addClass('hidden');
-        }
-    });
-}
-
-// Function to populate employee profile data
-function populateEmployeeProfile(data) {
-    $('#profile-name').text(data.name);
-    $('#profile-email').text(data.email);
-    $('#profile-position').text(data.position || 'Not set');
-    $('#profile-role').text(data.role);
-    $('#profile-hire-date').text(data.hire_date);
-    $('#profile-employee-id').text(data.employee_id);
-    
-    // Current status with badge
-    let statusBadge = '';
-    switch(data.current_status) {
-        case 'clocked_in':
-            statusBadge = '<span class="status-badge clocked-in">Clocked In</span>';
-            break;
-        case 'on_break':
-            statusBadge = '<span class="status-badge break-status">On Break</span>';
-            break;
-        case 'clocked_out':
-        default:
-            statusBadge = '<span class="status-badge clocked-out">Clocked Out</span>';
-            break;
-    }
-    $('#profile-current-status').html(statusBadge);
-    $('#profile-last-action').text(data.last_action || 'Never');
-    
-    // Recent attendance
-    const $attendanceBody = $('#profile-attendance');
-    $attendanceBody.empty();
-    
-    if (data.recent_attendance && data.recent_attendance.length > 0) {
-        data.recent_attendance.forEach(function(record) {
-            const statusText = record.status === 'completed' ? 'Completed' : 'Active';
-            const statusClass = record.status === 'completed' ? 'text-green-600' : 'text-blue-600';
-            
-            $attendanceBody.append(`
-                <tr>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.work_date}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.time_in || '-'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.time_out || '-'}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${record.total_hours || '0.00'} hrs</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm ${statusClass}">${statusText}</td>
-                </tr>
-            `);
-        });
-    } else {
-        $attendanceBody.append(`
-            <tr>
-                <td colspan="5" class="px-6 py-4 text-center text-gray-500">No recent attendance records found.</td>
-            </tr>
-        `);
-    }
 });
 
 // Delete all time logs function
