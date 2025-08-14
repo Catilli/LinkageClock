@@ -1,6 +1,6 @@
 # LinkageClock Theme
-**Version:** 3.1  
-**Date:** August 13, 2025  
+**Version:** 3.2  
+**Date:** August 14, 2025  
 **Project:** Time Tracking System for Linkage Web Development  
 
 ## Project Summary
@@ -21,6 +21,7 @@ WordPress time tracking system with **SIGNIFICANT PROGRESS** but **NOT YET COMPL
 - [x] **User Count Statistics** - Quick stats showing counts by status
 - [x] **Sticky Toolbar** - Toolbar remains fixed at top during scrolling for better navigation
 - [x] **Full Height Content** - Content area uses full viewport height with vertical scrollbar for optimal space usage
+- [x] **Employee List Sorting** - Intelligent sorting by status priority (On Break → Clocked In → Clocked Out) then by most recent activity
 
 **Status: COMPLETE** ✅
 
@@ -47,33 +48,34 @@ WordPress time tracking system with **SIGNIFICANT PROGRESS** but **NOT YET COMPL
 ### 3. Individual Employee Profiles ⚠️ **IMPLEMENTED BUT NOT FULLY TESTED**
 - [x] **Employee Information Display** - Name, ID (linkage_company_id), position, hire date
 - [x] **Profile Photo Support** - WordPress avatar integration
-- [ ] **⚠️ Detailed Attendance Logs** - Complete history with date, times, and hours
+- [x] **Detailed Attendance Logs** - Complete history with date, times, and hours powered by database integration
 - [x] **Formatted Time Display** - Consistent HH:MM AM/PM format
 - [x] **Total Hours Calculation** - Accurate per-shift totals including break time
-- [ ] **⚠️ Summary Statistics** - Total hours, average daily hours, days worked, overtime hours (implemented but not fully tested)
+- [ ] **Summary Statistics** - Total hours, average daily hours, days worked, overtime hours
 - [x] **⚠️ Access Control** - Employees see own profile (payroll/admin can't see all profiles)
 - [ ] **⚠️ Date Range Filtering** - Filter attendance records by date range (implemented but not fully tested)
 - [ ] **⚠️ Pagination Support** - Handle large datasets efficiently (implemented but not fully tested)
+- [x] **Database Integration** - Real attendance data from `linkage_attendance_logs` table instead of placeholder data
 
 **Status: IMPLEMENTED BUT REQUIRES TESTING** ⚠️
 
-### 4. Payroll Dashboard ✅ **COMPLETELY REDESIGNED**
+### 4. Payroll Dashboard ⚠️ **COMPLETELY REDESIGNED**
 - [x] **Employee Search with Autocomplete** - Real-time search with dropdown suggestions showing name and position
 - [x] **Advanced Date Range Filtering** - Custom date pickers with quick preset buttons (Biweekly/Monthly)
 - [x] **Employee Summary Table** - Professional table showing total hours, regular/overtime breakdown, and days worked
 - [x] **Detailed Logs Modal** - Click employee rows to view comprehensive attendance details with exact timestamps
-- [x] **Professional Export System** - CSV and Excel export buttons with proper formatting and UTF-8 support
+- [x] **⚠️ Professional Export System** - CSV and Excel export buttons with proper formatting and UTF-8 support (wrong Excel format)
 - [x] **Interactive User Interface** - Modern AJAX-powered dashboard with loading states and error handling
 - [x] **Comprehensive Data Display** - Shows time in, lunch times, time out, total hours, and session notes
 - [x] **Smart Date Presets** - Biweekly preset calculates current pay period, Monthly preset sets current month
-- [x] **Mobile Responsive Design** - Full responsiveness with sticky toolbar and optimized layouts
 - [x] **Real-time Calculations** - Automatic overtime calculation (8+ hours per day) with accurate totals
 - [x] **Role-based Access Control** - Restricted to administrators and accounting/payroll staff
 - [x] **Search Performance** - Debounced search with 300ms delay for optimal performance
 - [x] **Data Validation** - Comprehensive input validation and user-friendly error messages
 - [x] **Export Functionality** - Direct download with descriptive filenames and complete attendance data
+- [x] **Load All Employees by Default** - Payroll dashboard displays all employees immediately on page load for better user experience
 
-**Status: COMPLETE** ✅
+**Status: INCOMPLETE** ⚠️
 
 ### 5. Data Management ⚠️ **IMPLEMENTED BUT REQUIRES TESTING**
 - [x] **Server-based Timestamps** - All events recorded with accurate server time
@@ -99,6 +101,12 @@ WordPress time tracking system with **SIGNIFICANT PROGRESS** but **NOT YET COMPL
 - [x] **Data Access Control** - Users can only access appropriate data based on role
 - [x] **Payroll Access Control** - Multi-layer security for payroll functions
 - [x] **Navigation Security** - Menu items appear only for authorized users
+- [x] **Payroll Admin Access** - Payroll role granted limited admin access with restricted menu items
+- [x] **Admin User Privacy** - Administrator users hidden from payroll role view for enhanced security
+- [x] **Admin Toolbar Visibility** - WordPress admin bar shown only for admin and payroll roles on frontend
+- [x] **Mobile Device Redirect** - Comprehensive mobile/tablet detection redirects to desktop-only page across all pages
+- [x] **Comments Removal** - Complete WordPress comments functionality disabled across frontend, admin, and API
+- [x] **Timezone Management** - Automatic timezone detection with admin notices for proper configuration
 
 **Status: COMPLETE** ✅
 
@@ -260,4 +268,4 @@ The system is **NOT READY FOR PRODUCTION** due to untested payroll functionality
 ---
 
 **End of Report**  
-*LinkageClock Theme v3.1 - REQUIRES ADDITIONAL TESTING AND IMPROVEMENTS* ⚠️
+*LinkageClock Theme v3.2 - REQUIRES ADDITIONAL TESTING AND IMPROVEMENTS* ⚠️
