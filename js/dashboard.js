@@ -104,6 +104,46 @@ jQuery(document).ready(function($) {
             $('#employee-count').text(`${visibleCount} of ${totalCount} employees`);
         },
         
+        sortEmployeeRows: function() {
+            const $tbody = $('.employee-row').parent();
+            const $rows = $('.employee-row').detach();
+            
+            // Sort rows by status priority, then by last action time
+            $rows.sort(function(a, b) {
+                const statusPriority = {
+                    'on_break': 1,
+                    'clocked_in': 2,
+                    'clocked_out': 3
+                };
+                
+                const aStatus = $(a).find('.employee-status').data('status');
+                const bStatus = $(b).find('.employee-status').data('status');
+                
+                const aPriority = statusPriority[aStatus] || 3;
+                const bPriority = statusPriority[bStatus] || 3;
+                
+                // First sort by status priority
+                if (aPriority !== bPriority) {
+                    return aPriority - bPriority;
+                }
+                
+                // If same status, sort by last action time (most recent first)
+                const aTime = $(a).find('.last-action-time').data('datetime');
+                const bTime = $(b).find('.last-action-time').data('datetime');
+                
+                if (!aTime || aTime === 'Never') return 1;
+                if (!bTime || bTime === 'Never') return -1;
+                
+                const aTimestamp = new Date(aTime).getTime();
+                const bTimestamp = new Date(bTime).getTime();
+                
+                return bTimestamp - aTimestamp; // Most recent first
+            });
+            
+            // Re-append sorted rows
+            $tbody.append($rows);
+        },
+        
         refreshEmployeeList: function() {
             // Use AJAX to refresh employee data instead of page reload
             this.refreshEmployeeData();
@@ -327,6 +367,7 @@ jQuery(document).ready(function($) {
                     if (response.success) {
                         dashboard.updateEmployeeStatuses(response.data.statuses);
                         dashboard.updateTimeDisplays();
+                        dashboard.sortEmployeeRows(); // Sort after status updates
                         dashboard.updateEmployeeCount();
                         dashboard.updateEmployeePositions(response.data.positions);
                         dashboard.updateEmployeeHireDates(response.data.hire_dates);
@@ -402,7 +443,12 @@ jQuery(document).ready(function($) {
                 const $hireDateElement = $(`.employee-hire-date[data-user-id="${userId}"]`);
                 
                 if ($hireDateElement.length) {
-                    $hireDateElement.text(dashboard.formatExactTime(hireDate));
+                    // Format hire date as "Hired: Month Year" instead of time format
+                    const date = new Date(hireDate);
+                    const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", 
+                                      "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+                    const formattedDate = monthNames[date.getMonth()] + " " + date.getFullYear();
+                    $hireDateElement.text("Hired: " + formattedDate);
                 }
             });
         },
@@ -441,6 +487,9 @@ jQuery(document).ready(function($) {
                 
                 // Update data attribute
                 $row.find('.employee-status').attr('data-status', status);
+                
+                // Sort employee rows after status change
+                dashboard.sortEmployeeRows();
             }
         }
     };
