@@ -160,61 +160,55 @@ function linkage_create_default_pages() {
 add_action('after_switch_theme', 'linkage_create_default_pages');
 
 /**
- * Set WordPress timezone automatically when theme is activated
+ * Suggest timezone setup when theme is activated (safer approach)
  */
-function linkage_set_automatic_timezone() {
-    // Get the server's timezone
-    $server_timezone = date_default_timezone_get();
+function linkage_suggest_timezone_setup() {
+    // Only run if no timezone is configured
+    $current_timezone = get_option('timezone_string');
+    $current_offset = get_option('gmt_offset');
     
-    // If server timezone is valid, use it
-    if ($server_timezone && in_array($server_timezone, timezone_identifiers_list())) {
-        update_option('timezone_string', $server_timezone);
-        error_log('LinkageClock: Set WordPress timezone to: ' . $server_timezone);
-    } else {
-        // Fallback: Try to detect timezone from server offset
-        $offset = date('Z') / 3600; // Get offset in hours
-        
-        // Common timezone mappings based on offset
-        $timezone_map = array(
-            -12 => 'Pacific/Kwajalein',
-            -11 => 'Pacific/Midway',
-            -10 => 'Pacific/Honolulu',
-            -9 => 'America/Anchorage',
-            -8 => 'America/Los_Angeles',
-            -7 => 'America/Denver',
-            -6 => 'America/Chicago',
-            -5 => 'America/New_York',
-            -4 => 'America/Halifax',
-            -3 => 'America/Sao_Paulo',
-            -2 => 'Atlantic/South_Georgia',
-            -1 => 'Atlantic/Azores',
-            0 => 'UTC',
-            1 => 'Europe/London',
-            2 => 'Europe/Berlin',
-            3 => 'Europe/Moscow',
-            4 => 'Asia/Dubai',
-            5 => 'Asia/Karachi',
-            6 => 'Asia/Dhaka',
-            7 => 'Asia/Bangkok',
-            8 => 'Asia/Singapore',
-            9 => 'Asia/Tokyo',
-            10 => 'Australia/Sydney',
-            11 => 'Pacific/Norfolk',
-            12 => 'Pacific/Auckland'
-        );
-        
-        if (isset($timezone_map[$offset])) {
-            update_option('timezone_string', $timezone_map[$offset]);
-            error_log('LinkageClock: Set WordPress timezone to: ' . $timezone_map[$offset] . ' (based on server offset: ' . $offset . ')');
-        } else {
-            // Final fallback: set a manual UTC offset
-            update_option('gmt_offset', $offset);
-            update_option('timezone_string', '');
-            error_log('LinkageClock: Set WordPress GMT offset to: ' . $offset);
-        }
+    // Skip if timezone is already configured
+    if (!empty($current_timezone) || $current_offset != 0) {
+        return;
     }
+    
+    // Get server timezone info for suggestion
+    $server_timezone = date_default_timezone_get();
+    $server_offset = date('Z') / 3600;
+    
+    // Log suggestion instead of auto-setting
+    error_log('LinkageClock: WordPress timezone not configured. For accurate time tracking:');
+    error_log('- Go to WordPress Admin → Settings → General');
+    error_log('- Set your timezone (detected server timezone: ' . $server_timezone . ', offset: UTC' . ($server_offset >= 0 ? '+' : '') . $server_offset . ')');
+    error_log('- Recommended for your location: Asia/Singapore (UTC+8) or your actual timezone');
+    
+    // Add admin notice instead of auto-setting
+    add_action('admin_notices', 'linkage_timezone_setup_notice');
 }
-add_action('after_switch_theme', 'linkage_set_automatic_timezone');
+add_action('after_switch_theme', 'linkage_suggest_timezone_setup');
+
+/**
+ * Show admin notice for timezone setup
+ */
+function linkage_timezone_setup_notice() {
+    $current_timezone = get_option('timezone_string');
+    $current_offset = get_option('gmt_offset');
+    
+    // Only show if timezone not configured
+    if (!empty($current_timezone) || $current_offset != 0) {
+        return;
+    }
+    
+    $server_timezone = date_default_timezone_get();
+    $server_offset = date('Z') / 3600;
+    $settings_url = admin_url('options-general.php#timezone_string');
+    
+    echo '<div class="notice notice-warning is-dismissible">';
+    echo '<p><strong>LinkageClock:</strong> Please configure your timezone for accurate time tracking.</p>';
+    echo '<p>Detected server timezone: <strong>' . esc_html($server_timezone) . '</strong> (UTC' . ($server_offset >= 0 ? '+' : '') . esc_html($server_offset) . ')</p>';
+    echo '<p><a href="' . esc_url($settings_url) . '" class="button button-primary">Set Timezone in WordPress Settings</a></p>';
+    echo '</div>';
+}
 
 /**
  * Add Page Template column to Pages admin
