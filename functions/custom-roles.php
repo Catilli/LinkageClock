@@ -567,3 +567,70 @@ function linkage_admin_restriction_styles() {
     }
 }
 add_action('wp_head', 'linkage_admin_restriction_styles');
+
+/**
+ * Hide administrator users from Users list for payroll users
+ */
+function linkage_hide_admin_users_from_payroll($query) {
+    // Only apply in admin area
+    if (!is_admin()) {
+        return;
+    }
+    
+    // Only apply to user queries
+    if (!isset($query->query_vars['role']) && !isset($query->query_vars['meta_key'])) {
+        // Check if this is a user query by looking at the query object
+        global $pagenow;
+        if ($pagenow !== 'users.php') {
+            return;
+        }
+    }
+    
+    // Get current user
+    $current_user = wp_get_current_user();
+    
+    // Only apply to payroll users (administrators should see everyone)
+    if (!in_array('accounting_payroll', $current_user->roles)) {
+        return;
+    }
+    
+    // If payroll user is viewing users list, exclude administrators
+    if (is_admin() && $pagenow === 'users.php') {
+        // Get all user roles except administrator
+        $all_roles = wp_roles()->get_names();
+        unset($all_roles['administrator']);
+        
+        // Set the query to only show non-admin roles
+        $query->set('role__not_in', array('administrator'));
+    }
+}
+add_action('pre_get_users', 'linkage_hide_admin_users_from_payroll');
+
+/**
+ * Hide administrator role from role dropdown for payroll users
+ */
+function linkage_hide_admin_role_dropdown() {
+    $current_user = wp_get_current_user();
+    
+    // Only apply to payroll users
+    if (!in_array('accounting_payroll', $current_user->roles)) {
+        return;
+    }
+    
+    // Add JavaScript to hide administrator option in role dropdown
+    ?>
+    <script type="text/javascript">
+    jQuery(document).ready(function($) {
+        // Hide administrator option from role filter dropdown
+        $('#role option[value="administrator"]').remove();
+        
+        // Hide administrator option from bulk role change dropdown
+        $('#new_role option[value="administrator"]').remove();
+        
+        // Hide administrator option from user edit role dropdown
+        $('#role option[value="administrator"]').remove();
+    });
+    </script>
+    <?php
+}
+add_action('admin_footer-users.php', 'linkage_hide_admin_role_dropdown');
