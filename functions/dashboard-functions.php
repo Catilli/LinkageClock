@@ -128,6 +128,30 @@ function linkage_get_all_employees_status() {
         );
     }
     
+    // Sort employees by status priority first, then by last action time
+    usort($employees, function($a, $b) {
+        // Define status priority (1 = highest priority, 3 = lowest)
+        $status_priority = array(
+            'on_break' => 1,
+            'clocked_in' => 2,
+            'clocked_out' => 3
+        );
+        
+        $a_priority = isset($status_priority[$a->current_status]) ? $status_priority[$a->current_status] : 3;
+        $b_priority = isset($status_priority[$b->current_status]) ? $status_priority[$b->current_status] : 3;
+        
+        // First sort by status priority
+        if ($a_priority !== $b_priority) {
+            return $a_priority - $b_priority;
+        }
+        
+        // If same status, sort by last action time (most recent first)
+        $a_time = ($a->last_action_time && $a->last_action_time !== 'Never') ? strtotime($a->last_action_time) : 0;
+        $b_time = ($b->last_action_time && $b->last_action_time !== 'Never') ? strtotime($b->last_action_time) : 0;
+        
+        return $b_time - $a_time; // Descending order (most recent first)
+    });
+    
     return $employees;
 }
 
@@ -355,7 +379,7 @@ function linkage_ajax_get_employee_updates() {
         wp_send_json_error('User not logged in');
     }
     
-    // Get all employees with their current status
+    // Get all employees with their current status (already sorted by status and time)
     $employees = linkage_get_all_employees_status();
     
     $statuses = array();
