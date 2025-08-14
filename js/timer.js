@@ -133,10 +133,14 @@ jQuery(document).ready(function($) {
                 return;
             }
             
-                // Show confirmation popup for clock out action
+                // Show confirmation popup for clock actions
                 if (action === 'clock_out') {
                     self.showClockOutConfirmation(function() {
                         self.performClockAction(action);
+                    });
+                } else if (action === 'clock_in') {
+                    self.showClockInConfirmation(function(notes) {
+                        self.performClockAction(action, notes);
                     });
                 } else {
                     self.performClockAction(action);
@@ -151,14 +155,21 @@ jQuery(document).ready(function($) {
             });
         },
         
-        performClockAction: function(action) {
+        performClockAction: function(action, notes) {
             var self = this;
             
-            $.post(linkage_ajax.ajax_url, {
-                    action: 'linkage_clock_action',
-                    action_type: action,
-                    nonce: linkage_ajax.nonce
-            }, function(response) {
+            var postData = {
+                action: 'linkage_clock_action',
+                action_type: action,
+                nonce: linkage_ajax.nonce
+            };
+            
+            // Add notes if provided
+            if (notes && notes.trim() !== '') {
+                postData.notes = notes.trim();
+            }
+            
+            $.post(linkage_ajax.ajax_url, postData, function(response) {
                     if (response.success) {
                     var data = response.data;
                     
@@ -232,6 +243,99 @@ jQuery(document).ready(function($) {
             }).fail(function() {
                 console.error('Network error during break action');
                 alert('Network error. Please try again.');
+            });
+        },
+        
+        showClockInConfirmation: function(callback) {
+            var self = this;
+            // Get current date and time
+            var now = new Date();
+            var currentDate = now.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            var currentTime = now.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            // Create a modern confirmation modal with time info and notes
+            var modalHtml = `
+                <div id="clock-in-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-green-100 rounded-full flex items-center justify-center mr-4">
+                                <svg class="w-6 h-6 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900">Confirm Time In</h3>
+                        </div>
+                        
+                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="text-sm text-gray-600 mb-1">Start Time:</div>
+                            <div class="text-lg font-semibold text-gray-900">${currentTime}</div>
+                            <div class="text-sm text-gray-600 mt-1">${currentDate}</div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="clock-in-notes" class="block text-sm font-medium text-gray-700 mb-2">Notes (Optional)</label>
+                            <textarea 
+                                id="clock-in-notes" 
+                                rows="3" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none" 
+                                placeholder="Add any notes about your work session..."></textarea>
+                        </div>
+                        
+                        <div class="flex justify-end space-x-3">
+                            <button id="cancel-clock-in" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                Cancel
+                            </button>
+                            <button id="confirm-clock-in" class="px-4 py-2 bg-green-500 text-white rounded-lg hover:bg-green-600 transition-colors">
+                                Clock In
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page
+            $('body').append(modalHtml);
+            
+            // Focus on notes textarea
+            setTimeout(function() {
+                $('#clock-in-notes').focus();
+            }, 100);
+            
+            // Handle confirmation
+            $('#confirm-clock-in').on('click', function() {
+                var notes = $('#clock-in-notes').val().trim();
+                $('#clock-in-modal').remove();
+                callback(notes);
+            });
+            
+            // Handle cancellation
+            $('#cancel-clock-in').on('click', function() {
+                $('#clock-in-modal').remove();
+            });
+            
+            // Handle escape key and backdrop click
+            $('#clock-in-modal').on('click', function(e) {
+                if (e.target === this) {
+                    $('#clock-in-modal').remove();
+                }
+            });
+            
+            $(document).on('keydown.clockInModal', function(e) {
+                if (e.keyCode === 27) { // Escape key
+                    $('#clock-in-modal').remove();
+                    $(document).off('keydown.clockInModal');
+                } else if (e.keyCode === 13 && e.ctrlKey) { // Ctrl+Enter to confirm
+                    $('#confirm-clock-in').click();
+                }
             });
         },
         
@@ -529,12 +633,12 @@ jQuery(document).ready(function($) {
                 }
             }
             
-            /* Clock Out Modal Styles */
-            #clock-out-modal {
+            /* Clock Modal Styles */
+            #clock-out-modal, #clock-in-modal {
                 animation: modalFadeIn 0.2s ease-out;
             }
             
-            #clock-out-modal > div {
+            #clock-out-modal > div, #clock-in-modal > div {
                 animation: modalSlideIn 0.2s ease-out;
             }
             
@@ -552,6 +656,11 @@ jQuery(document).ready(function($) {
                     transform: scale(1) translateY(0);
                     opacity: 1;
                 }
+            }
+            
+            /* Clock-in modal specific styles */
+            #clock-in-notes:focus {
+                box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
             }
         </style>
     `;
