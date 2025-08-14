@@ -93,8 +93,8 @@ switch ($period) {
         break;
 }
 
-// Get attendance logs (this would need to be implemented in your database)
-$attendance_logs = array(); // Placeholder - implement based on your database structure
+// Get attendance logs from database
+$attendance_logs = linkage_get_employee_attendance_logs($viewing_user_id, $start_date, $end_date);
 $total_hours = 0;
 $days_worked = 0;
 $average_daily_hours = 0;
