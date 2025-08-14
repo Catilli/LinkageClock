@@ -111,6 +111,272 @@ function linkage_ajax_generate_payroll() {
 add_action('wp_ajax_linkage_generate_payroll', 'linkage_ajax_generate_payroll');
 
 /**
+ * AJAX handler for employee search with autocomplete
+ */
+function linkage_ajax_search_employees() {
+    if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
+        wp_send_json_error('Security check failed');
+    }
+    
+    if (!current_user_can('manage_options') && !current_user_can('linkage_export_attendance')) {
+        wp_send_json_error('Unauthorized access');
+    }
+    
+    $query = sanitize_text_field($_POST['query'] ?? '');
+    
+    if (strlen($query) < 2) {
+        wp_send_json_success([]);
+    }
+    
+    $users = get_users(array(
+        'search' => '*' . $query . '*',
+        'search_columns' => array('display_name', 'user_nicename', 'user_email'),
+        'role__in' => array('employee', 'manager', 'accounting_payroll', 'contractor'),
+        'number' => 10,
+        'orderby' => 'display_name',
+        'order' => 'ASC'
+    ));
+    
+    $employees = array();
+    foreach ($users as $user) {
+        $employees[] = array(
+            'ID' => $user->ID,
+            'display_name' => linkage_get_user_display_name($user->ID),
+            'email' => $user->user_email,
+            'position' => get_user_meta($user->ID, 'linkage_position', true) ?: 'No position set'
+        );
+    }
+    
+    wp_send_json_success($employees);
+}
+add_action('wp_ajax_linkage_search_employees', 'linkage_ajax_search_employees');
+
+/**
+ * AJAX handler for getting employee attendance data
+ */
+function linkage_ajax_get_employee_attendance() {
+    if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
+        wp_send_json_error('Security check failed');
+    }
+    
+    if (!current_user_can('manage_options') && !current_user_can('linkage_export_attendance')) {
+        wp_send_json_error('Unauthorized access');
+    }
+    
+    $query = sanitize_text_field($_POST['query'] ?? '');
+    $start_date = sanitize_text_field($_POST['start_date'] ?? '');
+    $end_date = sanitize_text_field($_POST['end_date'] ?? '');
+    
+    if (empty($start_date) || empty($end_date)) {
+        wp_send_json_error('Start date and end date are required');
+    }
+    
+    global $wpdb;
+    $attendance_table = $wpdb->prefix . 'linkage_attendance_logs';
+    
+    // Build query for employees
+    $user_query = "
+        SELECT DISTINCT u.ID, u.display_name, u.user_email
+        FROM {$wpdb->users} u
+        INNER JOIN {$wpdb->usermeta} um ON u.ID = um.user_id
+        WHERE um.meta_key = '{$wpdb->prefix}capabilities'
+        AND (um.meta_value LIKE '%employee%' OR um.meta_value LIKE '%manager%' 
+             OR um.meta_value LIKE '%accounting_payroll%' OR um.meta_value LIKE '%contractor%')
+    ";
+    
+    if (!empty($query)) {
+        $search_term = '%' . $wpdb->esc_like($query) . '%';
+        $user_query .= $wpdb->prepare(" AND (u.display_name LIKE %s OR u.user_email LIKE %s)", $search_term, $search_term);
+    }
+    
+    $user_query .= " ORDER BY u.display_name ASC";
+    
+    $users = $wpdb->get_results($user_query);
+    
+    $employees = array();
+    
+    foreach ($users as $user) {
+        // Get attendance summary for date range
+        $attendance_summary = $wpdb->get_row($wpdb->prepare("
+            SELECT 
+                COUNT(*) as days_worked,
+                SUM(total_hours) as total_hours,
+                SUM(CASE WHEN total_hours > 8 THEN 8 ELSE total_hours END) as regular_hours,
+                SUM(CASE WHEN total_hours > 8 THEN total_hours - 8 ELSE 0 END) as overtime_hours
+            FROM $attendance_table 
+            WHERE user_id = %d 
+            AND work_date BETWEEN %s AND %s
+            AND status = 'completed'
+        ", $user->ID, $start_date, $end_date));
+        
+        $employees[] = array(
+            'user_id' => $user->ID,
+            'name' => linkage_get_user_display_name($user->ID),
+            'email' => $user->user_email,
+            'position' => get_user_meta($user->ID, 'linkage_position', true) ?: 'No position set',
+            'days_worked' => intval($attendance_summary->days_worked),
+            'total_hours' => number_format(floatval($attendance_summary->total_hours), 2) . ' hrs',
+            'regular_hours' => number_format(floatval($attendance_summary->regular_hours), 2) . ' hrs',
+            'overtime_hours' => number_format(floatval($attendance_summary->overtime_hours), 2) . ' hrs'
+        );
+    }
+    
+    wp_send_json_success(array('employees' => $employees));
+}
+add_action('wp_ajax_linkage_get_employee_attendance', 'linkage_ajax_get_employee_attendance');
+
+/**
+ * AJAX handler for getting detailed employee logs
+ */
+function linkage_ajax_get_employee_detailed_logs() {
+    if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
+        wp_send_json_error('Security check failed');
+    }
+    
+    if (!current_user_can('manage_options') && !current_user_can('linkage_export_attendance')) {
+        wp_send_json_error('Unauthorized access');
+    }
+    
+    $employee_id = intval($_POST['employee_id'] ?? 0);
+    $start_date = sanitize_text_field($_POST['start_date'] ?? '');
+    $end_date = sanitize_text_field($_POST['end_date'] ?? '');
+    
+    if ($employee_id <= 0 || empty($start_date) || empty($end_date)) {
+        wp_send_json_error('Employee ID, start date and end date are required');
+    }
+    
+    global $wpdb;
+    $attendance_table = $wpdb->prefix . 'linkage_attendance_logs';
+    
+    $logs = $wpdb->get_results($wpdb->prepare("
+        SELECT 
+            work_date,
+            time_in,
+            lunch_start,
+            lunch_end,
+            time_out,
+            total_hours,
+            notes
+        FROM $attendance_table 
+        WHERE user_id = %d 
+        AND work_date BETWEEN %s AND %s
+        ORDER BY work_date DESC
+    ", $employee_id, $start_date, $end_date));
+    
+    // Format the data
+    $formatted_logs = array();
+    foreach ($logs as $log) {
+        $formatted_logs[] = array(
+            'work_date' => date('M j, Y', strtotime($log->work_date)),
+            'time_in' => $log->time_in ? date('g:i A', strtotime($log->time_in)) : null,
+            'lunch_start' => $log->lunch_start ? date('g:i A', strtotime($log->lunch_start)) : null,
+            'lunch_end' => $log->lunch_end ? date('g:i A', strtotime($log->lunch_end)) : null,
+            'time_out' => $log->time_out ? date('g:i A', strtotime($log->time_out)) : null,
+            'total_hours' => number_format(floatval($log->total_hours), 2) . ' hrs',
+            'notes' => $log->notes
+        );
+    }
+    
+    $employee_name = linkage_get_user_display_name($employee_id);
+    
+    wp_send_json_success(array(
+        'employee_name' => $employee_name,
+        'logs' => $formatted_logs
+    ));
+}
+add_action('wp_ajax_linkage_get_employee_detailed_logs', 'linkage_ajax_get_employee_detailed_logs');
+
+/**
+ * AJAX handler for exporting employee attendance data
+ */
+function linkage_ajax_export_employee_attendance() {
+    if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
+        wp_die('Security check failed');
+    }
+    
+    if (!current_user_can('manage_options') && !current_user_can('linkage_export_attendance')) {
+        wp_die('Unauthorized access');
+    }
+    
+    $employee_id = intval($_POST['employee_id'] ?? 0);
+    $start_date = sanitize_text_field($_POST['start_date'] ?? '');
+    $end_date = sanitize_text_field($_POST['end_date'] ?? '');
+    $format = sanitize_text_field($_POST['format'] ?? 'csv');
+    
+    if ($employee_id <= 0 || empty($start_date) || empty($end_date)) {
+        wp_die('Employee ID, start date and end date are required');
+    }
+    
+    global $wpdb;
+    $attendance_table = $wpdb->prefix . 'linkage_attendance_logs';
+    
+    $logs = $wpdb->get_results($wpdb->prepare("
+        SELECT 
+            work_date,
+            time_in,
+            lunch_start,
+            lunch_end,
+            time_out,
+            total_hours,
+            notes
+        FROM $attendance_table 
+        WHERE user_id = %d 
+        AND work_date BETWEEN %s AND %s
+        ORDER BY work_date ASC
+    ", $employee_id, $start_date, $end_date));
+    
+    $employee_name = linkage_get_user_display_name($employee_id);
+    $filename = sanitize_file_name($employee_name . '_attendance_' . $start_date . '_to_' . $end_date);
+    
+    if ($format === 'xlsx') {
+        // For XLSX, we'll still output CSV for now but could be enhanced with a library like PhpSpreadsheet
+        $format = 'csv';
+    }
+    
+    // Set headers for CSV download
+    header('Content-Type: text/csv; charset=utf-8');
+    header('Content-Disposition: attachment; filename="' . $filename . '.csv"');
+    header('Pragma: no-cache');
+    header('Expires: 0');
+    
+    // Create output stream
+    $output = fopen('php://output', 'w');
+    
+    // Add BOM for Excel UTF-8 support
+    fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+    
+    // Add header row
+    fputcsv($output, array(
+        'Employee',
+        'Date',
+        'Time In',
+        'Lunch Start',
+        'Lunch End',
+        'Time Out',
+        'Total Hours',
+        'Notes'
+    ));
+    
+    // Add data rows
+    foreach ($logs as $log) {
+        fputcsv($output, array(
+            $employee_name,
+            date('M j, Y', strtotime($log->work_date)),
+            $log->time_in ? date('g:i A', strtotime($log->time_in)) : '',
+            $log->lunch_start ? date('g:i A', strtotime($log->lunch_start)) : '',
+            $log->lunch_end ? date('g:i A', strtotime($log->lunch_end)) : '',
+            $log->time_out ? date('g:i A', strtotime($log->time_out)) : '',
+            number_format(floatval($log->total_hours), 2),
+            $log->notes ?: ''
+        ));
+    }
+    
+    fclose($output);
+    exit;
+}
+add_action('wp_ajax_linkage_export_employee_attendance', 'linkage_ajax_export_employee_attendance');
+
+/**
  * AJAX handler for getting payroll records
  */
 function linkage_ajax_get_payroll_records() {
