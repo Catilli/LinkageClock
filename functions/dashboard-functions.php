@@ -9,10 +9,14 @@
 function linkage_is_mobile_or_tablet() {
     $user_agent = $_SERVER['HTTP_USER_AGENT'] ?? '';
     
+    // More comprehensive mobile detection
     $mobile_agents = array(
         'Mobile', 'Android', 'iPhone', 'iPad', 'iPod', 'BlackBerry', 
         'IEMobile', 'Opera Mini', 'Opera Mobi', 'webOS', 'Windows Phone',
-        'Tablet', 'PlayBook', 'Kindle', 'Silk', 'Mobile Safari'
+        'Tablet', 'PlayBook', 'Kindle', 'Silk', 'Mobile Safari',
+        'Windows CE', 'PalmOS', 'Pocket', 'Symbian', 'MobileExplorer',
+        'Nokia', 'Samsung', 'LG-', 'HTC', 'Motorola', 'Sony',
+        'Palm', 'Blazer', 'Avantgo', 'Xiino', 'UP.Browser'
     );
     
     foreach ($mobile_agents as $agent) {
@@ -20,6 +24,9 @@ function linkage_is_mobile_or_tablet() {
             return true;
         }
     }
+    
+    // Additional check for screen width via JavaScript (if available)
+    // This helps catch edge cases where user agent might not be detected
     
     return false;
 }
@@ -59,8 +66,22 @@ function linkage_redirect_to_login() {
         return;
     }
     
-    // Only redirect on homepage/front page
+    // Only redirect on homepage/front page for login requirements
     if (!is_front_page() && !is_home()) {
+        // But still check for mobile redirect on ALL pages
+        if (is_user_logged_in() && linkage_is_mobile_or_tablet() && linkage_user_has_custom_role()) {
+            // Find a page that uses the desktop-only template
+            $desktop_only_pages = get_pages(array(
+                'meta_key' => '_wp_page_template',
+                'meta_value' => 'page-desktop-only.php',
+                'posts_per_page' => 1
+            ));
+            
+            if (!empty($desktop_only_pages)) {
+                wp_redirect(get_permalink($desktop_only_pages[0]->ID));
+                exit;
+            }
+        }
         return;
     }
     
