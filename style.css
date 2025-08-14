@@ -180,3 +180,24 @@
         display: none;
     }
 }
+
+/* Sticky Toolbar */
+#toolbar {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+
+/* Ensure main content area uses full height and flexbox */
+#main-content {
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Full Height Content with Scrollbar */
+#content.site-content {
+    flex: 1;
+    overflow-y: auto;
+    min-height: 0; /* Allows flex child to shrink below content size */
+}
