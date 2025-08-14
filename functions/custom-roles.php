@@ -572,18 +572,16 @@ add_action('wp_head', 'linkage_admin_restriction_styles');
  * Hide administrator users from Users list for payroll users
  */
 function linkage_hide_admin_users_from_payroll($query) {
+    global $pagenow;
+    
     // Only apply in admin area
     if (!is_admin()) {
         return;
     }
     
-    // Only apply to user queries
-    if (!isset($query->query_vars['role']) && !isset($query->query_vars['meta_key'])) {
-        // Check if this is a user query by looking at the query object
-        global $pagenow;
-        if ($pagenow !== 'users.php') {
-            return;
-        }
+    // Only apply to users.php page
+    if ($pagenow !== 'users.php') {
+        return;
     }
     
     // Get current user
@@ -595,14 +593,7 @@ function linkage_hide_admin_users_from_payroll($query) {
     }
     
     // If payroll user is viewing users list, exclude administrators
-    if (is_admin() && $pagenow === 'users.php') {
-        // Get all user roles except administrator
-        $all_roles = wp_roles()->get_names();
-        unset($all_roles['administrator']);
-        
-        // Set the query to only show non-admin roles
-        $query->set('role__not_in', array('administrator'));
-    }
+    $query->set('role__not_in', array('administrator'));
 }
 add_action('pre_get_users', 'linkage_hide_admin_users_from_payroll');
 
