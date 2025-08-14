@@ -585,6 +585,48 @@ function linkage_format_time_display($seconds) {
 }
 
 /**
+ * Get employee attendance logs for employee page display
+ */
+function linkage_get_employee_attendance_logs($user_id, $start_date, $end_date) {
+    global $wpdb;
+    
+    $table = $wpdb->prefix . 'linkage_attendance_logs';
+    
+    $logs = $wpdb->get_results($wpdb->prepare("
+        SELECT 
+            work_date as date,
+            time_in,
+            lunch_start,
+            lunch_end,
+            time_out,
+            total_hours as hours,
+            status,
+            notes
+        FROM $table 
+        WHERE user_id = %d 
+        AND work_date BETWEEN %s AND %s
+        ORDER BY work_date DESC
+    ", $user_id, $start_date, $end_date));
+    
+    // Format the data for the template
+    $formatted_logs = array();
+    foreach ($logs as $log) {
+        $formatted_logs[] = array(
+            'date' => $log->date,
+            'time_in' => $log->time_in,
+            'time_out' => $log->time_out,
+            'lunch_start' => $log->lunch_start,
+            'lunch_end' => $log->lunch_end,
+            'hours' => floatval($log->hours),
+            'status' => ($log->status === 'completed' || $log->time_out) ? 'complete' : 'incomplete',
+            'notes' => $log->notes
+        );
+    }
+    
+    return $formatted_logs;
+}
+
+/**
  * Get attendance logs for export with all required fields
  */
 function linkage_get_attendance_logs_for_export($user_id = null, $start_date = null, $end_date = null) {
