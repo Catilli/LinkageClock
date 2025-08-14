@@ -135,8 +135,8 @@ jQuery(document).ready(function($) {
             
                 // Show confirmation popup for clock actions
                 if (action === 'clock_out') {
-                    self.showClockOutConfirmation(function() {
-                        self.performClockAction(action);
+                    self.showClockOutConfirmation(function(notes) {
+                        self.performClockAction(action, notes);
                     });
                 } else if (action === 'clock_in') {
                     self.showClockInConfirmation(function(notes) {
@@ -340,7 +340,22 @@ jQuery(document).ready(function($) {
         },
         
         showClockOutConfirmation: function(callback) {
-            // Create a modern confirmation modal
+            var self = this;
+            // Get current date and time for end time
+            var now = new Date();
+            var currentDate = now.toLocaleDateString('en-US', {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
+            });
+            var currentTime = now.toLocaleTimeString('en-US', {
+                hour: 'numeric',
+                minute: '2-digit',
+                hour12: true
+            });
+            
+            // Create a modern confirmation modal with time info and notes
             var modalHtml = `
                 <div id="clock-out-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
                     <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
@@ -352,7 +367,24 @@ jQuery(document).ready(function($) {
                             </div>
                             <h3 class="text-lg font-semibold text-gray-900">Confirm Time Out</h3>
                         </div>
-                        <p class="text-gray-600 mb-6">Are you sure you want to clock out? This will end your current work session.</p>
+                        
+                        <p class="text-gray-600 mb-4">Are you sure you want to clock out? This will end your current work session.</p>
+                        
+                        <div class="mb-4 p-3 bg-gray-50 rounded-lg">
+                            <div class="text-sm text-gray-600 mb-1">End Time:</div>
+                            <div class="text-lg font-semibold text-gray-900">${currentTime}</div>
+                            <div class="text-sm text-gray-600 mt-1">${currentDate}</div>
+                        </div>
+                        
+                        <div class="mb-6">
+                            <label for="clock-out-notes" class="block text-sm font-medium text-gray-700 mb-2">Session Notes (Optional)</label>
+                            <textarea 
+                                id="clock-out-notes" 
+                                rows="3" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent resize-none" 
+                                placeholder="Add notes about your completed work session..."></textarea>
+                        </div>
+                        
                         <div class="flex justify-end space-x-3">
                             <button id="cancel-clock-out" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
                                 Cancel
@@ -368,10 +400,16 @@ jQuery(document).ready(function($) {
             // Add modal to page
             $('body').append(modalHtml);
             
+            // Focus on notes textarea
+            setTimeout(function() {
+                $('#clock-out-notes').focus();
+            }, 100);
+            
             // Handle confirmation
             $('#confirm-clock-out').on('click', function() {
+                var notes = $('#clock-out-notes').val().trim();
                 $('#clock-out-modal').remove();
-                callback();
+                callback(notes);
             });
             
             // Handle cancellation
@@ -390,6 +428,8 @@ jQuery(document).ready(function($) {
                 if (e.keyCode === 27) { // Escape key
                     $('#clock-out-modal').remove();
                     $(document).off('keydown.clockOutModal');
+                } else if (e.keyCode === 13 && e.ctrlKey) { // Ctrl+Enter to confirm
+                    $('#confirm-clock-out').click();
                 }
             });
         },
@@ -658,9 +698,13 @@ jQuery(document).ready(function($) {
                 }
             }
             
-            /* Clock-in modal specific styles */
+            /* Clock modal specific styles */
             #clock-in-notes:focus {
                 box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.1);
+            }
+            
+            #clock-out-notes:focus {
+                box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
             }
         </style>
     `;
