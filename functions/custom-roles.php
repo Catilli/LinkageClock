@@ -312,18 +312,25 @@ function linkage_restrict_admin_access() {
 add_action('init', 'linkage_restrict_admin_access');
 
 /**
- * Hide admin bar for all users (including administrators)
- * This ensures a clean frontend experience for everyone
+ * Show admin bar for administrators and payroll users only
+ * Hide admin bar for all other roles to maintain clean frontend
  */
-function linkage_hide_admin_bar_for_all_users() {
+function linkage_manage_admin_bar_visibility() {
     if (!is_user_logged_in()) {
         return;
     }
     
-    // Hide admin bar for all users to maintain clean frontend
-    show_admin_bar(false);
+    $current_user = wp_get_current_user();
+    
+    // Show admin bar for administrators and payroll users
+    if (in_array('administrator', $current_user->roles) || in_array('accounting_payroll', $current_user->roles)) {
+        show_admin_bar(true);
+    } else {
+        // Hide admin bar for all other roles to maintain clean frontend
+        show_admin_bar(false);
+    }
 }
-add_action('after_setup_theme', 'linkage_hide_admin_bar_for_all_users');
+add_action('after_setup_theme', 'linkage_manage_admin_bar_visibility');
 
 /**
  * Redirect non-administrators and non-payroll users away from admin pages
