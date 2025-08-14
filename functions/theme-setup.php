@@ -131,7 +131,7 @@ function linkage_create_default_pages() {
     
     // Create Payroll page if it doesn't exist
     if (!$payroll_page) {
-        $payroll_page = wp_insert_post(array(
+        $payroll_page_id = wp_insert_post(array(
             'post_title'    => 'Payroll Dashboard',
             'post_content'  => 'This page allows managers to generate payroll reports and manage payroll records.',
             'post_status'   => 'publish',
