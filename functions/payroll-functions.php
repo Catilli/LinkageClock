@@ -19,7 +19,6 @@ function linkage_ajax_generate_payroll() {
     $period_start = sanitize_text_field($_POST['period_start'] ?? '');
     $period_end = sanitize_text_field($_POST['period_end'] ?? '');
     $employee_id = intval($_POST['employee_id'] ?? 0);
-    $overtime_type = sanitize_text_field($_POST['overtime_type'] ?? '1.5x');
     
     if (empty($period_start) || empty($period_end) || $employee_id <= 0) {
         wp_send_json_error('All fields are required');
@@ -63,19 +62,8 @@ function linkage_ajax_generate_payroll() {
         }
     }
     
-    // Get employee hourly rate (from user meta or default)
-    $hourly_rate = floatval(get_user_meta($employee_id, 'linkage_hourly_rate', true)) ?: 15.00;
-    
-    // Calculate pay
-    $overtime_multiplier = ($overtime_type === '2x') ? 2.0 : 1.5;
-    $regular_pay = $regular_hours * $hourly_rate;
-    $overtime_pay = $overtime_hours * $hourly_rate * $overtime_multiplier;
-    $gross_pay = $regular_pay + $overtime_pay;
-    
-    // Calculate deductions (placeholder - you can customize this)
-    $tax_rate = 0.15; // 15% tax rate
-    $deductions = $gross_pay * $tax_rate;
-    $net_pay = $gross_pay - $deductions;
+    // Basic totals calculation only
+    // Note: Payroll calculations have been simplified
     
     // Insert payroll record
     $result = $wpdb->insert(
@@ -86,13 +74,9 @@ function linkage_ajax_generate_payroll() {
             'period_end' => $period_end,
             'total_regular_hours' => number_format($regular_hours, 2),
             'total_overtime_hours' => number_format($overtime_hours, 2),
-            'overtime_type' => $overtime_type,
-            'gross_pay' => number_format($gross_pay, 2),
-            'deductions' => number_format($deductions, 2),
-            'net_pay' => number_format($net_pay, 2),
             'status' => 'pending'
         ],
-        ['%d', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s', '%s']
+        ['%d', '%s', '%s', '%s', '%s', '%s']
     );
     
     if ($result === false) {
@@ -103,9 +87,7 @@ function linkage_ajax_generate_payroll() {
         'message' => 'Payroll generated successfully',
         'payroll_id' => $wpdb->insert_id,
         'regular_hours' => $regular_hours,
-        'overtime_hours' => $overtime_hours,
-        'gross_pay' => $gross_pay,
-        'net_pay' => $net_pay
+        'overtime_hours' => $overtime_hours
     ]);
 }
 add_action('wp_ajax_linkage_generate_payroll', 'linkage_ajax_generate_payroll');
@@ -376,259 +358,7 @@ function linkage_ajax_export_employee_attendance() {
 }
 add_action('wp_ajax_linkage_export_employee_attendance', 'linkage_ajax_export_employee_attendance');
 
-/**
- * AJAX handler for generating payslips
- */
-function linkage_ajax_generate_payslip() {
-    if (!wp_verify_nonce($_POST['nonce'], 'linkage_dashboard_nonce')) {
-        wp_die('Security check failed');
-    }
-    
-    if (!current_user_can('manage_options') && !current_user_can('linkage_export_attendance')) {
-        wp_die('Unauthorized access');
-    }
-    
-    $employee_id = intval($_POST['employee_id'] ?? 0);
-    $start_date = sanitize_text_field($_POST['start_date'] ?? '');
-    $end_date = sanitize_text_field($_POST['end_date'] ?? '');
-    
-    if ($employee_id <= 0 || empty($start_date) || empty($end_date)) {
-        wp_die('Employee ID, start date and end date are required');
-    }
-    
-    global $wpdb;
-    $attendance_table = $wpdb->prefix . 'linkage_attendance_logs';
-    
-    // Get employee information
-    $employee = get_userdata($employee_id);
-    if (!$employee) {
-        wp_die('Employee not found');
-    }
-    
-    $employee_name = linkage_get_user_display_name($employee_id);
-    $employee_position = get_user_meta($employee_id, 'linkage_position', true) ?: 'Employee';
-    $employee_email = $employee->user_email;
-    $hourly_rate = floatval(get_user_meta($employee_id, 'linkage_hourly_rate', true)) ?: 15.00;
-    
-    // Get attendance data
-    $logs = $wpdb->get_results($wpdb->prepare("
-        SELECT 
-            work_date,
-            time_in,
-            lunch_start,
-            lunch_end,
-            time_out,
-            total_hours,
-            notes
-        FROM $attendance_table 
-        WHERE user_id = %d 
-        AND work_date BETWEEN %s AND %s
-        AND status = 'completed'
-        ORDER BY work_date ASC
-    ", $employee_id, $start_date, $end_date));
-    
-    // Calculate totals
-    $total_hours = 0;
-    $regular_hours = 0;
-    $overtime_hours = 0;
-    $days_worked = count($logs);
-    
-    foreach ($logs as $log) {
-        $daily_hours = floatval($log->total_hours);
-        $total_hours += $daily_hours;
-        
-        if ($daily_hours > 8) {
-            $overtime_hours += ($daily_hours - 8);
-            $regular_hours += 8;
-        } else {
-            $regular_hours += $daily_hours;
-        }
-    }
-    
-    // Calculate pay
-    $overtime_multiplier = 1.5; // 1.5x overtime rate
-    $regular_pay = $regular_hours * $hourly_rate;
-    $overtime_pay = $overtime_hours * $hourly_rate * $overtime_multiplier;
-    $gross_pay = $regular_pay + $overtime_pay;
-    
-    // Calculate deductions (simplified)
-    $tax_rate = 0.15; // 15% tax rate
-    $tax_deduction = $gross_pay * $tax_rate;
-    $net_pay = $gross_pay - $tax_deduction;
-    
-    // Generate HTML payslip
-    $company_name = get_bloginfo('name');
-    $payslip_date = current_time('F j, Y');
-    $period_start_formatted = date('F j, Y', strtotime($start_date));
-    $period_end_formatted = date('F j, Y', strtotime($end_date));
-    
-    $html = '
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <meta charset="UTF-8">
-        <title>Payslip - ' . esc_html($employee_name) . '</title>
-        <style>
-            body { font-family: Arial, sans-serif; margin: 20px; color: #333; }
-            .header { text-align: center; margin-bottom: 30px; border-bottom: 3px solid #0066cc; padding-bottom: 20px; }
-            .company-name { font-size: 24px; font-weight: bold; color: #0066cc; margin-bottom: 5px; }
-            .payslip-title { font-size: 18px; color: #666; }
-            .employee-info { margin-bottom: 30px; }
-            .info-table { width: 100%; border-collapse: collapse; }
-            .info-table td { padding: 8px; border: 1px solid #ddd; }
-            .info-table .label { background-color: #f5f5f5; font-weight: bold; width: 150px; }
-            .earnings-table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-            .earnings-table th, .earnings-table td { padding: 10px; border: 1px solid #ddd; text-align: right; }
-            .earnings-table th { background-color: #0066cc; color: white; }
-            .earnings-table .description { text-align: left; }
-            .totals { background-color: #f9f9f9; font-weight: bold; }
-            .net-pay { background-color: #e8f5e8; font-weight: bold; font-size: 16px; }
-            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 12px; color: #666; }
-            @media print { 
-                body { margin: 0; } 
-                .no-print { display: none; }
-            }
-        </style>
-    </head>
-    <body>
-        <div class="header">
-            <div class="company-name">' . esc_html($company_name) . '</div>
-            <div class="payslip-title">PAYSLIP</div>
-        </div>
-        
-        <div class="employee-info">
-            <table class="info-table">
-                <tr>
-                    <td class="label">Employee Name:</td>
-                    <td>' . esc_html($employee_name) . '</td>
-                    <td class="label">Employee ID:</td>
-                    <td>' . esc_html($employee_id) . '</td>
-                </tr>
-                <tr>
-                    <td class="label">Position:</td>
-                    <td>' . esc_html($employee_position) . '</td>
-                    <td class="label">Email:</td>
-                    <td>' . esc_html($employee_email) . '</td>
-                </tr>
-                <tr>
-                    <td class="label">Pay Period:</td>
-                    <td>' . esc_html($period_start_formatted) . ' - ' . esc_html($period_end_formatted) . '</td>
-                    <td class="label">Payslip Date:</td>
-                    <td>' . esc_html($payslip_date) . '</td>
-                </tr>
-                <tr>
-                    <td class="label">Hourly Rate:</td>
-                    <td>$' . number_format($hourly_rate, 2) . '</td>
-                    <td class="label">Days Worked:</td>
-                    <td>' . $days_worked . '</td>
-                </tr>
-            </table>
-        </div>
-        
-        <table class="earnings-table">
-            <thead>
-                <tr>
-                    <th class="description">Description</th>
-                    <th>Hours</th>
-                    <th>Rate</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="description">Regular Hours</td>
-                    <td>' . number_format($regular_hours, 2) . '</td>
-                    <td>$' . number_format($hourly_rate, 2) . '</td>
-                    <td>$' . number_format($regular_pay, 2) . '</td>
-                </tr>
-                <tr>
-                    <td class="description">Overtime Hours (1.5x)</td>
-                    <td>' . number_format($overtime_hours, 2) . '</td>
-                    <td>$' . number_format($hourly_rate * $overtime_multiplier, 2) . '</td>
-                    <td>$' . number_format($overtime_pay, 2) . '</td>
-                </tr>
-                <tr class="totals">
-                    <td class="description">GROSS PAY</td>
-                    <td>' . number_format($total_hours, 2) . '</td>
-                    <td>-</td>
-                    <td>$' . number_format($gross_pay, 2) . '</td>
-                </tr>
-            </tbody>
-        </table>
-        
-        <table class="earnings-table">
-            <thead>
-                <tr>
-                    <th class="description">Deductions</th>
-                    <th colspan="2">Rate</th>
-                    <th>Amount</th>
-                </tr>
-            </thead>
-            <tbody>
-                <tr>
-                    <td class="description">Federal Tax</td>
-                    <td colspan="2">' . ($tax_rate * 100) . '%</td>
-                    <td>$' . number_format($tax_deduction, 2) . '</td>
-                </tr>
-                <tr class="net-pay">
-                    <td class="description">NET PAY</td>
-                    <td colspan="2">-</td>
-                    <td>$' . number_format($net_pay, 2) . '</td>
-                </tr>
-            </tbody>
-        </table>';
-    
-    // Add detailed attendance log if there are records
-    if (!empty($logs)) {
-        $html .= '
-        <h3 style="margin-top: 30px; color: #0066cc;">Attendance Details</h3>
-        <table class="earnings-table">
-            <thead>
-                <tr>
-                    <th class="description">Date</th>
-                    <th>Time In</th>
-                    <th>Time Out</th>
-                    <th>Hours</th>
-                </tr>
-            </thead>
-            <tbody>';
-        
-        foreach ($logs as $log) {
-            $html .= '
-                <tr>
-                    <td class="description">' . esc_html(date('M j, Y', strtotime($log->work_date))) . '</td>
-                    <td>' . esc_html($log->time_in ? date('g:i A', strtotime($log->time_in)) : '-') . '</td>
-                    <td>' . esc_html($log->time_out ? date('g:i A', strtotime($log->time_out)) : '-') . '</td>
-                    <td>' . esc_html(number_format(floatval($log->total_hours), 2)) . '</td>
-                </tr>';
-        }
-        
-        $html .= '
-            </tbody>
-        </table>';
-    }
-    
-    $html .= '
-        <div class="footer">
-            <p><strong>Note:</strong> This payslip is generated electronically and is valid without signature.</p>
-            <p>Generated on ' . esc_html($payslip_date) . ' by ' . esc_html($company_name) . ' Payroll System</p>
-        </div>
-        
-        <script>
-            window.onload = function() {
-                window.print();
-            }
-        </script>
-    </body>
-    </html>';
-    
-    // Set headers for HTML output
-    header('Content-Type: text/html; charset=utf-8');
-    
-    echo $html;
-    exit;
-}
-add_action('wp_ajax_linkage_generate_payslip', 'linkage_ajax_generate_payslip');
+
 
 /**
  * AJAX handler for getting payroll records
@@ -651,7 +381,7 @@ function linkage_ajax_get_payroll_records() {
     
     if (empty($records)) {
         wp_send_json_success([
-            'html' => '<tr><td colspan="8" class="px-6 py-4 text-center text-gray-500">No payroll records found.</td></tr>'
+            'html' => '<tr><td colspan="6" class="px-6 py-4 text-center text-gray-500">No payroll records found.</td></tr>'
         ]);
         return;
     }
@@ -679,8 +409,6 @@ function linkage_ajax_get_payroll_records() {
         $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' . esc_html($record->period_start . ' to ' . $record->period_end) . '</td>';
         $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' . esc_html($record->total_regular_hours) . '</td>';
         $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">' . esc_html($record->total_overtime_hours) . '</td>';
-        $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$' . esc_html($record->gross_pay) . '</td>';
-        $html .= '<td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">$' . esc_html($record->net_pay) . '</td>';
         $html .= '<td class="px-6 py-4 whitespace-nowrap">';
         $html .= '<span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ' . $status_class . '">' . ucfirst($record->status) . '</span>';
         $html .= '</td>';
