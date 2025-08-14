@@ -22,3 +22,6 @@ require_once get_template_directory() . '/functions/login.php';
 
 // Include payroll-functions.php for payroll processing
 require_once get_template_directory() . '/functions/payroll-functions.php';
+
+// Include disable-comments.php to remove WordPress comments functionality
+require_once get_template_directory() . '/functions/disable-comments.php';
