@@ -160,6 +160,63 @@ function linkage_create_default_pages() {
 add_action('after_switch_theme', 'linkage_create_default_pages');
 
 /**
+ * Set WordPress timezone automatically when theme is activated
+ */
+function linkage_set_automatic_timezone() {
+    // Get the server's timezone
+    $server_timezone = date_default_timezone_get();
+    
+    // If server timezone is valid, use it
+    if ($server_timezone && in_array($server_timezone, timezone_identifiers_list())) {
+        update_option('timezone_string', $server_timezone);
+        error_log('LinkageClock: Set WordPress timezone to: ' . $server_timezone);
+    } else {
+        // Fallback: Try to detect timezone from server offset
+        $offset = date('Z') / 3600; // Get offset in hours
+        
+        // Common timezone mappings based on offset
+        $timezone_map = array(
+            -12 => 'Pacific/Kwajalein',
+            -11 => 'Pacific/Midway',
+            -10 => 'Pacific/Honolulu',
+            -9 => 'America/Anchorage',
+            -8 => 'America/Los_Angeles',
+            -7 => 'America/Denver',
+            -6 => 'America/Chicago',
+            -5 => 'America/New_York',
+            -4 => 'America/Halifax',
+            -3 => 'America/Sao_Paulo',
+            -2 => 'Atlantic/South_Georgia',
+            -1 => 'Atlantic/Azores',
+            0 => 'UTC',
+            1 => 'Europe/London',
+            2 => 'Europe/Berlin',
+            3 => 'Europe/Moscow',
+            4 => 'Asia/Dubai',
+            5 => 'Asia/Karachi',
+            6 => 'Asia/Dhaka',
+            7 => 'Asia/Bangkok',
+            8 => 'Asia/Singapore',
+            9 => 'Asia/Tokyo',
+            10 => 'Australia/Sydney',
+            11 => 'Pacific/Norfolk',
+            12 => 'Pacific/Auckland'
+        );
+        
+        if (isset($timezone_map[$offset])) {
+            update_option('timezone_string', $timezone_map[$offset]);
+            error_log('LinkageClock: Set WordPress timezone to: ' . $timezone_map[$offset] . ' (based on server offset: ' . $offset . ')');
+        } else {
+            // Final fallback: set a manual UTC offset
+            update_option('gmt_offset', $offset);
+            update_option('timezone_string', '');
+            error_log('LinkageClock: Set WordPress GMT offset to: ' . $offset);
+        }
+    }
+}
+add_action('after_switch_theme', 'linkage_set_automatic_timezone');
+
+/**
  * Add Page Template column to Pages admin
  */
 function linkage_add_page_template_column($columns) {
