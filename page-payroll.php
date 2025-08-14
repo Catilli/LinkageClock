@@ -149,21 +149,30 @@ get_header(); ?>
         
         <!-- Modal Content -->
         <div class="p-6 overflow-y-auto max-h-[calc(90vh-120px)]">
-            <!-- Export Buttons -->
-            <div class="flex items-center space-x-3 mb-6">
-                <button id="export-csv" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition-colors font-medium flex items-center">
+            <!-- Export and Payslip Buttons -->
+            <div class="flex items-center justify-between mb-6">
+                <div class="flex items-center space-x-3">
+                    <button id="export-csv" class="bg-green-500 hover:bg-green-600 text-white px-4 py-2 rounded-md transition-colors font-medium flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Export CSV
+                    </button>
+                    <button id="export-xlsx" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors font-medium flex items-center">
+                        <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        </svg>
+                        Export Excel
+                    </button>
+                    <div class="text-sm text-gray-600" id="modal-date-range"></div>
+                </div>
+                
+                <button id="generate-payslip-modal" class="bg-purple-500 hover:bg-purple-600 text-white px-4 py-2 rounded-md transition-colors font-medium flex items-center">
                     <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                     </svg>
-                    Export CSV
+                    Generate Payslip
                 </button>
-                <button id="export-xlsx" class="bg-blue-500 hover:bg-blue-600 text-white px-4 py-2 rounded-md transition-colors font-medium flex items-center">
-                    <svg class="w-4 h-4 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    Export Excel
-                </button>
-                <div class="text-sm text-gray-600" id="modal-date-range"></div>
             </div>
             
             <!-- Detailed Logs Table -->
@@ -279,6 +288,11 @@ jQuery(document).ready(function($) {
     
     $('#export-xlsx').on('click', function() {
         exportEmployeeData('xlsx');
+    });
+    
+    // Payslip generation handlers
+    $('#generate-payslip-modal').on('click', function() {
+        generatePayslip();
     });
     
     // Functions
@@ -419,9 +433,14 @@ jQuery(document).ready(function($) {
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.overtime_hours}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.days_worked}</td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm font-medium">
-                        <button class="text-blue-600 hover:text-blue-900 view-details-btn" data-employee-id="${employee.user_id}">
-                            View Details
-                        </button>
+                        <div class="flex space-x-2">
+                            <button class="text-blue-600 hover:text-blue-900 view-details-btn" data-employee-id="${employee.user_id}">
+                                View Details
+                            </button>
+                            <button class="text-green-600 hover:text-green-900 generate-payslip-btn" data-employee-id="${employee.user_id}">
+                                Generate Payslip
+                            </button>
+                        </div>
                     </td>
                 </tr>
             `);
@@ -434,6 +453,12 @@ jQuery(document).ready(function($) {
             e.stopPropagation();
             const employeeId = $(this).data('employee-id');
             viewEmployeeDetails(employeeId);
+        });
+        
+        $('.generate-payslip-btn').on('click', function(e) {
+            e.stopPropagation();
+            const employeeId = $(this).data('employee-id');
+            generatePayslipForEmployee(employeeId);
         });
         
         $employeeList.find('tr').on('click', function() {
@@ -528,6 +553,55 @@ jQuery(document).ready(function($) {
             start_date: currentDateRange.start,
             end_date: currentDateRange.end,
             format: format,
+            nonce: linkage_ajax.nonce
+        };
+        
+        Object.keys(fields).forEach(function(key) {
+            const input = document.createElement('input');
+            input.type = 'hidden';
+            input.name = key;
+            input.value = fields[key];
+            form.appendChild(input);
+        });
+        
+        document.body.appendChild(form);
+        form.submit();
+        document.body.removeChild(form);
+    }
+    
+    function generatePayslip() {
+        if (!currentEmployeeId || !currentDateRange) {
+            alert('No employee data available for payslip generation.');
+            return;
+        }
+        
+        generatePayslipForEmployee(currentEmployeeId);
+    }
+    
+    function generatePayslipForEmployee(employeeId) {
+        const startDate = currentDateRange ? currentDateRange.start : $('#date-start').val();
+        const endDate = currentDateRange ? currentDateRange.end : $('#date-end').val();
+        
+        if (!startDate || !endDate) {
+            alert('Please select a date range first.');
+            return;
+        }
+        
+        // Show confirmation dialog
+        if (!confirm('Generate payslip for the selected date range?\n\nDate Range: ' + startDate + ' to ' + endDate)) {
+            return;
+        }
+        
+        const form = document.createElement('form');
+        form.method = 'POST';
+        form.action = linkage_ajax.ajax_url;
+        form.target = '_blank';
+        
+        const fields = {
+            action: 'linkage_generate_payslip',
+            employee_id: employeeId,
+            start_date: startDate,
+            end_date: endDate,
             nonce: linkage_ajax.nonce
         };
         
