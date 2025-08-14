@@ -133,8 +133,14 @@ jQuery(document).ready(function($) {
                 return;
             }
             
-
-                self.performClockAction(action);
+                // Show confirmation popup for clock out action
+                if (action === 'clock_out') {
+                    self.showClockOutConfirmation(function() {
+                        self.performClockAction(action);
+                    });
+                } else {
+                    self.performClockAction(action);
+                }
             });
             
             // Break start/end button
@@ -226,6 +232,61 @@ jQuery(document).ready(function($) {
             }).fail(function() {
                 console.error('Network error during break action');
                 alert('Network error. Please try again.');
+            });
+        },
+        
+        showClockOutConfirmation: function(callback) {
+            // Create a modern confirmation modal
+            var modalHtml = `
+                <div id="clock-out-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div class="bg-white rounded-lg shadow-xl p-6 max-w-md w-full mx-4">
+                        <div class="flex items-center mb-4">
+                            <div class="w-12 h-12 bg-red-100 rounded-full flex items-center justify-center mr-4">
+                                <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.728-.833-2.498 0L4.316 15.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                                </svg>
+                            </div>
+                            <h3 class="text-lg font-semibold text-gray-900">Confirm Time Out</h3>
+                        </div>
+                        <p class="text-gray-600 mb-6">Are you sure you want to clock out? This will end your current work session.</p>
+                        <div class="flex justify-end space-x-3">
+                            <button id="cancel-clock-out" class="px-4 py-2 text-gray-600 bg-gray-100 rounded-lg hover:bg-gray-200 transition-colors">
+                                Cancel
+                            </button>
+                            <button id="confirm-clock-out" class="px-4 py-2 bg-red-500 text-white rounded-lg hover:bg-red-600 transition-colors">
+                                Clock Out
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+            
+            // Add modal to page
+            $('body').append(modalHtml);
+            
+            // Handle confirmation
+            $('#confirm-clock-out').on('click', function() {
+                $('#clock-out-modal').remove();
+                callback();
+            });
+            
+            // Handle cancellation
+            $('#cancel-clock-out').on('click', function() {
+                $('#clock-out-modal').remove();
+            });
+            
+            // Handle escape key and backdrop click
+            $('#clock-out-modal').on('click', function(e) {
+                if (e.target === this) {
+                    $('#clock-out-modal').remove();
+                }
+            });
+            
+            $(document).on('keydown.clockOutModal', function(e) {
+                if (e.keyCode === 27) { // Escape key
+                    $('#clock-out-modal').remove();
+                    $(document).off('keydown.clockOutModal');
+                }
             });
         },
         
@@ -428,7 +489,7 @@ jQuery(document).ready(function($) {
         }
     });
     
-    // Add CSS for animations
+    // Add CSS for animations and modal
     const timerCSS = `
         <style>
             .timer-notification {
@@ -465,6 +526,31 @@ jQuery(document).ready(function($) {
                 }
                 50% {
                     opacity: 0.5;
+                }
+            }
+            
+            /* Clock Out Modal Styles */
+            #clock-out-modal {
+                animation: modalFadeIn 0.2s ease-out;
+            }
+            
+            #clock-out-modal > div {
+                animation: modalSlideIn 0.2s ease-out;
+            }
+            
+            @keyframes modalFadeIn {
+                from { opacity: 0; }
+                to { opacity: 1; }
+            }
+            
+            @keyframes modalSlideIn {
+                from { 
+                    transform: scale(0.95) translateY(-10px);
+                    opacity: 0;
+                }
+                to { 
+                    transform: scale(1) translateY(0);
+                    opacity: 1;
                 }
             }
         </style>
